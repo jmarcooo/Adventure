@@ -106,13 +106,39 @@
         #enemy-container {
             display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; min-height: 180px; align-items: flex-end;
         }
-        .enemy-unit { display: flex; flex-direction: column; align-items: center; transition: opacity 0.3s, transform 0.1s; }
+        .enemy-unit { display: flex; flex-direction: column; align-items: center; transition: opacity 0.3s, transform 0.1s; position: relative; }
         .enemy-unit.dead { opacity: 0; pointer-events: none; }
         .enemy-unit .emoji { font-size: 3.5rem; margin-bottom: 5px; text-shadow: 0 5px 10px rgba(0,0,0,0.3); }
         .enemy-unit.boss .emoji { font-size: 7rem; }
+        
         .mini-bar-container { width: 50px; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
         .mini-bar-fill { width: 100%; height: 100%; background: #e74c3c; transition: width 0.1s; }
         .boss .mini-bar-container { width: 120px; height: 12px; }
+        
+        .mini-hp-text { font-size: 0.7rem; font-weight: bold; margin-top: 2px; color: #fff; }
+
+        /* --- COMBAT STATS PANEL --- */
+        .combat-stats-panel {
+            display: flex; justify-content: space-around; align-items: center; width: 85%; 
+            background: rgba(0,0,0,0.25); border-radius: 15px; padding: 10px; margin: 0 auto 10px auto;
+            font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .combat-stats-panel p { margin: 2px 0; display: flex; align-items: center; gap: 5px; }
+        .combat-stats-icon { font-size: 2.5rem; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); }
+
+        /* --- FLOATING COMBAT TEXT --- */
+        .floating-text {
+            position: absolute; font-family: 'Fredoka One', cursive; font-size: 1.5rem;
+            pointer-events: none; z-index: 100; animation: floatUpAndFade 0.8s ease-out forwards;
+        }
+        .float-crit { color: #f1c40f; text-shadow: 0 0 8px #e74c3c, 0 3px 0 #d35400; font-size: 1.8rem; }
+        .float-miss { color: #bdc3c7; text-shadow: 0 2px 0 #7f8c8d; font-size: 1.5rem; }
+
+        @keyframes floatUpAndFade {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            50% { transform: translateY(-20px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1); }
+        }
 
         /* Combat Animations */
         .hit-anim { animation: takeDamage 0.2s; }
@@ -138,13 +164,6 @@
         .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; font-weight: bold; }
         .upgrade-btn .cost { font-weight: bold; color: #f39c12; font-size: 1.2rem;}
         .upgrade-btn.disabled { opacity: 0.5; pointer-events: none; }
-
-        /* Dodged Text */
-        .dodge-text {
-            position: absolute; color: #f1c40f; font-weight: bold; font-size: 1.5rem;
-            animation: floatUp 1s forwards; text-shadow: 0 2px 5px rgba(0,0,0,0.5); pointer-events: none;
-        }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-30px); } }
 
     </style>
 </head>
@@ -211,7 +230,6 @@
         <div id="screen-shop" class="screen" style="justify-content: flex-start;">
             <h2>Premium Shop</h2>
             <p style="color: #3498db; font-size: 1.2rem; margin-top: 5px; font-weight: bold;">Spend your Gems!</p>
-            
             <div class="list-container">
                 <div class="card" onclick="buyPremium('gold')">
                     <div class="card-icon">💰</div>
@@ -235,28 +253,29 @@
 
             <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
 
-            <div style="width: 100%; position: relative;">
+            <div style="width: 100%; position: relative;" id="player-combat-area">
+                
+                <div class="combat-stats-panel" id="combat-stats-panel">
+                    </div>
+
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 0 auto; align-items: flex-end;">
                     <h3 style="margin:0;">Your Health</h3>
                     <span id="player-hp-text" style="font-weight: bold; font-size: 0.9rem;">100/100</span>
                 </div>
                 <div class="bar-container" style="width: 80%; margin: 5px auto 10px auto; position: relative;">
                     <div class="bar-fill player-hp" id="player-health"></div>
-                    <div id="dodge-feedback" style="position: absolute; top: -25px; right: 0; width: 100%; text-align: center;"></div>
                 </div>
             </div>
 
             <div id="combat-controls" style="width: 80%;">
-                <button class="action-btn red" onclick="attackEnemy()" style="margin-top: 10px; font-size: 2rem;">ATTACK!</button>
+                <button class="action-btn red" onclick="attackEnemy()" style="margin-top: 5px; font-size: 2rem;">ATTACK!</button>
                 <button class="action-btn" onclick="fleeCombat()" style="font-size: 1rem; padding: 10px 20px; margin-top: 15px; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Flee</button>
             </div>
 
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
                 <p style="margin-bottom: 25px;">Select an upgrade for this run.</p>
-
                 <div id="upgrade-list" style="width: 100%;"></div>
-
                 <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
@@ -291,7 +310,7 @@
             maxHealth: 100, currentHealth: 100
         };
 
-        // Extended Temporary Stats
+        // Temporary Run Stats
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0 
@@ -301,8 +320,7 @@
         let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
         let enemyAttackTimer;
 
-        // --- NAVIGATION LOGIC ---
-        // Added 'shop' back into the screens array
+        // --- NAVIGATION & GENERAL LOGIC ---
         const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
 
         function openMenu(targetScreen) {
@@ -338,22 +356,13 @@
             else { alert("Not enough Gold!"); }
         }
 
-        // --- PREMIUM SHOP LOGIC ---
         function buyPremium(item) {
             if (item === 'gold') {
-                if (player.gems >= 10) {
-                    player.gems -= 10;
-                    player.gold += 1000;
-                    updateUI();
-                    alert("Purchased 1,000 Gold!");
-                } else { alert("Not enough Gems!"); }
+                if (player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); alert("Purchased 1,000 Gold!"); } 
+                else { alert("Not enough Gems!"); }
             } else if (item === 'damage') {
-                if (player.gems >= 50) {
-                    player.gems -= 50;
-                    player.bonusDamage += 50;
-                    updateUI();
-                    alert("Purchased +50 Permanent Damage!");
-                } else { alert("Not enough Gems!"); }
+                if (player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); alert("Purchased +50 Permanent Damage!"); } 
+                else { alert("Not enough Gems!"); }
             }
         }
 
@@ -361,6 +370,43 @@
         function getTotalDamage() {
             let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage + runStats.bonusAtk;
             return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)));
+        }
+
+        function updateCombatStatsPanel() {
+            let panel = document.getElementById('combat-stats-panel');
+            panel.innerHTML = `
+                <div class="combat-stats-icon">${heroData[player.currentHero].emoji}</div>
+                <div>
+                    <p>⚔️ ${getTotalDamage()} DMG</p>
+                    <p>🎯 ${Math.round(runStats.critChance * 100)}% Crit</p>
+                    <p>⚡ ${Math.round(runStats.doubleHitChance * 100)}% Dbl</p>
+                </div>
+                <div>
+                    <p>🛡️ ${Math.round(runStats.damageReduction * 100)}% Arm</p>
+                    <p>💨 ${Math.round(runStats.evasion * 100)}% Ddg</p>
+                    <p>🩸 ${Math.round(runStats.lifesteal * 100)}% L.S.</p>
+                </div>
+            `;
+        }
+
+        // Helper to spawn floating text ("CRIT!" or "MISS!")
+        function spawnFloatingText(targetId, text, className) {
+            let targetDiv = document.getElementById(targetId);
+            if(!targetDiv) return;
+
+            let ft = document.createElement('div');
+            ft.className = `floating-text ${className}`;
+            ft.innerText = text;
+            
+            // Random offset so multiple texts don't perfectly overlap
+            let offsetX = (Math.random() * 40) - 20;
+            ft.style.left = `calc(50% + ${offsetX}px)`;
+            ft.style.top = '10px'; // Start slightly inside the element
+
+            targetDiv.appendChild(ft);
+            
+            // Cleanup DOM after animation
+            setTimeout(() => { if(ft.parentElement) ft.remove(); }, 800);
         }
 
         function startGame() {
@@ -373,6 +419,7 @@
             document.getElementById('wave-upgrade-ui').style.display = 'none';
             waveManager.isUpgrading = false;
 
+            updateCombatStatsPanel();
             openMenu('game');
             spawnEnemyPack();
             
@@ -406,6 +453,7 @@
                     <div class="enemy-unit boss" id="enemy-0">
                         <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
                         <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
+                        <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
                     </div>`;
             } else {
                 let enemyCount = Math.min(6, Math.floor(((waveManager.wave - 1) % 15) / 2) + 1);
@@ -420,6 +468,7 @@
                         <div class="enemy-unit" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
                             <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
+                            <div class="mini-hp-text" id="enemy-hp-text-${i}">${normHp}/${normHp}</div>
                         </div>`;
                 }
             }
@@ -428,16 +477,28 @@
         function animateHit(unitId, isCrit) {
             let unitDiv = document.getElementById(`enemy-${unitId}`);
             let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
+            let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
             let target = activeEnemies.find(e => e.id === unitId);
 
+            if (!target) return;
+
+            // Visual impact
             if (unitDiv) {
                 unitDiv.classList.add('hit-anim');
-                if(isCrit) unitDiv.style.filter = "drop-shadow(0 0 10px red)"; 
+                if(isCrit) {
+                    unitDiv.style.filter = "drop-shadow(0 0 10px red)"; 
+                    spawnFloatingText(`enemy-${unitId}`, "CRIT!", "float-crit");
+                }
                 setTimeout(() => { unitDiv.classList.remove('hit-anim'); unitDiv.style.filter = ""; }, 200);
             }
-            if (hpBarDiv && target) hpBarDiv.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + '%';
+
+            // Update Bars and Text
+            let displayHp = Math.max(0, Math.ceil(target.hp));
+            if (hpBarDiv) hpBarDiv.style.width = (displayHp / target.maxHp) * 100 + '%';
+            if (hpTextDiv) hpTextDiv.innerText = `${displayHp}/${target.maxHp}`;
             
-            if (target && target.hp <= 0 && unitDiv) {
+            // Death State
+            if (target.hp <= 0 && unitDiv) {
                 unitDiv.classList.add('dead');
                 setTimeout(() => unitDiv.style.display = 'none', 300); 
             }
@@ -449,36 +510,40 @@
             let strikes = (Math.random() < runStats.doubleHitChance) ? 2 : 1;
 
             for (let s = 0; s < strikes; s++) {
-                let target = activeEnemies.find(e => e.hp > 0);
-                if (!target) break;
+                // Must delay double hits slightly so the second text can spawn
+                setTimeout(() => {
+                    let target = activeEnemies.find(e => e.hp > 0);
+                    if (!target) return;
 
-                let dmg = getTotalDamage();
-                let isCrit = Math.random() < runStats.critChance;
-                if (isCrit) dmg *= 2.5; 
+                    let dmg = getTotalDamage();
+                    let isCrit = Math.random() < runStats.critChance;
+                    if (isCrit) dmg *= 2.5; 
 
-                target.hp -= dmg;
-                animateHit(target.id, isCrit);
+                    target.hp -= dmg;
+                    animateHit(target.id, isCrit);
 
-                if (runStats.lifesteal > 0) {
-                    let healAmount = Math.floor(dmg * runStats.lifesteal);
-                    if (healAmount > 0) {
-                        player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
-                        updatePlayerHealthBar();
-                    }
-                }
-
-                if (runStats.splashDmg > 0) {
-                    let sDmg = dmg * runStats.splashDmg;
-                    activeEnemies.forEach(e => {
-                        if (e.id !== target.id && e.hp > 0) {
-                            e.hp -= sDmg;
-                            animateHit(e.id, false);
+                    if (runStats.lifesteal > 0) {
+                        let healAmount = Math.floor(dmg * runStats.lifesteal);
+                        if (healAmount > 0) {
+                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
+                            updatePlayerHealthBar();
                         }
-                    });
-                }
+                    }
+
+                    if (runStats.splashDmg > 0) {
+                        let sDmg = dmg * runStats.splashDmg;
+                        activeEnemies.forEach(e => {
+                            if (e.id !== target.id && e.hp > 0) {
+                                e.hp -= sDmg;
+                                animateHit(e.id, false);
+                            }
+                        });
+                    }
+                }, s * 150); // Second hit happens 150ms after first
             }
 
-            if (activeEnemies.every(e => e.hp <= 0)) setTimeout(packDefeated, 400); 
+            // Check wave state after attacks resolve
+            setTimeout(() => { if (activeEnemies.every(e => e.hp <= 0)) packDefeated(); }, 400); 
         }
 
         function enemyStrikesBack() {
@@ -495,11 +560,10 @@
                         setTimeout(() => unitDiv.classList.remove('attack-anim'), 300);
                     }
                     
+                    // Dodge Logic
                     if (Math.random() < runStats.evasion) {
-                        let feedback = document.getElementById('dodge-feedback');
-                        feedback.innerHTML = '<span class="dodge-text">DODGED!</span>';
-                        setTimeout(() => feedback.innerHTML = '', 1000);
-                        return; 
+                        spawnFloatingText('player-combat-area', "MISS!", "float-miss");
+                        return; // Takes 0 damage
                     }
 
                     let incomingDmg = Math.floor(e.damage * (1 - runStats.damageReduction));
@@ -531,7 +595,9 @@
 
         // --- RANDOMIZED UPGRADE SHOP ---
         function packDefeated() {
+            if(waveManager.isUpgrading) return; // Prevent double firing
             waveManager.isUpgrading = true; 
+            
             let isBoss = getLevelAndWave().isBoss;
             let packSize = activeEnemies.length;
 
@@ -598,6 +664,7 @@
                 if(type === 'armor') runStats.damageReduction += 0.1;
                 
                 updateUI();
+                updateCombatStatsPanel(); // Refresh stats panel visually
                 continueToNextWave(); 
             }
         }
