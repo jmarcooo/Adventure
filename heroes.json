@@ -2,28 +2,69 @@
   "warrior": {
     "id": "warrior",
     "name": "Warrior",
-    "emoji": "🧑‍🎤",
-    "weapon": "⚔️",
+    "emoji": "\ud83e\uddd1\u200d\ud83c\udfa4",
+    "weapon": "\u2694\ufe0f",
     "baseDamage": 20,
-    "innate": { "splashDmg": 0.20 },
+    "innate": {
+      "splashDmg": 0.2
+    },
     "innateDesc": "+20% Splash Damage"
   },
   "mage": {
     "id": "mage",
     "name": "Mage",
-    "emoji": "🧙‍♂️",
-    "weapon": "🔮",
+    "emoji": "\ud83e\uddd9\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udd2e",
     "baseDamage": 35,
-    "innate": { "lifesteal": 0.10 },
+    "innate": {
+      "lifesteal": 0.1
+    },
     "innateDesc": "+10% Lifesteal"
   },
   "archer": {
     "id": "archer",
     "name": "Archer",
-    "emoji": "🧝‍♂️",
-    "weapon": "🏹",
+    "emoji": "\ud83e\udddd\u200d\u2642\ufe0f",
+    "weapon": "\ud83c\udff9",
     "baseDamage": 25,
-    "innate": { "critChance": 0.15 },
+    "innate": {
+      "critChance": 0.15
+    },
     "innateDesc": "+15% Critical Chance"
+  },
+  "paladin": {
+    "id": "paladin",
+    "name": "Paladin",
+    "emoji": "\ud83d\udee1\ufe0f",
+    "weapon": "\ud83d\udd28",
+    "baseDamage": 15,
+    "innate": {
+      "damageReduction": 0.15
+    },
+    "innateDesc": "+15% Damage Reduction"
+  },
+  "rogue": {
+    "id": "rogue",
+    "name": "Rogue",
+    "emoji": "\ud83e\udd77",
+    "weapon": "\ud83d\udde1\ufe0f",
+    "baseDamage": 22,
+    "innate": {
+      "evasion": 0.15,
+      "doubleHitChance": 0.1
+    },
+    "innateDesc": "+15% Dodge, +10% Double Strike"
+  },
+  "berserker": {
+    "id": "berserker",
+    "name": "Berserker",
+    "emoji": "\ud83d\udc79",
+    "weapon": "\ud83e\ude93",
+    "baseDamage": 30,
+    "innate": {
+      "atkSpeedBonus": 0.2,
+      "damageReduction": -0.1
+    },
+    "innateDesc": "+20% Attack Speed, -10% Damage Reduction"
   }
 }
