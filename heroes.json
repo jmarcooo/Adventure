@@ -66,5 +66,88 @@
       "damageReduction": -0.1
     },
     "innateDesc": "+20% Attack Speed, -10% Damage Reduction"
+  },
+  "necromancer": {
+    "id": "necromancer",
+    "name": "Necromancer",
+    "emoji": "\ud83e\uddb9\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udc80",
+    "baseDamage": 28,
+    "innate": {
+      "lifesteal": 0.15,
+      "critChance": 0.1
+    },
+    "innateDesc": "+15% Lifesteal, +10% Crit Chance"
+  },
+  "beast_tamer": {
+    "id": "beast_tamer",
+    "name": "Beast Tamer",
+    "emoji": "\ud83e\udd20",
+    "weapon": "\ud83e\udd85",
+    "baseDamage": 26,
+    "innate": {
+      "atkSpeedBonus": 0.15,
+      "doubleHitChance": 0.15
+    },
+    "innateDesc": "+15% Attack Speed, +15% Double Strike"
+  },
+  "cleric": {
+    "id": "cleric",
+    "name": "Cleric",
+    "emoji": "\ud83e\uddd1\u200d\u2695\ufe0f",
+    "weapon": "\u271d\ufe0f",
+    "baseDamage": 12,
+    "innate": {
+      "damageReduction": 0.2,
+      "lifesteal": 0.05
+    },
+    "innateDesc": "+20% Damage Reduction, +5% Lifesteal"
+  },
+  "monk": {
+    "id": "monk",
+    "name": "Monk",
+    "emoji": "\ud83e\uddd8\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udc4a",
+    "baseDamage": 24,
+    "innate": {
+      "evasion": 0.25
+    },
+    "innateDesc": "+25% Dodge Chance"
+  },
+  "bard": {
+    "id": "bard",
+    "name": "Bard",
+    "emoji": "\ud83e\uddd1\u200d\ud83c\udfa4",
+    "weapon": "\ud83e\ude95",
+    "baseDamage": 18,
+    "innate": {
+      "goldMultiplier": 0.5,
+      "evasion": 0.1
+    },
+    "innateDesc": "+50% Gold Earned, +10% Dodge Chance"
+  },
+  "druid": {
+    "id": "druid",
+    "name": "Druid",
+    "emoji": "\ud83e\udd8c",
+    "weapon": "\ud83c\udf3f",
+    "baseDamage": 20,
+    "innate": {
+      "splashDmg": 0.15,
+      "lifesteal": 0.1
+    },
+    "innateDesc": "+15% Splash Damage, +10% Lifesteal"
+  },
+  "warlock": {
+    "id": "warlock",
+    "name": "Warlock",
+    "emoji": "\ud83e\uddd9\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udd25",
+    "baseDamage": 40,
+    "innate": {
+      "dmgMultiplier": 0.3,
+      "damageReduction": -0.2
+    },
+    "innateDesc": "+30% Damage, -20% Damage Reduction"
   }
 }
