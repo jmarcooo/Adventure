@@ -318,7 +318,7 @@
             maxHealth: 100, currentHealth: 100
         };
 
-        // Run Stats (Including New Attack Speed Bonus)
+        // Run Stats (Including Attack Speed Bonus)
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0 
@@ -387,7 +387,7 @@
 
         function updateCombatStatsPanel() {
             let panel = document.getElementById('combat-stats-panel');
-            let aps = (1 + runStats.atkSpeedBonus).toFixed(2); // Attacks per second
+            let aps = (1 + runStats.atkSpeedBonus).toFixed(2); 
 
             panel.innerHTML = `
                 <div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero].emoji}</div>
@@ -433,7 +433,7 @@
             openMenu('game');
             spawnEnemyPack();
             
-            // Start Auto-Attack Timers
+            // Start Timers
             clearInterval(enemyAttackTimer);
             enemyAttackTimer = setInterval(enemyStrikesBack, 1500);
             startPlayerAutoAttack();
@@ -462,8 +462,11 @@
             let stageInfo = getLevelAndWave();
 
             if (stageInfo.isBoss) {
-                let bossHp = 200 * waveManager.wave;
-                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: 8 * waveManager.wave });
+                // Boss Scaling
+                let bossHp = 150 + (waveManager.wave * 25);
+                let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
+
+                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg });
                 
                 textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
                 
@@ -474,14 +477,17 @@
                         <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
                     </div>`;
             } else {
-                let enemyCount = Math.min(6, Math.floor(((waveManager.wave - 1) % 15) / 2) + 1);
-                let normHp = 50 * waveManager.wave;
+                // Normal Enemy Scaling (Max 5 enemies per pack)
+                let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
+                let normHp = 20 + (waveManager.wave * 10);
+                let normDmg = Math.max(1, Math.floor(waveManager.wave * 0.6));
+
                 let packEmoji = waveManager.normalEmojis[Math.floor(Math.random() * waveManager.normalEmojis.length)];
 
                 textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
                 for(let i = 0; i < enemyCount; i++) {
-                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: 3 * waveManager.wave });
+                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg });
                     container.innerHTML += `
                         <div class="enemy-unit" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
@@ -574,7 +580,6 @@
                 }, s * 150);
             }
 
-            // Check clear condition shortly after attacks finish
             setTimeout(() => { if (activeEnemies.every(e => e.hp <= 0)) packDefeated(); }, 400); 
         }
 
@@ -643,7 +648,7 @@
             
             while(player.exp >= player.expNeeded) {
                 player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
-                player.talentPoints++; player.maxHealth += 20; player.currentHealth = player.maxHealth; 
+                player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; 
             }
 
             updateUI();
@@ -690,7 +695,7 @@
                 player.gold -= cost;
                 
                 if(type === 'atk') runStats.bonusAtk += 15;
-                if(type === 'spd') { runStats.atkSpeedBonus += 0.15; startPlayerAutoAttack(); } // Restart timer for new speed
+                if(type === 'spd') { runStats.atkSpeedBonus += 0.15; startPlayerAutoAttack(); } 
                 if(type === 'splash') runStats.splashDmg += 0.1;
                 if(type === 'double') runStats.doubleHitChance += 0.1;
                 if(type === 'crit') runStats.critChance += 0.1;
