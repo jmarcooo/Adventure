@@ -474,6 +474,7 @@
             gameSpeed = gameSpeed === 1 ? 2 : 1;
             getEl('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
             
+            // Instantly re-schedule timers with new speed if in combat
             if (!waveManager.isUpgrading && getEl('screen-game').classList.contains('active')) {
                 schedulePlayerAttack();
                 scheduleEnemyAttack();
@@ -669,8 +670,30 @@
             }
             
             updateCombatStatsPanel();
+            
+            // Kickstart combat loops safely
             schedulePlayerAttack(); 
             scheduleEnemyAttack();
+        }
+
+        // ----------------------------------------------------
+        // THE FIX: CENTRALIZED WIN CONDITION CHECKER
+        // ----------------------------------------------------
+        function checkWinCondition() {
+            if (waveManager.isUpgrading) return; // Prevent double-firing
+            
+            let anyAlive = activeEnemies.some(e => !e.isDead && e.hp > 0);
+            
+            if (!anyAlive) {
+                waveManager.isUpgrading = true; // Lock combat
+                clearTimeout(playerAttackTimer);
+                clearTimeout(enemyAttackTimer);
+
+                // Wait 1 full second for the loot animations to finish
+                setTimeout(() => {
+                    packDefeated();
+                }, 1000);
+            }
         }
 
         function handleEnemyDeath(target, unitId, unitDiv) {
@@ -706,13 +729,6 @@
             if(unitDiv) { 
                 unitDiv.classList.add('dead'); 
                 setTimeout(() => unitDiv.style.display = 'none', 300); 
-            }
-
-            // --- THE FIX: INSTANT WAVE CLEAR CHECK ---
-            if (activeEnemies.every(e => e.isDead)) {
-                setTimeout(() => {
-                    packDefeated();
-                }, 600); // Give time for loot animations to finish
             }
         }
 
@@ -783,6 +799,37 @@
             target.hp -= dmg;
             animateHit(target.id, dmg, isCrit, isMeteor ? "METEOR!" : null);
 
+            // Mage Overload Innate
+            if(!isCounter && player.currentHero === 'mage') {
+                runStats.mageAttackCount++;
+                if(runStats.mageAttackCount % 5 === 0) {
+                    spawnFloatingText('player-combat-area', "OVERLOAD!", "float-crit");
+                    activeEnemies.forEach(en => { 
+                        if(!en.isDead && en.hp > 0 && en.id !== target.id) {
+                            processHitTarget(en, true); 
+                        }
+                    });
+                }
+            }
+
+            // Mage Chain Lightning
+            if(!isCounter && player.currentHero === 'mage' && getUpgradeLvl('mage_chain') > 0) {
+                let chainChance = [0.15, 0.30, 0.45][getUpgradeLvl('mage_chain') - 1];
+                if(Math.random() < chainChance) {
+                    let others = activeEnemies.filter(e => !e.isDead && e.hp > 0 && e.id !== target.id);
+                    if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
+                }
+            }
+
+            // Archer Multishot
+            if(!isCounter && player.currentHero === 'archer' && getUpgradeLvl('arc_multi') > 0) {
+                let multiChance = [0.20, 0.40, 0.60][getUpgradeLvl('arc_multi') - 1];
+                if(Math.random() < multiChance) {
+                    let others = activeEnemies.filter(e => !e.isDead && e.hp > 0 && e.id !== target.id);
+                    if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
+                }
+            }
+
             // Warrior Stun
             if(player.currentHero === 'warrior' && getUpgradeLvl('war_stun') > 0) {
                 let stunChance = [0.20, 0.30][getUpgradeLvl('war_stun') - 1];
@@ -812,18 +859,21 @@
             if (runStats.splashDmg > 0 && !isCounter) {
                 let sDmg = Math.floor(dmg * runStats.splashDmg);
                 activeEnemies.forEach(e => { 
-                    if (e.id !== target.id && !e.isDead && e.hp > 0) { 
+                    if (!e.isDead && e.id !== target.id && e.hp > 0) { 
                         e.hp -= sDmg; 
                         animateHit(e.id, sDmg, false); 
                     } 
                 });
             }
+
+            // Call this at the absolute end of ANY attack process
+            checkWinCondition();
         }
 
         function autoAttackEnemy() {
             if(waveManager.isUpgrading || player.currentHealth <= 0 || !getEl('screen-game').classList.contains('active')) return;
             
-            let aliveEnemies = activeEnemies.filter(e => !e.isDead);
+            let aliveEnemies = activeEnemies.filter(e => !e.isDead && e.hp > 0);
             if(aliveEnemies.length === 0) return;
 
             let pIcon = getEl('player-combat-icon');
@@ -836,39 +886,8 @@
 
             for (let s = 0; s < strikes; s++) {
                 setTimeout(() => {
-                    let target = activeEnemies.find(e => !e.isDead);
-                    if (!target) return;
-
-                    processHitTarget(target);
-
-                    // Mage Overload Innate
-                    if(player.currentHero === 'mage') {
-                        runStats.mageAttackCount++;
-                        if(runStats.mageAttackCount % 5 === 0) {
-                            spawnFloatingText('player-combat-area', "OVERLOAD!", "float-crit");
-                            activeEnemies.forEach(en => { 
-                                if(!en.isDead && en.id !== target.id) processHitTarget(en, true); 
-                            });
-                        }
-                    }
-
-                    // Mage Chain Lightning
-                    if(player.currentHero === 'mage' && getUpgradeLvl('mage_chain') > 0) {
-                        let chainChance = [0.15, 0.30, 0.45][getUpgradeLvl('mage_chain') - 1];
-                        if(Math.random() < chainChance) {
-                            let others = activeEnemies.filter(e => !e.isDead && e.id !== target.id);
-                            if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
-                        }
-                    }
-
-                    // Archer Multishot
-                    if(player.currentHero === 'archer' && getUpgradeLvl('arc_multi') > 0) {
-                        let multiChance = [0.20, 0.40, 0.60][getUpgradeLvl('arc_multi') - 1];
-                        if(Math.random() < multiChance) {
-                            let others = activeEnemies.filter(e => !e.isDead && e.id !== target.id);
-                            if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
-                        }
-                    }
+                    let target = activeEnemies.find(e => !e.isDead && e.hp > 0);
+                    if (target) processHitTarget(target);
                 }, s * 150);
             }
         }
@@ -876,10 +895,10 @@
         function enemyStrikesBack() {
             if(!getEl('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
             
-            let aliveEnemies = activeEnemies.filter(e => !e.isDead);
+            let aliveEnemies = activeEnemies.filter(e => !e.isDead && e.hp > 0);
             aliveEnemies.forEach((e, index) => {
                 setTimeout(() => {
-                    if(player.currentHealth <= 0 || waveManager.isUpgrading || e.isDead) return; 
+                    if(player.currentHealth <= 0 || waveManager.isUpgrading || e.isDead || e.hp <= 0) return; 
 
                     if(e.isStunned) { e.isStunned = false; return; }
                     if(e.isFrozen) { e.isFrozen = false; return; }
@@ -950,6 +969,7 @@
                         if(retDmg > 0) { 
                             e.hp -= retDmg; 
                             animateHit(e.id, retDmg, false); 
+                            checkWinCondition(); // Check if retaliation killed the last enemy!
                         }
                     }
 
@@ -974,9 +994,6 @@
 
         // --- WAVE DEFEATED & SMART SHOP ---
         function packDefeated() {
-            if(waveManager.isUpgrading) return; 
-            waveManager.isUpgrading = true; 
-            
             let stageInfo = getLevelAndWave();
 
             let gemsEarned = 0;
@@ -994,7 +1011,6 @@
             if(stageInfo.isBoss) { 
                 showBossClearUI(); 
             } else { 
-                // Always show the shop, even if they have 0 runes or everything is maxed!
                 showUpgradeShop(availableUpgrades); 
             }
         }
