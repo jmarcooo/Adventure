@@ -212,21 +212,18 @@
                     <div class="card-icon">🧑‍🎤</div>
                     <div class="card-info">
                         <h3>Warrior</h3><p>Base Damage: 20</p>
-                        <p style="color:#f1c40f; font-size: 0.75rem; margin-top:3px;">Innate: Below 30% HP = +75% Atk Spd, +25% Armor</p>
                     </div>
                 </div>
                 <div class="card" id="card-mage" onclick="selectHero('mage')">
                     <div class="card-icon">🧙‍♂️</div>
                     <div class="card-info">
                         <h3>Mage</h3><p>Base Damage: 35</p>
-                        <p style="color:#f1c40f; font-size: 0.75rem; margin-top:3px;">Innate: Every 5th hit blasts ALL enemies (150%)</p>
                     </div>
                 </div>
                 <div class="card" id="card-archer" onclick="selectHero('archer')">
                     <div class="card-icon">🧝‍♂️</div>
                     <div class="card-info">
                         <h3>Archer</h3><p>Base Damage: 25</p>
-                        <p style="color:#f1c40f; font-size: 0.75rem; margin-top:3px;">Innate: Crits deal massive 3.5x damage</p>
                     </div>
                 </div>
             </div>
@@ -287,10 +284,7 @@
             <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
 
             <div style="width: 100%; position: relative;" id="player-combat-area">
-                
-                <div class="combat-stats-panel" id="combat-stats-panel">
-                    </div>
-
+                <div class="combat-stats-panel" id="combat-stats-panel"></div>
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 0 auto; align-items: flex-end;">
                     <h3 style="margin:0;">Your Health</h3>
                     <span id="player-hp-text" style="font-weight: bold; font-size: 0.9rem;">100/100</span>
@@ -303,38 +297,31 @@
             <div id="wave-upgrade-ui">
                 <h1 id="shop-title" style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
                 <p id="shop-desc" style="margin-bottom: 10px;">Spend your Runes for this run.</p>
-                
                 <div id="shop-rune-display-box" style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 20px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">
                     🌀 <span id="shop-runes-display">0</span>
                 </div>
-
                 <div id="upgrade-list" style="width: 100%;"></div>
-                
                 <button id="skip-btn" class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
             <div id="boss-clear-ui">
                 <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 2.5rem;">BOSS SLAIN!</h1>
                 <p style="margin-bottom: 15px;">You found powerful cursed relics...</p>
-                
                 <div class="loot-panel">
                     <div class="loot-item"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
                     <div class="loot-item"><span style="font-size: 1.5rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
                     <div class="loot-item"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
                 </div>
-
                 <div id="cursed-list" style="width: 100%; margin-bottom: 10px;"></div>
-
                 <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
                     <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Escape & Claim</button>
-                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #e74c3c; box-shadow: 0 5px 0 #c0392b;" id="btn-descend" disabled>Descend Deeper</button>
+                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #e74c3c; box-shadow: 0 5px 0 #c0392b;" id="btn-descend">Descend Deeper</button>
                 </div>
             </div>
 
             <div id="run-summary-ui">
                 <h1 id="run-summary-title" style="font-family: 'Fredoka One'; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
                 <p style="margin-bottom: 25px; font-size: 1.2rem;">Run Summary</p>
-                
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; width: 80%; margin-bottom: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);">
                     <div style="font-size: 1.5rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
                         <span>💀 Kills:</span> <span id="summary-kills" style="color: #e74c3c; font-weight: bold;">0</span>
@@ -346,7 +333,6 @@
                         <span>🌟 EXP:</span> <span id="summary-exp" style="color: #9b59b6; font-weight: bold;">0</span>
                     </div>
                 </div>
-
                 <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.5rem; padding: 15px 30px;">Collect & Home</button>
             </div>
         </div>
@@ -384,7 +370,7 @@
         let activeEnemies = [];
         let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 
-        // --- UPGRADE DATABASES ---
+        // --- GLOBAL UPGRADES ONLY (Rolled back version) ---
         const globalUpgrades = [
             { id: 'atk', name: "Sharpen Blade", desc: "+20 Base Attack", maxLevel: 5 },
             { id: 'spd', name: "Swift Strikes", desc: "+10% Attack Speed", maxLevel: 5 },
@@ -395,27 +381,6 @@
             { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", maxLevel: 5 },
             { id: 'armor', name: "Iron Skin", desc: "+5% Damage Reduction", maxLevel: 5 }
         ];
-
-        const heroSpecificUpgrades = {
-            warrior: [
-                { id: 'war_stun', name: 'Stunning Blow', desc: 'Chance to Stun', maxLevel: 2 },
-                { id: 'war_block', name: 'Shield Block', desc: 'Chance to Block (0 DMG)', maxLevel: 3 },
-                { id: 'war_ret', name: 'Retaliation', desc: 'Reflect % Damage', maxLevel: 3 },
-                { id: 'war_blood', name: 'Bloodlust', desc: 'Heal on Kill', maxLevel: 3 }
-            ],
-            mage: [
-                { id: 'mage_chain', name: 'Chain Lightning', desc: 'Hit +1 Extra Enemy', maxLevel: 3 },
-                { id: 'mage_frost', name: 'Frost Nova', desc: 'Chance to Freeze', maxLevel: 2 },
-                { id: 'mage_meteor', name: 'Meteor Strike', desc: 'Chance for 400% DMG', maxLevel: 3 },
-                { id: 'mage_shield', name: 'Mana Shield', desc: 'Block 1st Hit + Atk Spd', maxLevel: 1 }
-            ],
-            archer: [
-                { id: 'arc_multi', name: 'Multishot', desc: 'Fire at Extra Target', maxLevel: 3 },
-                { id: 'arc_mark', name: 'Hunter\'s Mark', desc: 'Consecutive Hits = +DMG', maxLevel: 3 },
-                { id: 'arc_acro', name: 'Acrobatics', desc: 'Dodge = Free Counter-Atk', maxLevel: 2 },
-                { id: 'arc_pierce', name: 'Piercing Arrow', desc: 'Ignore Enemy Armor', maxLevel: 2 }
-            ]
-        };
 
         const bossSkillsData = [
             { id: 'crit', name: 'Critical Strike', icon: '🎯', desc: '25% chance for 2x DMG' },
@@ -438,8 +403,8 @@
         // --- NAVIGATION LOGIC ---
         function openMenu(targetScreen) {
             if(targetScreen !== 'game') { 
-                clearTimeout(enemyAttackTimer); 
-                clearTimeout(playerAttackTimer); 
+                clearInterval(enemyAttackTimer); 
+                clearInterval(playerAttackTimer); 
             }
             
             let screensList = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
@@ -476,8 +441,10 @@
             
             // Instantly re-schedule timers with new speed if in combat
             if (!waveManager.isUpgrading && getEl('screen-game').classList.contains('active')) {
-                schedulePlayerAttack();
-                scheduleEnemyAttack();
+                clearInterval(playerAttackTimer);
+                clearInterval(enemyAttackTimer);
+                startPlayerAutoAttack();
+                startEnemyAutoAttack();
             }
         }
 
@@ -502,11 +469,6 @@
             return runStats.upgradeLevels[id] || 0;
         }
 
-        function checkWarriorInnate() {
-            if(player.currentHero !== 'warrior') return { spd: 0, arm: 0 };
-            return (player.currentHealth / player.maxHealth < 0.30) ? { spd: 0.75, arm: 0.25 } : { spd: 0, arm: 0 };
-        }
-
         function getTotalDamage() {
             let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage + runStats.bonusAtk;
             return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)) * runStats.dmgMultiplier);
@@ -514,9 +476,7 @@
 
         function updateCombatStatsPanel() {
             let panel = getEl('combat-stats-panel');
-            let wBuff = checkWarriorInnate();
-            let totalSpdBonus = runStats.atkSpeedBonus + runStats.tempAtkSpeed + wBuff.spd;
-            let aps = (1 + totalSpdBonus).toFixed(2); 
+            let aps = (1 + runStats.atkSpeedBonus).toFixed(2); 
 
             panel.innerHTML = `
                 <div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero].emoji}</div>
@@ -526,7 +486,7 @@
                     <p>🎯 ${Math.round(runStats.critChance * 100)}% Crit</p>
                 </div>
                 <div>
-                    <p>🛡️ ${Math.round((runStats.damageReduction + wBuff.arm) * 100)}% Arm</p>
+                    <p>🛡️ ${Math.round(runStats.damageReduction * 100)}% Arm</p>
                     <p>💨 ${Math.round(runStats.evasion * 100)}% Ddg</p>
                     <p>🩸 ${Math.round(runStats.lifesteal * 100)}% L.S.</p>
                 </div>
@@ -575,28 +535,24 @@
             updateCombatStatsPanel();
         }
 
-        // --- NEW BULLETPROOF SCHEDULING SYSTEM ---
-        function schedulePlayerAttack() {
-            clearTimeout(playerAttackTimer);
+        // --- SAFE SCHEDULING SYSTEM ---
+        function startPlayerAutoAttack() {
+            clearInterval(playerAttackTimer);
             if(waveManager.isUpgrading || !getEl('screen-game').classList.contains('active') || player.currentHealth <= 0) return;
             
-            let wBuff = checkWarriorInnate();
-            let totalSpdBonus = runStats.atkSpeedBonus + runStats.tempAtkSpeed + wBuff.spd;
-            let interval = 2000 / (gameSpeed * Math.max(0.1, (1 + totalSpdBonus)));
+            let interval = 2000 / (gameSpeed * Math.max(0.1, (1 + runStats.atkSpeedBonus)));
             
-            playerAttackTimer = setTimeout(() => {
+            playerAttackTimer = setInterval(() => {
                 autoAttackEnemy();
-                schedulePlayerAttack(); // Recursive self-scheduling
             }, interval);
         }
 
-        function scheduleEnemyAttack() {
-            clearTimeout(enemyAttackTimer);
+        function startEnemyAutoAttack() {
+            clearInterval(enemyAttackTimer);
             if(waveManager.isUpgrading || !getEl('screen-game').classList.contains('active') || player.currentHealth <= 0) return;
             
-            enemyAttackTimer = setTimeout(() => {
+            enemyAttackTimer = setInterval(() => {
                 enemyStrikesBack();
-                scheduleEnemyAttack(); // Recursive self-scheduling
             }, 3000 / gameSpeed);
         }
 
@@ -606,7 +562,6 @@
                 lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
                 dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-                mageAttackCount: 0, archerLastTarget: null, archerCombo: 0, mageShieldActive: false, tempAtkSpeed: 0,
                 upgradeLevels: {} 
             };
             
@@ -628,9 +583,6 @@
             let textEl = getEl('level-wave-text');
             container.innerHTML = ''; activeEnemies = []; waveManager.isUpgrading = false;
 
-            runStats.tempAtkSpeed = 0; 
-            if(player.currentHero === 'mage' && getUpgradeLvl('mage_shield') > 0) runStats.mageShieldActive = true;
-
             let stageLvl = Math.floor((waveManager.wave - 1) / 15) + 1;
             let stageWave = ((waveManager.wave - 1) % 15) + 1;
             let isBoss = stageWave === 15;
@@ -640,7 +592,7 @@
                 let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
                 let bSkill = bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)];
 
-                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true, isStunned: false, isFrozen: false });
+                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true });
                 
                 textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageLvl} - Wave ${stageWave} ⚠️</span>`;
                 container.innerHTML = `
@@ -659,7 +611,7 @@
                 textEl.innerHTML = `Level ${stageLvl} - Wave ${stageWave}`;
 
                 for(let i = 0; i < enemyCount; i++) {
-                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg, skill: null, isDead: false, isBoss: false, isStunned: false, isFrozen: false });
+                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg, skill: null, isDead: false, isBoss: false });
                     container.innerHTML += `
                         <div class="enemy-unit" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
@@ -670,26 +622,22 @@
             }
             
             updateCombatStatsPanel();
-            
-            // Kickstart combat loops safely
-            schedulePlayerAttack(); 
-            scheduleEnemyAttack();
+            startPlayerAutoAttack(); 
+            startEnemyAutoAttack();
         }
 
-        // ----------------------------------------------------
-        // THE FIX: CENTRALIZED WIN CONDITION CHECKER
-        // ----------------------------------------------------
+        // --- CHECK WIN SYSTEM ---
         function checkWinCondition() {
-            if (waveManager.isUpgrading) return; // Prevent double-firing
+            if (waveManager.isUpgrading) return; 
             
             let anyAlive = activeEnemies.some(e => !e.isDead && e.hp > 0);
             
             if (!anyAlive) {
-                waveManager.isUpgrading = true; // Lock combat
-                clearTimeout(playerAttackTimer);
-                clearTimeout(enemyAttackTimer);
+                waveManager.isUpgrading = true; 
+                clearInterval(playerAttackTimer);
+                clearInterval(enemyAttackTimer);
 
-                // Wait 1 full second for the loot animations to finish
+                // Wait 1 second for animations, then show shop
                 setTimeout(() => {
                     packDefeated();
                 }, 1000);
@@ -700,12 +648,6 @@
             if (target.isDead) return;
             target.isDead = true; 
             runStats.enemiesKilled++;
-
-            if(player.currentHero === 'warrior' && getUpgradeLvl('war_blood') > 0) {
-                let healAmount = [5, 10, 20][getUpgradeLvl('war_blood') - 1];
-                player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
-                updatePlayerHealthBar();
-            }
 
             if (target.isBoss) {
                 runStats.runes += (5 + waveManager.wave);
@@ -732,16 +674,14 @@
             }
         }
 
-        function animateHit(unitId, damageDealt, isCrit, specialText) {
+        function animateHit(unitId, damageDealt, isCrit) {
             let unitDiv = getEl(`enemy-${unitId}`);
             let target = activeEnemies.find(e => e.id === unitId);
             if (!target) return;
 
             if (unitDiv) {
                 unitDiv.classList.add('hit-anim');
-                if(specialText) { 
-                    spawnFloatingText(`enemy-${unitId}`, specialText, "float-crit"); 
-                } else if(isCrit) { 
+                if(isCrit) { 
                     unitDiv.style.filter = "drop-shadow(0 0 10px red)"; 
                     spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit"); 
                 } else { 
@@ -762,119 +702,14 @@
             }
         }
 
-        function processHitTarget(target, isCounter = false) {
-            if(!target || target.isDead || target.hp <= 0) return;
-            let dmg = getTotalDamage();
-
-            // Archer Mark
-            if(player.currentHero === 'archer' && getUpgradeLvl('arc_mark') > 0 && !isCounter) {
-                if(runStats.archerLastTarget === target.id) runStats.archerCombo++;
-                else { runStats.archerLastTarget = target.id; runStats.archerCombo = 1; }
-                let bonus = [0.05, 0.10, 0.15][getUpgradeLvl('arc_mark') - 1] * runStats.archerCombo;
-                dmg = Math.floor(dmg * (1 + bonus));
-            }
-
-            // Mage Meteor
-            let isMeteor = false;
-            if(player.currentHero === 'mage' && getUpgradeLvl('mage_meteor') > 0) {
-                let chance = [0.05, 0.10, 0.15][getUpgradeLvl('mage_meteor') - 1];
-                if(Math.random() < chance) {
-                    isMeteor = true; 
-                    dmg *= 4;
-                }
-            }
-
-            // Critical Hits
-            let isCrit = Math.random() < runStats.critChance;
-            let critMult = player.currentHero === 'archer' ? 3.5 : 2.5; 
-            if (isCrit) dmg = Math.floor(dmg * critMult); 
-
-            // Enemy Armor & Piercing
-            if (target.skill === 'armor') {
-                let pierceChance = getUpgradeLvl('arc_pierce') > 0 ? [0.25, 0.50][getUpgradeLvl('arc_pierce') - 1] : 0;
-                let pierce = player.currentHero === 'archer' && Math.random() < pierceChance;
-                if(!pierce) dmg = Math.floor(dmg * 0.70); 
-            }
-
-            target.hp -= dmg;
-            animateHit(target.id, dmg, isCrit, isMeteor ? "METEOR!" : null);
-
-            // Mage Overload Innate
-            if(!isCounter && player.currentHero === 'mage') {
-                runStats.mageAttackCount++;
-                if(runStats.mageAttackCount % 5 === 0) {
-                    spawnFloatingText('player-combat-area', "OVERLOAD!", "float-crit");
-                    activeEnemies.forEach(en => { 
-                        if(!en.isDead && en.hp > 0 && en.id !== target.id) {
-                            processHitTarget(en, true); 
-                        }
-                    });
-                }
-            }
-
-            // Mage Chain Lightning
-            if(!isCounter && player.currentHero === 'mage' && getUpgradeLvl('mage_chain') > 0) {
-                let chainChance = [0.15, 0.30, 0.45][getUpgradeLvl('mage_chain') - 1];
-                if(Math.random() < chainChance) {
-                    let others = activeEnemies.filter(e => !e.isDead && e.hp > 0 && e.id !== target.id);
-                    if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
-                }
-            }
-
-            // Archer Multishot
-            if(!isCounter && player.currentHero === 'archer' && getUpgradeLvl('arc_multi') > 0) {
-                let multiChance = [0.20, 0.40, 0.60][getUpgradeLvl('arc_multi') - 1];
-                if(Math.random() < multiChance) {
-                    let others = activeEnemies.filter(e => !e.isDead && e.hp > 0 && e.id !== target.id);
-                    if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
-                }
-            }
-
-            // Warrior Stun
-            if(player.currentHero === 'warrior' && getUpgradeLvl('war_stun') > 0) {
-                let stunChance = [0.20, 0.30][getUpgradeLvl('war_stun') - 1];
-                if(Math.random() < stunChance) {
-                    target.isStunned = true; 
-                    spawnFloatingText(`enemy-${target.id}`, "STUNNED", "float-miss");
-                }
-            }
-
-            // Mage Frost
-            if(player.currentHero === 'mage' && getUpgradeLvl('mage_frost') > 0) {
-                let frostChance = [0.15, 0.25][getUpgradeLvl('mage_frost') - 1];
-                if(Math.random() < frostChance) {
-                    target.isFrozen = true; 
-                    spawnFloatingText(`enemy-${target.id}`, "FROZEN", "float-miss");
-                }
-            }
-
-            if (runStats.lifesteal > 0) {
-                let healAmt = Math.floor(dmg * runStats.lifesteal);
-                if (healAmt > 0) { 
-                    player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmt); 
-                    updatePlayerHealthBar(); 
-                }
-            }
-
-            if (runStats.splashDmg > 0 && !isCounter) {
-                let sDmg = Math.floor(dmg * runStats.splashDmg);
-                activeEnemies.forEach(e => { 
-                    if (!e.isDead && e.id !== target.id && e.hp > 0) { 
-                        e.hp -= sDmg; 
-                        animateHit(e.id, sDmg, false); 
-                    } 
-                });
-            }
-
-            // Call this at the absolute end of ANY attack process
-            checkWinCondition();
-        }
-
         function autoAttackEnemy() {
             if(waveManager.isUpgrading || player.currentHealth <= 0 || !getEl('screen-game').classList.contains('active')) return;
             
             let aliveEnemies = activeEnemies.filter(e => !e.isDead && e.hp > 0);
-            if(aliveEnemies.length === 0) return;
+            if(aliveEnemies.length === 0) {
+                checkWinCondition();
+                return;
+            }
 
             let pIcon = getEl('player-combat-icon');
             if(pIcon) { 
@@ -887,7 +722,39 @@
             for (let s = 0; s < strikes; s++) {
                 setTimeout(() => {
                     let target = activeEnemies.find(e => !e.isDead && e.hp > 0);
-                    if (target) processHitTarget(target);
+                    if (!target) return;
+
+                    let dmg = getTotalDamage();
+                    let isCrit = Math.random() < runStats.critChance;
+                    if (isCrit) dmg = Math.floor(dmg * 2.5); 
+
+                    if (target.skill === 'armor') {
+                        dmg = Math.floor(dmg * 0.70); 
+                    }
+
+                    target.hp -= dmg;
+                    animateHit(target.id, dmg, isCrit);
+
+                    if (runStats.lifesteal > 0) {
+                        let healAmt = Math.floor(dmg * runStats.lifesteal);
+                        if (healAmt > 0) { 
+                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmt); 
+                            updatePlayerHealthBar(); 
+                        }
+                    }
+
+                    if (runStats.splashDmg > 0) {
+                        let sDmg = Math.floor(dmg * runStats.splashDmg);
+                        activeEnemies.forEach(e => { 
+                            if (!e.isDead && e.id !== target.id && e.hp > 0) { 
+                                e.hp -= sDmg; 
+                                animateHit(e.id, sDmg, false); 
+                            } 
+                        });
+                    }
+
+                    // Check win after every single hit is processed
+                    checkWinCondition();
                 }, s * 150);
             }
         }
@@ -900,9 +767,6 @@
                 setTimeout(() => {
                     if(player.currentHealth <= 0 || waveManager.isUpgrading || e.isDead || e.hp <= 0) return; 
 
-                    if(e.isStunned) { e.isStunned = false; return; }
-                    if(e.isFrozen) { e.isFrozen = false; return; }
-
                     let unitDiv = getEl(`enemy-${e.id}`);
                     if(unitDiv) { 
                         unitDiv.classList.add('attack-anim'); 
@@ -911,69 +775,25 @@
                     
                     let incomingDmg = e.damage;
 
-                    // Boss Crit
                     if (e.skill === 'crit' && Math.random() < 0.25) { 
                         incomingDmg *= 2; 
                         spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg"); 
                     }
                     
-                    // Mage Shield
-                    if(player.currentHero === 'mage' && runStats.mageShieldActive) {
-                        runStats.mageShieldActive = false; 
-                        incomingDmg = 0; 
-                        runStats.tempAtkSpeed = 0.5; 
-                        schedulePlayerAttack(); 
-                        updateCombatStatsPanel();
-                        spawnFloatingText('player-combat-area', "SHIELD BLOCKED!", "float-miss"); 
-                        return;
-                    }
-
-                    // Warrior Block
-                    if(player.currentHero === 'warrior' && getUpgradeLvl('war_block') > 0) {
-                        let blockChance = [0.15, 0.20, 0.25][getUpgradeLvl('war_block') - 1];
-                        if(Math.random() < blockChance) {
-                            spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss"); 
-                            return;
-                        }
-                    }
-
-                    // Evasion
                     if (e.skill !== 'magic' && Math.random() < runStats.evasion) { 
                         spawnFloatingText('player-combat-area', "MISS!", "float-miss"); 
-                        // Archer Acrobatics Counter
-                        if(player.currentHero === 'archer' && getUpgradeLvl('arc_acro') > 0) {
-                            let counterChance = [0.50, 1.00][getUpgradeLvl('arc_acro') - 1];
-                            if(Math.random() < counterChance) {
-                                setTimeout(() => processHitTarget(e, true), 100);
-                            }
-                        }
                         return; 
                     }
 
-                    // Armor Calculation
                     if (e.skill !== 'magic') {
-                        let wBuff = checkWarriorInnate();
-                        incomingDmg = Math.floor(incomingDmg * (1 - (runStats.damageReduction + wBuff.arm))); 
+                        incomingDmg = Math.floor(incomingDmg * (1 - runStats.damageReduction)); 
                     }
                     if(incomingDmg < 1) incomingDmg = 1; 
 
-                    // Apply Damage
                     player.currentHealth -= incomingDmg;
                     updatePlayerHealthBar();
                     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
-                    // Warrior Retaliation
-                    if(player.currentHero === 'warrior' && getUpgradeLvl('war_ret') > 0) {
-                        let retPercent = [0.10, 0.20, 0.30][getUpgradeLvl('war_ret') - 1];
-                        let retDmg = Math.floor(incomingDmg * retPercent);
-                        if(retDmg > 0) { 
-                            e.hp -= retDmg; 
-                            animateHit(e.id, retDmg, false); 
-                            checkWinCondition(); // Check if retaliation killed the last enemy!
-                        }
-                    }
-
-                    // Boss Vampiric
                     if (e.skill === 'vampire') {
                         e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
                         let hpBarDiv = getEl(`enemy-hp-bar-${e.id}`); 
@@ -982,7 +802,6 @@
                         if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(e.hp)}/${e.maxHp}`;
                     }
 
-                    // Flash Screen on hit
                     let container = getEl('game-container');
                     container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
                     setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
@@ -992,21 +811,23 @@
             });
         }
 
-        // --- WAVE DEFEATED & SMART SHOP ---
+        // --- SHOP & REWARD LOGIC ---
         function packDefeated() {
+            if(!waveManager.isUpgrading) return; // Failsafe
+            
             let stageInfo = getLevelAndWave();
+            let packSize = activeEnemies.length;
 
             let gemsEarned = 0;
             if (stageInfo.isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1; 
             runStats.gemsGained += gemsEarned;
 
-            let expGainedThisWave = stageInfo.isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * activeEnemies.length);
+            let expGainedThisWave = stageInfo.isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             runStats.expGained += expGainedThisWave;
 
             updateCombatStatsPanel(); 
 
-            let combinedPool = globalUpgrades.concat(heroSpecificUpgrades[player.currentHero]);
-            let availableUpgrades = combinedPool.filter(u => getUpgradeLvl(u.id) < u.maxLevel);
+            let availableUpgrades = globalUpgrades.filter(u => getUpgradeLvl(u.id) < u.maxLevel);
 
             if(stageInfo.isBoss) { 
                 showBossClearUI(); 
@@ -1017,19 +838,10 @@
 
         function showUpgradeShop(availableUpgrades) {
             getEl('wave-upgrade-ui').style.display = 'flex';
-            
-            getEl('shop-title').style.color = '#f1c40f';
-            getEl('shop-title').innerText = 'WAVE CLEARED!';
-            getEl('shop-desc').innerText = 'Spend your Runes for this run.';
-            getEl('shop-rune-display-box').style.display = 'block';
-            getEl('skip-btn').style.display = 'block';
-
             getEl('shop-runes-display').innerText = runStats.runes; 
-
             let list = getEl('upgrade-list'); 
             list.innerHTML = '';
 
-            // Handle case where EVERYTHING is maxed out
             if (availableUpgrades.length === 0) {
                 list.innerHTML = `<h3 style="color: #2ecc71; margin-bottom: 20px;">All Upgrades Maxed!</h3>`;
                 return;
@@ -1085,7 +897,7 @@
             runStats.upgradeLevels[type]++; 
             
             if(type === 'atk') runStats.bonusAtk += 20;
-            if(type === 'spd') { runStats.atkSpeedBonus += 0.10; schedulePlayerAttack(); } 
+            if(type === 'spd') { runStats.atkSpeedBonus += 0.10; } 
             if(type === 'splash') runStats.splashDmg += 0.10;
             if(type === 'double') runStats.doubleHitChance += 0.10;
             if(type === 'crit') runStats.critChance += 0.10;
@@ -1099,13 +911,13 @@
 
         function selectCursedRelic(id) {
             if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
-            if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; schedulePlayerAttack(); }
+            if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; }
             if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
-            if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; schedulePlayerAttack(); }
+            if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; }
             if(id === 'blood') { runStats.lifesteal += 0.10; runStats.damageReduction -= 0.15; }
             if(id === 'midas') { runStats.goldMultiplier += 0.50; runStats.enemyHpMultiplier += 0.20; }
             if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; } 
-            if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; schedulePlayerAttack(); }
+            if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; }
             
             updateCombatStatsPanel();
             getEl(`btn-curse-${id}`).style.borderColor = '#2ecc71';
@@ -1128,8 +940,8 @@
 
         // --- GAME OVER & RUN SUMMARY LOGIC ---
         function endRun(titleText, titleColor) {
-            clearTimeout(enemyAttackTimer); 
-            clearTimeout(playerAttackTimer);
+            clearInterval(enemyAttackTimer); 
+            clearInterval(playerAttackTimer);
             getEl('wave-upgrade-ui').style.display = 'none';
             getEl('boss-clear-ui').style.display = 'none';
             
@@ -1179,7 +991,6 @@
             updateUI();
         }
 
-        // --- UI REFRESH ---
         function updateUI() {
             getEl('gold-amount').innerText = player.gold;
             getEl('gem-amount').innerText = player.gems;
