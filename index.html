@@ -135,9 +135,16 @@
         .upgrade-btn:active { transform: scale(0.95); }
         .upgrade-btn .info { text-align: left; }
         .upgrade-btn .info h4 { margin: 0; color: #2c3e50; font-size: 1.1rem;}
-        .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; }
+        .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; font-weight: bold; }
         .upgrade-btn .cost { font-weight: bold; color: #f39c12; font-size: 1.2rem;}
         .upgrade-btn.disabled { opacity: 0.5; pointer-events: none; }
+
+        /* Dodged Text */
+        .dodge-text {
+            position: absolute; color: #f1c40f; font-weight: bold; font-size: 1.5rem;
+            animation: floatUp 1s forwards; text-shadow: 0 2px 5px rgba(0,0,0,0.5); pointer-events: none;
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-30px); } }
 
     </style>
 </head>
@@ -201,7 +208,7 @@
             </div>
         </div>
 
-        <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around;">
+        <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
             
             <div style="width: 100%;">
                 <h2 id="level-wave-text" style="color: #f1c40f;">Level 1 - Wave 1</h2>
@@ -210,12 +217,15 @@
 
             <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
 
-            <div style="width: 100%;">
+            <div style="width: 100%; position: relative;">
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 0 auto; align-items: flex-end;">
                     <h3 style="margin:0;">Your Health</h3>
                     <span id="player-hp-text" style="font-weight: bold; font-size: 0.9rem;">100/100</span>
                 </div>
-                <div class="bar-container" style="width: 80%; margin: 5px auto 10px auto;"><div class="bar-fill player-hp" id="player-health"></div></div>
+                <div class="bar-container" style="width: 80%; margin: 5px auto 10px auto; position: relative;">
+                    <div class="bar-fill player-hp" id="player-health"></div>
+                    <div id="dodge-feedback" style="position: absolute; top: -25px; right: 0; width: 100%; text-align: center;"></div>
+                </div>
             </div>
 
             <div id="combat-controls" style="width: 80%;">
@@ -225,7 +235,7 @@
 
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
-                <p style="margin-bottom: 25px;">Buy upgrades for this run.</p>
+                <p style="margin-bottom: 25px;">Select an upgrade for this run.</p>
 
                 <div id="upgrade-list" style="width: 100%;"></div>
 
@@ -262,12 +272,15 @@
             maxHealth: 100, currentHealth: 100
         };
 
-        // NEW: Temporary stats that reset on death
+        // NEW: Extended Temporary Stats
         let runStats = {
             bonusAtk: 0,
-            splashDmg: 0.0, // Percentage (0.1 = 10%)
-            doubleHitChance: 0.0, // Percentage (0.1 = 10%)
-            critChance: 0.0 // Percentage
+            splashDmg: 0.0, // Percentage
+            doubleHitChance: 0.0, // Percentage
+            critChance: 0.0, // Percentage
+            lifesteal: 0.0, // Heals % of damage dealt
+            evasion: 0.0, // Chance to take 0 damage
+            damageReduction: 0.0 // Reduces incoming damage by %
         };
 
         let activeEnemies = [];
@@ -317,8 +330,8 @@
         }
 
         function startGame() {
-            // Reset Run Stats
-            runStats = { bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0 };
+            // Reset Run Stats Completely
+            runStats = { bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0 };
             waveManager.wave = 1;
             player.currentHealth = player.maxHealth; 
             
@@ -379,7 +392,6 @@
             }
         }
 
-        // Apply visual damage
         function animateHit(unitId, isCrit) {
             let unitDiv = document.getElementById(`enemy-${unitId}`);
             let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
@@ -387,38 +399,43 @@
 
             if (unitDiv) {
                 unitDiv.classList.add('hit-anim');
-                if(isCrit) unitDiv.style.filter = "drop-shadow(0 0 10px red)"; // Crit visual flair
-                setTimeout(() => {
-                    unitDiv.classList.remove('hit-anim');
-                    unitDiv.style.filter = "";
-                }, 200);
+                if(isCrit) unitDiv.style.filter = "drop-shadow(0 0 10px red)"; 
+                setTimeout(() => { unitDiv.classList.remove('hit-anim'); unitDiv.style.filter = ""; }, 200);
             }
-            if (hpBarDiv && target) {
-                hpBarDiv.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + '%';
-            }
+            if (hpBarDiv && target) hpBarDiv.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + '%';
+            
             if (target && target.hp <= 0 && unitDiv) {
                 unitDiv.classList.add('dead');
-                setTimeout(() => unitDiv.style.display = 'none', 300); // Remove from layout after death
+                setTimeout(() => unitDiv.style.display = 'none', 300); 
             }
         }
 
         function attackEnemy() {
-            if(waveManager.isUpgrading) return; // Can't attack during shop phase
+            if(waveManager.isUpgrading) return;
 
             let strikes = (Math.random() < runStats.doubleHitChance) ? 2 : 1;
 
             for (let s = 0; s < strikes; s++) {
                 let target = activeEnemies.find(e => e.hp > 0);
-                if (!target) break; // Pack is dead
+                if (!target) break;
 
                 let dmg = getTotalDamage();
                 let isCrit = Math.random() < runStats.critChance;
-                if (isCrit) dmg *= 2.5; // Crits do 250% damage
+                if (isCrit) dmg *= 2.5; 
 
                 target.hp -= dmg;
                 animateHit(target.id, isCrit);
 
-                // Calculate Splash Damage to all OTHER enemies
+                // LIFESTEAL Mechanics
+                if (runStats.lifesteal > 0) {
+                    let healAmount = Math.floor(dmg * runStats.lifesteal);
+                    if (healAmount > 0) {
+                        player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
+                        updatePlayerHealthBar();
+                    }
+                }
+
+                // SPLASH Damage Mechanics
                 if (runStats.splashDmg > 0) {
                     let sDmg = dmg * runStats.splashDmg;
                     activeEnemies.forEach(e => {
@@ -430,9 +447,7 @@
                 }
             }
 
-            if (activeEnemies.every(e => e.hp <= 0)) {
-                setTimeout(packDefeated, 400); 
-            }
+            if (activeEnemies.every(e => e.hp <= 0)) setTimeout(packDefeated, 400); 
         }
 
         function enemyStrikesBack() {
@@ -449,7 +464,19 @@
                         setTimeout(() => unitDiv.classList.remove('attack-anim'), 300);
                     }
                     
-                    player.currentHealth -= e.damage;
+                    // EVASION Mechanics
+                    if (Math.random() < runStats.evasion) {
+                        let feedback = document.getElementById('dodge-feedback');
+                        feedback.innerHTML = '<span class="dodge-text">DODGED!</span>';
+                        setTimeout(() => feedback.innerHTML = '', 1000);
+                        return; // Takes 0 damage!
+                    }
+
+                    // ARMOR Damage Reduction Mechanics
+                    let incomingDmg = Math.floor(e.damage * (1 - runStats.damageReduction));
+                    if(incomingDmg < 1) incomingDmg = 1; // Always take at least 1 damage
+
+                    player.currentHealth -= incomingDmg;
                     updatePlayerHealthBar();
 
                     let container = document.getElementById('game-container');
@@ -473,9 +500,9 @@
             else pBar.style.backgroundColor = '#2ecc71';
         }
 
-        // --- END OF WAVE & UPGRADE UI ---
+        // --- RANDOMIZED UPGRADE SHOP ---
         function packDefeated() {
-            waveManager.isUpgrading = true; // Pause combat
+            waveManager.isUpgrading = true; 
             let isBoss = getLevelAndWave().isBoss;
             let packSize = activeEnemies.length;
 
@@ -502,14 +529,27 @@
 
             let baseCost = 25 * waveManager.wave;
 
-            const upgrades = [
+            // Pool of all 7 possible upgrades
+            let allUpgrades = [
                 { id: 'atk', name: "Sharpen Blade", desc: "+15 Base Attack", cost: baseCost },
                 { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", cost: Math.floor(baseCost * 1.5) },
                 { id: 'double', name: "Lightning Reflex", desc: "+10% Chance to Double Strike", cost: Math.floor(baseCost * 1.5) },
-                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Hit Chance", cost: Math.floor(baseCost * 1.5) }
+                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Hit Chance", cost: Math.floor(baseCost * 1.5) },
+                { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", cost: Math.floor(baseCost * 2) },
+                { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", cost: Math.floor(baseCost * 1.5) },
+                { id: 'armor', name: "Iron Skin", desc: "+10% Damage Reduction", cost: Math.floor(baseCost * 1.5) }
             ];
 
-            upgrades.forEach(u => {
+            // Shuffle the array to randomize
+            for (let i = allUpgrades.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allUpgrades[i], allUpgrades[j]] = [allUpgrades[j], allUpgrades[i]];
+            }
+
+            // Slice exactly 3 random options
+            let selectedUpgrades = allUpgrades.slice(0, 3);
+
+            selectedUpgrades.forEach(u => {
                 let canAfford = player.gold >= u.cost;
                 list.innerHTML += `
                     <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost})">
@@ -527,9 +567,12 @@
                 if(type === 'splash') runStats.splashDmg += 0.1;
                 if(type === 'double') runStats.doubleHitChance += 0.1;
                 if(type === 'crit') runStats.critChance += 0.1;
+                if(type === 'lifesteal') runStats.lifesteal += 0.05;
+                if(type === 'evasion') runStats.evasion += 0.05;
+                if(type === 'armor') runStats.damageReduction += 0.1;
                 
                 updateUI();
-                continueToNextWave();
+                continueToNextWave(); // Buying one immediately moves you to the next wave
             }
         }
 
