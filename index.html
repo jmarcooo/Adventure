@@ -114,6 +114,13 @@
         .boss .mini-bar-container { width: 120px; height: 12px; }
         .mini-hp-text { font-size: 0.7rem; font-weight: bold; margin-top: 2px; color: #fff; }
 
+        /* Boss Skill Badge */
+        .boss-skill-badge {
+            background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 10px;
+            font-size: 0.75rem; color: #f1c40f; font-weight: bold; margin-top: 5px;
+            display: flex; align-items: center; gap: 4px; border: 1px solid #f1c40f;
+        }
+
         /* --- COMBAT STATS PANEL --- */
         .combat-stats-panel {
             display: flex; justify-content: space-around; align-items: center; width: 90%; 
@@ -145,7 +152,6 @@
         .attack-anim { animation: lunge 0.3s ease-in-out; }
         @keyframes lunge { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(20px) scale(1.15); z-index: 10;} 100% { transform: translateY(0) scale(1); } }
 
-        /* Player attack lunges UP towards enemies */
         .player-attack-anim { animation: playerLunge 0.2s ease-in-out; }
         @keyframes playerLunge { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-25px) scale(1.15); } 100% { transform: translateY(0) scale(1); } }
 
@@ -318,7 +324,7 @@
             maxHealth: 100, currentHealth: 100
         };
 
-        // Run Stats (Including Attack Speed Bonus)
+        // Run Stats
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0 
@@ -327,6 +333,14 @@
         let activeEnemies = [];
         let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
         
+        // BOSS SKILLS DATABASE
+        const bossSkillsData = [
+            { id: 'crit', name: 'Critical Strike', icon: '🎯', desc: '25% chance for 2x DMG' },
+            { id: 'armor', name: 'Thick Hide', icon: '🛡️', desc: 'Takes 30% less DMG' },
+            { id: 'magic', name: 'Magic Aura', icon: '✨', desc: 'Ignores Player Armor/Dodge' },
+            { id: 'vampire', name: 'Vampiric', icon: '🦇', desc: 'Heals 50% of DMG dealt' }
+        ];
+
         let enemyAttackTimer;
         let playerAttackTimer;
 
@@ -433,7 +447,6 @@
             openMenu('game');
             spawnEnemyPack();
             
-            // Start Timers
             clearInterval(enemyAttackTimer);
             enemyAttackTimer = setInterval(enemyStrikesBack, 1500);
             startPlayerAutoAttack();
@@ -441,7 +454,7 @@
 
         function startPlayerAutoAttack() {
             clearInterval(playerAttackTimer);
-            let interval = 1000 / (1 + runStats.atkSpeedBonus); // Base 1 attack per second
+            let interval = 1000 / (1 + runStats.atkSpeedBonus);
             playerAttackTimer = setInterval(autoAttackEnemy, interval);
         }
 
@@ -465,8 +478,11 @@
                 // Boss Scaling
                 let bossHp = 150 + (waveManager.wave * 25);
                 let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
+                
+                // Assign Random Boss Skill
+                let bSkill = bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)];
 
-                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg });
+                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id });
                 
                 textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
                 
@@ -475,9 +491,10 @@
                         <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
                         <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                         <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
+                        <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
                     </div>`;
             } else {
-                // Normal Enemy Scaling (Max 5 enemies per pack)
+                // Normal Enemy Scaling
                 let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
                 let normHp = 20 + (waveManager.wave * 10);
                 let normDmg = Math.max(1, Math.floor(waveManager.wave * 0.6));
@@ -487,7 +504,7 @@
                 textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
                 for(let i = 0; i < enemyCount; i++) {
-                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg });
+                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg, skill: null });
                     container.innerHTML += `
                         <div class="enemy-unit" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
@@ -537,7 +554,6 @@
             let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
             if(aliveEnemies.length === 0) return;
 
-            // Trigger Player Animation
             let pIcon = document.getElementById('player-combat-icon');
             if(pIcon) {
                 pIcon.classList.add('player-attack-anim');
@@ -554,6 +570,11 @@
                     let dmg = getTotalDamage();
                     let isCrit = Math.random() < runStats.critChance;
                     if (isCrit) dmg = Math.floor(dmg * 2.5); 
+
+                    // BOSS SKILL: Thick Hide (Armor)
+                    if (target.skill === 'armor') {
+                        dmg = Math.floor(dmg * 0.70); // 30% damage reduction
+                    }
 
                     target.hp -= dmg;
                     animateHit(target.id, dmg, isCrit);
@@ -597,19 +618,41 @@
                         setTimeout(() => unitDiv.classList.remove('attack-anim'), 300);
                     }
                     
-                    // Dodge Logic
-                    if (Math.random() < runStats.evasion) {
+                    let incomingDmg = e.damage;
+
+                    // BOSS SKILL: Critical Strike
+                    if (e.skill === 'crit' && Math.random() < 0.25) {
+                        incomingDmg = Math.floor(incomingDmg * 2);
+                        spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg");
+                    }
+                    
+                    // Dodge Logic (Ignored by Boss Magic Skill)
+                    if (e.skill !== 'magic' && Math.random() < runStats.evasion) {
                         spawnFloatingText('player-combat-area', "MISS!", "float-miss");
                         return; 
                     }
 
-                    let incomingDmg = Math.floor(e.damage * (1 - runStats.damageReduction));
+                    // Armor Logic (Ignored by Boss Magic Skill)
+                    if (e.skill !== 'magic') {
+                        incomingDmg = Math.floor(incomingDmg * (1 - runStats.damageReduction));
+                    }
                     if(incomingDmg < 1) incomingDmg = 1; 
 
+                    // Deal Damage
                     player.currentHealth -= incomingDmg;
                     updatePlayerHealthBar();
                     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
+                    // BOSS SKILL: Vampiric
+                    if (e.skill === 'vampire') {
+                        e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
+                        let hpBarDiv = document.getElementById(`enemy-hp-bar-${e.id}`);
+                        let hpTextDiv = document.getElementById(`enemy-hp-text-${e.id}`);
+                        if (hpBarDiv) hpBarDiv.style.width = (e.hp / e.maxHp) * 100 + '%';
+                        if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(e.hp)}/${e.maxHp}`;
+                    }
+
+                    // Flash Screen
                     let container = document.getElementById('game-container');
                     container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
                     setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
@@ -631,7 +674,7 @@
             else pBar.style.backgroundColor = '#2ecc71';
         }
 
-        // --- RANDOMIZED UPGRADE SHOP ---
+        // --- BALANCED UPGRADE SHOP ---
         function packDefeated() {
             if(waveManager.isUpgrading) return; 
             waveManager.isUpgrading = true; 
@@ -660,17 +703,19 @@
             let list = document.getElementById('upgrade-list');
             list.innerHTML = '';
 
-            let baseCost = 25 * waveManager.wave;
+            // Smoother scaling cost
+            let baseCost = Math.floor(30 * Math.pow(1.15, waveManager.wave - 1));
 
+            // Nerfed values for balance so players don't hit 100% instantly
             let allUpgrades = [
-                { id: 'atk', name: "Sharpen Blade", desc: "+15 Base Attack", cost: baseCost },
-                { id: 'spd', name: "Swift Strikes", desc: "+15% Attack Speed", cost: Math.floor(baseCost * 1.5) },
-                { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", cost: Math.floor(baseCost * 1.5) },
-                { id: 'double', name: "Lightning Reflex", desc: "+10% Chance to Double Strike", cost: Math.floor(baseCost * 1.5) },
-                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Chance", cost: Math.floor(baseCost * 1.5) },
-                { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", cost: Math.floor(baseCost * 2) },
-                { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", cost: Math.floor(baseCost * 1.5) },
-                { id: 'armor', name: "Iron Skin", desc: "+10% Damage Reduction", cost: Math.floor(baseCost * 1.5) }
+                { id: 'atk', name: "Sharpen Blade", desc: "+10 Base Attack", cost: baseCost },
+                { id: 'spd', name: "Swift Strikes", desc: "+5% Attack Speed", cost: Math.floor(baseCost * 1.5) },
+                { id: 'splash', name: "Explosive Hits", desc: "+5% Splash Damage", cost: Math.floor(baseCost * 1.5) },
+                { id: 'double', name: "Lightning Reflex", desc: "+5% Double Strike Chance", cost: Math.floor(baseCost * 1.5) },
+                { id: 'crit', name: "Deadly Aim", desc: "+5% Critical Chance", cost: Math.floor(baseCost * 1.5) },
+                { id: 'lifesteal', name: "Vampiric Touch", desc: "+2% Lifesteal", cost: Math.floor(baseCost * 2) },
+                { id: 'evasion', name: "Shadow Step", desc: "+3% Dodge Chance", cost: Math.floor(baseCost * 1.5) },
+                { id: 'armor', name: "Iron Skin", desc: "+4% Damage Reduction", cost: Math.floor(baseCost * 1.5) }
             ];
 
             for (let i = allUpgrades.length - 1; i > 0; i--) {
@@ -694,14 +739,14 @@
             if(player.gold >= cost) {
                 player.gold -= cost;
                 
-                if(type === 'atk') runStats.bonusAtk += 15;
-                if(type === 'spd') { runStats.atkSpeedBonus += 0.15; startPlayerAutoAttack(); } 
-                if(type === 'splash') runStats.splashDmg += 0.1;
-                if(type === 'double') runStats.doubleHitChance += 0.1;
-                if(type === 'crit') runStats.critChance += 0.1;
-                if(type === 'lifesteal') runStats.lifesteal += 0.05;
-                if(type === 'evasion') runStats.evasion += 0.05;
-                if(type === 'armor') runStats.damageReduction += 0.1;
+                if(type === 'atk') runStats.bonusAtk += 10;
+                if(type === 'spd') { runStats.atkSpeedBonus += 0.05; startPlayerAutoAttack(); } 
+                if(type === 'splash') runStats.splashDmg += 0.05;
+                if(type === 'double') runStats.doubleHitChance += 0.05;
+                if(type === 'crit') runStats.critChance += 0.05;
+                if(type === 'lifesteal') runStats.lifesteal += 0.02;
+                if(type === 'evasion') runStats.evasion += 0.03;
+                if(type === 'armor') runStats.damageReduction += 0.04;
                 
                 updateUI();
                 updateCombatStatsPanel(); 
