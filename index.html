@@ -31,53 +31,35 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: background-color 0.1s; /* For damage flash */
+            transition: background-color 0.1s;
         }
 
         /* --- Top Bar (Currencies) --- */
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.15);
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
-            z-index: 10;
+            display: flex; justify-content: space-between; padding: 20px;
+            background: rgba(0, 0, 0, 0.15); border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px; z-index: 10;
         }
 
         .currency {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 8px 15px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: bold;
-            color: #333;
+            background: rgba(255, 255, 255, 0.95); padding: 8px 15px;
+            border-radius: 20px; display: flex; align-items: center;
+            gap: 8px; font-weight: bold; color: #333;
         }
 
         /* --- Screens --- */
         .screen {
-            flex-grow: 1;
-            display: none; 
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            text-align: center;
-            overflow-y: auto; 
+            flex-grow: 1; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px; text-align: center; overflow-y: auto; 
         }
-
         .screen.active { display: flex; }
 
         /* --- Home Screen Elements --- */
         .game-title {
-            font-family: 'Fredoka One', cursive;
-            font-size: 3.2rem;
-            line-height: 1;
-            text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-            transform: rotate(-3deg);
+            font-family: 'Fredoka One', cursive; font-size: 3.2rem;
+            line-height: 1; text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px; transform: rotate(-3deg);
         }
 
         .character-display {
@@ -85,14 +67,12 @@
             background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
             display: flex; justify-content: center; align-items: center;
             border-radius: 50%; margin-bottom: 20px;
-            animation: bounce 2s infinite ease-in-out;
-            position: relative;
+            animation: bounce 2s infinite ease-in-out; position: relative;
         }
-
         .character-display .hero-emoji { font-size: 6rem; z-index: 2; }
         .character-display .weapon-emoji {
-            font-size: 2.5rem; position: absolute;
-            bottom: 20px; right: 10px; z-index: 3; transform: rotate(15deg);
+            font-size: 2.5rem; position: absolute; bottom: 20px; right: 10px;
+            z-index: 3; transform: rotate(15deg);
         }
 
         @keyframes bounce {
@@ -101,23 +81,17 @@
         }
 
         /* --- Lists & Cards --- */
-        .list-container {
-            display: flex; flex-direction: column; gap: 15px; width: 100%; margin-top: 20px;
-        }
-
+        .list-container { display: flex; flex-direction: column; gap: 15px; width: 100%; margin-top: 20px; }
         .card {
             background: rgba(255, 255, 255, 0.2); border: 3px solid transparent;
             border-radius: 15px; padding: 15px; display: flex; align-items: center;
             gap: 15px; cursor: pointer; transition: all 0.2s;
         }
-
         .card:active { transform: scale(0.95); }
-
         .card.selected {
             background: rgba(255, 255, 255, 0.9); color: #333;
             border-color: #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-
         .card .card-icon { font-size: 3rem; }
         .card .card-info { text-align: left; }
         .card h3 { margin: 0; font-size: 1.2rem; }
@@ -127,19 +101,15 @@
         .bar-container { width: 100%; height: 20px; background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; margin-top: 5px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);}
         .bar-fill { width: 100%; height: 100%; background: #e74c3c; transition: width 0.2s, background-color 0.3s; }
         .bar-fill.exp { background: #f1c40f; width: 0%; }
-        .bar-fill.player-hp { background: #2ecc71; } /* Base Green health bar for player */
+        .bar-fill.player-hp { background: #2ecc71; }
 
         /* --- Buttons --- */
         .action-btn {
-            font-family: 'Fredoka One', cursive;
-            background: linear-gradient(180deg, #f1c40f 0%, #f39c12 100%);
-            color: white; border: none; padding: 20px 60px;
-            font-size: 2.5rem; border-radius: 50px; cursor: pointer;
-            box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3);
-            transition: transform 0.1s, box-shadow 0.1s;
-            text-transform: uppercase; margin-top: 10px;
+            font-family: 'Fredoka One', cursive; background: linear-gradient(180deg, #f1c40f 0%, #f39c12 100%);
+            color: white; border: none; padding: 20px 60px; font-size: 2.5rem;
+            border-radius: 50px; cursor: pointer; box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3);
+            transition: transform 0.1s, box-shadow 0.1s; text-transform: uppercase; margin-top: 10px;
         }
-
         .action-btn:active { transform: translateY(8px); box-shadow: 0 0px 0 #d35400, 0 5px 10px rgba(0,0,0,0.3); }
         .action-btn.red { background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 8px 0 #922b21; }
         .action-btn.red:active { box-shadow: 0 0px 0 #922b21; }
@@ -151,17 +121,14 @@
             border-top-left-radius: 25px; border-top-right-radius: 25px;
             z-index: 10; position: relative;
         }
-
         .nav-btn {
             background: none; border: none; display: flex; flex-direction: column;
             align-items: center; font-family: 'Nunito', sans-serif;
             font-size: 0.8rem; font-weight: bold; color: #95a5a6; cursor: pointer; flex: 1;
         }
-
         .nav-btn .icon { font-size: 1.5rem; margin-bottom: 5px; transition: transform 0.2s;}
         .nav-btn.active { color: #3498db; }
         .nav-btn.active .icon { transform: scale(1.2); }
-
         .nav-btn.home-btn { transform: translateY(-15px); color: #333; }
         .nav-btn.home-btn .icon {
             font-size: 2.5rem; background: #f1c40f; border-radius: 50%;
@@ -170,7 +137,7 @@
         .nav-btn.home-btn.active { color: #f39c12; }
 
         /* --- Enemy Style --- */
-        .enemy { font-size: 5rem; animation: shake 0.5s infinite alternate; margin-top: 10px;}
+        .enemy { font-size: 4rem; animation: shake 0.5s infinite alternate; margin-top: 10px; letter-spacing: 5px; line-height: 1.2;}
         @keyframes shake { 0% { transform: translateX(-5px); } 100% { transform: translateX(5px); } }
     </style>
 </head>
@@ -251,7 +218,7 @@
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around;">
             
             <div style="width: 100%;">
-                <h2 id="level-wave-text" style="color: #f1c40f;">Level 1 - Wave 1/5</h2>
+                <h2 id="level-wave-text" style="color: #f1c40f;">Wave 1</h2>
                 <div class="enemy" id="enemy-emoji">👾</div>
                 
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 10px auto 0 auto; font-size: 0.9rem; font-weight: bold;">
@@ -303,17 +270,16 @@
 
         let player = {
             level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
-            gold: 0, gems: 0,
-            currentHero: 'warrior', bonusDamage: 0, 
+            gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0, 
             talents: { damage: 0, gold: 0 },
-            maxHealth: 100,
-            currentHealth: 100
+            maxHealth: 100, currentHealth: 100
         };
 
         let enemy = {
-            level: 1, wave: 1, maxWaves: 5,
-            maxHealth: 100, currentHealth: 100, damage: 5,
-            emojis: ['👾', '🧟', '🦇', '👹', '🐉', '🕷️', '🦂']
+            wave: 1, maxHealth: 100, currentHealth: 100, damage: 5,
+            isBoss: false, count: 1,
+            normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'],
+            bossEmojis: ['🐉', '👹', '🦑', '🦖']
         };
 
         let enemyAttackTimer;
@@ -364,8 +330,8 @@
 
         // --- COMBAT & WAVE LOGIC ---
         function startGame() {
+            // Restore health upon clicking play to restart the wave
             player.currentHealth = player.maxHealth; 
-            enemy.wave = 1;
             
             document.getElementById('combat-controls').style.display = 'block';
             document.getElementById('game-over-ui').style.display = 'none';
@@ -379,12 +345,38 @@
         }
 
         function spawnEnemy() {
-            enemy.maxHealth = (100 * enemy.level) + (20 * enemy.wave);
-            enemy.currentHealth = enemy.maxHealth;
-            enemy.damage = 5 * enemy.level; 
+            let enemyEl = document.getElementById('enemy-emoji');
+            let textEl = document.getElementById('level-wave-text');
 
-            document.getElementById('level-wave-text').innerText = `Level ${enemy.level} - Wave ${enemy.wave}/${enemy.maxWaves}`;
-            document.getElementById('enemy-emoji').innerText = enemy.emojis[Math.floor(Math.random() * enemy.emojis.length)];
+            enemy.isBoss = (enemy.wave % 15 === 0);
+
+            if (enemy.isBoss) {
+                // BOSS SETTINGS
+                enemy.count = 1;
+                enemy.maxHealth = 200 * enemy.wave; // Massive Health
+                enemy.damage = 8 * enemy.wave; // Hard hitter
+
+                enemyEl.innerText = enemy.bossEmojis[Math.floor(Math.random() * enemy.bossEmojis.length)];
+                enemyEl.style.fontSize = '8rem'; // Huge Boss
+                
+                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS WAVE ${enemy.wave} ⚠️</span>`;
+            } else {
+                // NORMAL ENEMIES (1 to 6 scaling)
+                // We calculate a cycle from 1 to 14, and map it to 1-6 enemies
+                let cycle = enemy.wave % 15;
+                enemy.count = Math.min(6, Math.ceil(cycle / 2)); // E.g., Wave 1=1, Wave 2=1, Wave 3=2, etc. up to 6
+                
+                enemy.maxHealth = 50 * enemy.wave * enemy.count;
+                enemy.damage = 3 * enemy.wave * enemy.count;
+
+                let randomEmoji = enemy.normalEmojis[Math.floor(Math.random() * enemy.normalEmojis.length)];
+                enemyEl.innerText = randomEmoji.repeat(enemy.count);
+                enemyEl.style.fontSize = enemy.count > 3 ? '3.5rem' : '4.5rem'; // Shrink slightly to fit screen
+                
+                textEl.innerHTML = `Wave ${enemy.wave} <span style="font-size: 1rem; color:#aaa;">(x${enemy.count} Pack)</span>`;
+            }
+
+            enemy.currentHealth = enemy.maxHealth;
             updateHealthBars();
         }
 
@@ -392,7 +384,7 @@
             enemy.currentHealth -= getTotalDamage();
             
             let enemyEl = document.getElementById('enemy-emoji');
-            enemyEl.style.transform = 'scale(0.8) rotate(-10deg)';
+            enemyEl.style.transform = 'scale(0.9) translateY(10px)';
             setTimeout(() => { enemyEl.style.transform = ''; }, 100);
 
             if (enemy.currentHealth <= 0) { enemyDefeated(); } 
@@ -404,8 +396,8 @@
                 player.currentHealth -= enemy.damage;
                 
                 let container = document.getElementById('game-container');
-                container.style.backgroundColor = 'rgba(231, 76, 60, 0.5)';
-                setTimeout(() => { container.style.backgroundColor = ''; }, 100);
+                container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
+                setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
                 if (player.currentHealth <= 0) { triggerGameOver(); }
                 updateHealthBars();
@@ -413,19 +405,18 @@
         }
 
         function updateHealthBars() {
-            // Update Enemy Health Visuals
+            // Update Enemy Health
             let ePercent = Math.max(0, (enemy.currentHealth / enemy.maxHealth) * 100);
             document.getElementById('enemy-health').style.width = ePercent + '%';
             document.getElementById('enemy-hp-text').innerText = Math.max(0, enemy.currentHealth) + '/' + enemy.maxHealth;
 
-            // Update Player Health Visuals
+            // Update Player Health
             let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
             let playerHpBar = document.getElementById('player-health');
             
             playerHpBar.style.width = pPercent + '%';
             document.getElementById('player-hp-text').innerText = Math.max(0, player.currentHealth) + '/' + player.maxHealth;
 
-            // HP Bar Color Logic
             if (pPercent <= 30) {
                 playerHpBar.style.backgroundColor = '#e74c3c'; // Red
             } else if (pPercent <= 50) {
@@ -438,27 +429,30 @@
         }
 
         function enemyDefeated() {
-            let baseGold = 50 * enemy.level;
+            // Distribute Gold
+            let baseGold = enemy.isBoss ? (150 * enemy.wave) : (20 * enemy.wave * enemy.count);
             player.gold += Math.floor(baseGold * (1 + (player.talents.gold * 0.20)));
-            if(Math.random() > 0.9) player.gems += 1; 
+            
+            // Distribute Gems
+            if (enemy.isBoss) { player.gems += 5; } // Boss always drops 5 gems
+            else if (Math.random() > 0.8) { player.gems += 1; } 
 
-            player.exp += (35 * enemy.level);
-            if(player.exp >= player.expNeeded) {
+            // Distribute EXP & Check Level Up
+            let expGained = enemy.isBoss ? (100 * enemy.wave) : (15 * enemy.wave * enemy.count);
+            player.exp += expGained;
+            
+            while(player.exp >= player.expNeeded) {
                 player.level++;
                 player.exp -= player.expNeeded;
                 player.expNeeded = Math.floor(player.expNeeded * 1.5);
                 player.talentPoints++;
                 player.maxHealth += 20; 
-                alert("🎉 LEVEL UP! You reached Level " + player.level + "!");
+                
+                // Heal on level up
+                player.currentHealth = player.maxHealth; 
             }
 
             enemy.wave++;
-            if(enemy.wave > enemy.maxWaves) {
-                enemy.level++;
-                enemy.wave = 1;
-                player.currentHealth = player.maxHealth; 
-            }
-            
             updateUI();
             spawnEnemy();
         }
@@ -477,21 +471,17 @@
             updateUI();
         }
 
-        function fleeCombat() {
-            returnHome();
-        }
+        function fleeCombat() { returnHome(); }
 
         // --- UI REFRESH ---
         function updateUI() {
             document.getElementById('gold-amount').innerText = player.gold;
             document.getElementById('gem-amount').innerText = player.gems;
             
-            // EXP Updates
             document.getElementById('player-level-text').innerText = player.level;
             document.getElementById('player-exp-fill').style.width = ((player.exp / player.expNeeded) * 100) + '%';
             document.getElementById('player-exp-text').innerText = player.exp + '/' + player.expNeeded;
 
-            // Talent Updates
             document.getElementById('tp-amount').innerText = player.talentPoints;
             document.getElementById('talent-lvl-damage').innerText = player.talents.damage;
             document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
