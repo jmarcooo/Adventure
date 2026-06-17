@@ -81,6 +81,8 @@
             box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3); transition: transform 0.1s, box-shadow 0.1s; text-transform: uppercase; margin-top: 10px; width: 100%;
         }
         .action-btn:active { transform: translateY(8px); box-shadow: 0 0px 0 #d35400, 0 5px 10px rgba(0,0,0,0.3); }
+        .action-btn.red { background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 8px 0 #922b21; }
+        .action-btn.red:active { box-shadow: 0 0px 0 #922b21; }
 
         /* --- Bottom Navigation --- */
         .bottom-nav {
@@ -779,22 +781,18 @@
 
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
             
-            let baseCost = Math.max(1, Math.floor(waveManager.wave / 3) + 1);
-            let medCost = Math.max(1, Math.ceil(baseCost * 1.5));
-            let highCost = Math.max(2, baseCost * 2);
-
+            // Base values defined - cost is dynamically calculated based on current skill level
             let allUpgrades = [
-                { id: 'atk', name: "Sharpen Blade", desc: "+20 Base Attack", cost: baseCost, maxLevel: 5 },
-                { id: 'spd', name: "Swift Strikes", desc: "+10% Attack Speed", cost: medCost, maxLevel: 5 },
-                { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", cost: medCost, maxLevel: 3 },
-                { id: 'double', name: "Lightning Reflex", desc: "+10% Double Strike", cost: medCost, maxLevel: 5 },
-                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Chance", cost: medCost, maxLevel: 5 },
-                { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", cost: highCost, maxLevel: 3 },
-                { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", cost: medCost, maxLevel: 5 },
-                { id: 'armor', name: "Iron Skin", desc: "+5% Damage Reduction", cost: medCost, maxLevel: 5 }
+                { id: 'atk', name: "Sharpen Blade", desc: "+20 Base Attack", maxLevel: 5 },
+                { id: 'spd', name: "Swift Strikes", desc: "+10% Attack Speed", maxLevel: 5 },
+                { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", maxLevel: 3 },
+                { id: 'double', name: "Lightning Reflex", desc: "+10% Double Strike", maxLevel: 5 },
+                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Chance", maxLevel: 5 },
+                { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", maxLevel: 3 },
+                { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", maxLevel: 5 },
+                { id: 'armor', name: "Iron Skin", desc: "+5% Damage Reduction", maxLevel: 5 }
             ];
 
-            // Filter out upgrades that have reached their max level
             let availableUpgrades = allUpgrades.filter(u => runStats.upgradeLevels[u.id] < u.maxLevel);
 
             if (availableUpgrades.length === 0) {
@@ -808,15 +806,18 @@
             }
 
             availableUpgrades.slice(0, 3).forEach(u => {
-                let canAfford = runStats.runes >= u.cost;
                 let currentLvl = runStats.upgradeLevels[u.id];
+                let cost = 1 + (currentLvl * 2); // Dynamic Cost: Level 0 costs 1, Lv 1 costs 3, Lv 2 costs 5...
+                
+                let canAfford = runStats.runes >= cost;
+                
                 list.innerHTML += `
-                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost})">
+                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${cost})">
                         <div class="info">
-                            <h4>${u.name} <span class="lvl-badge">(Lv ${currentLvl}/${u.maxLevel})</span></h4>
+                            <h4>${u.name} <span class="lvl-badge">(Lv ${currentLvl + 1}/${u.maxLevel})</span></h4>
                             <p>${u.desc}</p>
                         </div>
-                        <div class="cost">${u.cost} 🌀</div>
+                        <div class="cost">${cost} 🌀</div>
                     </button>`;
             });
         }
