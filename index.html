@@ -40,7 +40,6 @@
             background: rgba(0, 0, 0, 0.15); border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px; z-index: 10;
         }
-
         .currency {
             background: rgba(255, 255, 255, 0.95); padding: 8px 15px;
             border-radius: 20px; display: flex; align-items: center;
@@ -61,7 +60,6 @@
             line-height: 1; text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3);
             margin-bottom: 20px; transform: rotate(-3deg);
         }
-
         .character-display {
             width: 160px; height: 160px;
             background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
@@ -136,9 +134,68 @@
         }
         .nav-btn.home-btn.active { color: #f39c12; }
 
-        /* --- Enemy Style --- */
-        .enemy { font-size: 4rem; animation: shake 0.5s infinite alternate; margin-top: 10px; letter-spacing: 5px; line-height: 1.2;}
-        @keyframes shake { 0% { transform: translateX(-5px); } 100% { transform: translateX(5px); } }
+        /* --- INDIVIDUAL ENEMY STYLES --- */
+        #enemy-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            min-height: 180px; /* Reserves space so buttons don't jump around */
+            align-items: flex-end;
+        }
+        .enemy-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.3s, transform 0.1s;
+        }
+        .enemy-unit.dead {
+            opacity: 0.2;
+            filter: grayscale(100%);
+        }
+        .enemy-unit .emoji {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+            text-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+        .enemy-unit.boss .emoji {
+            font-size: 7rem;
+        }
+        .mini-bar-container {
+            width: 50px;
+            height: 8px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .mini-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: #e74c3c;
+            transition: width 0.1s;
+        }
+        .boss .mini-bar-container {
+            width: 120px; /* Bosses get bigger bars */
+            height: 12px;
+        }
+
+        /* Combat Animations */
+        .hit-anim { animation: takeDamage 0.2s; }
+        @keyframes takeDamage {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(0.8) rotate(-15deg); filter: brightness(2) }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .attack-anim { animation: lunge 0.3s ease-in-out; }
+        @keyframes lunge {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(20px) scale(1.15); z-index: 10;} /* Lunges downward toward player */
+            100% { transform: translateY(0) scale(1); }
+        }
+
     </style>
 </head>
 <body>
@@ -219,13 +276,7 @@
             
             <div style="width: 100%;">
                 <h2 id="level-wave-text" style="color: #f1c40f;">Wave 1</h2>
-                <div class="enemy" id="enemy-emoji">👾</div>
-                
-                <div style="display: flex; justify-content: space-between; width: 80%; margin: 10px auto 0 auto; font-size: 0.9rem; font-weight: bold;">
-                    <span>Enemy HP</span>
-                    <span id="enemy-hp-text">100/100</span>
-                </div>
-                <div class="bar-container" style="width: 80%; margin: 5px auto 10px auto;"><div class="bar-fill" id="enemy-health"></div></div>
+                <div id="enemy-container"></div>
             </div>
 
             <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
@@ -239,7 +290,7 @@
             </div>
 
             <div id="combat-controls">
-                <button class="action-btn red" onclick="attackEnemy()" style="margin-top: 20px; font-size: 2rem;">ATTACK!</button>
+                <button class="action-btn red" onclick="attackEnemy()" style="margin-top: 10px; font-size: 2rem;">ATTACK!</button>
                 <br>
                 <button class="action-btn" onclick="fleeCombat()" style="font-size: 1rem; padding: 10px 20px; margin-top: 15px; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Flee</button>
             </div>
@@ -275,9 +326,11 @@
             maxHealth: 100, currentHealth: 100
         };
 
-        let enemy = {
-            wave: 1, maxHealth: 100, currentHealth: 100, damage: 5,
-            isBoss: false, count: 1,
+        // NEW: Array to hold multiple active enemies on screen
+        let activeEnemies = [];
+
+        let waveManager = {
+            wave: 1,
             normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'],
             bossEmojis: ['🐉', '👹', '🦑', '🦖']
         };
@@ -304,7 +357,6 @@
             }
         }
 
-        // --- HERO & TALENT LOGIC ---
         function selectHero(heroId) {
             player.currentHero = heroId;
             document.querySelectorAll('.card').forEach(card => card.classList.remove('selected'));
@@ -330,7 +382,6 @@
 
         // --- COMBAT & WAVE LOGIC ---
         function startGame() {
-            // Restore health upon clicking play to restart the wave
             player.currentHealth = player.maxHealth; 
             
             document.getElementById('combat-controls').style.display = 'block';
@@ -338,107 +389,152 @@
             document.getElementById('screen-game').style.backgroundColor = '#2c3e50';
 
             openMenu('game');
-            spawnEnemy();
+            spawnEnemyPack();
             
             clearInterval(enemyAttackTimer);
             enemyAttackTimer = setInterval(enemyStrikesBack, 1500);
         }
 
-        function spawnEnemy() {
-            let enemyEl = document.getElementById('enemy-emoji');
+        function spawnEnemyPack() {
+            let container = document.getElementById('enemy-container');
             let textEl = document.getElementById('level-wave-text');
+            
+            container.innerHTML = ''; // Clear previous wave
+            activeEnemies = []; // Reset array
 
-            enemy.isBoss = (enemy.wave % 15 === 0);
+            let isBoss = (waveManager.wave % 15 === 0);
 
-            if (enemy.isBoss) {
-                // BOSS SETTINGS
-                enemy.count = 1;
-                enemy.maxHealth = 200 * enemy.wave; // Massive Health
-                enemy.damage = 8 * enemy.wave; // Hard hitter
-
-                enemyEl.innerText = enemy.bossEmojis[Math.floor(Math.random() * enemy.bossEmojis.length)];
-                enemyEl.style.fontSize = '8rem'; // Huge Boss
+            if (isBoss) {
+                // SPAWN 1 MASSIVE BOSS
+                let bossMaxHp = 200 * waveManager.wave;
+                let bossDamage = 8 * waveManager.wave;
+                let bossEmoji = waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)];
                 
-                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS WAVE ${enemy.wave} ⚠️</span>`;
+                activeEnemies.push({ id: 0, maxHp: bossMaxHp, hp: bossMaxHp, damage: bossDamage, isBoss: true });
+                
+                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS WAVE ${waveManager.wave} ⚠️</span>`;
+                
+                container.innerHTML = `
+                    <div class="enemy-unit boss" id="enemy-0">
+                        <div class="emoji">${bossEmoji}</div>
+                        <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
+                    </div>`;
             } else {
-                // NORMAL ENEMIES (1 to 6 scaling)
-                // We calculate a cycle from 1 to 14, and map it to 1-6 enemies
-                let cycle = enemy.wave % 15;
-                enemy.count = Math.min(6, Math.ceil(cycle / 2)); // E.g., Wave 1=1, Wave 2=1, Wave 3=2, etc. up to 6
+                // SPAWN 1 TO 6 NORMAL ENEMIES
+                // Cycle 1-14 gives us packs from 1 to 6 enemies (e.g., Wave 1 is 1 enemy, Wave 12 is 6 enemies)
+                let enemyCount = Math.min(6, Math.floor(((waveManager.wave - 1) % 15) / 2) + 1);
                 
-                enemy.maxHealth = 50 * enemy.wave * enemy.count;
-                enemy.damage = 3 * enemy.wave * enemy.count;
+                let normMaxHp = 50 * waveManager.wave;
+                let normDamage = 3 * waveManager.wave;
+                let packEmoji = waveManager.normalEmojis[Math.floor(Math.random() * waveManager.normalEmojis.length)];
 
-                let randomEmoji = enemy.normalEmojis[Math.floor(Math.random() * enemy.normalEmojis.length)];
-                enemyEl.innerText = randomEmoji.repeat(enemy.count);
-                enemyEl.style.fontSize = enemy.count > 3 ? '3.5rem' : '4.5rem'; // Shrink slightly to fit screen
-                
-                textEl.innerHTML = `Wave ${enemy.wave} <span style="font-size: 1rem; color:#aaa;">(x${enemy.count} Pack)</span>`;
+                textEl.innerHTML = `Wave ${waveManager.wave} <span style="font-size: 1rem; color:#aaa;">(x${enemyCount} Pack)</span>`;
+
+                for(let i = 0; i < enemyCount; i++) {
+                    activeEnemies.push({ id: i, maxHp: normMaxHp, hp: normMaxHp, damage: normDamage, isBoss: false });
+                    
+                    container.innerHTML += `
+                        <div class="enemy-unit" id="enemy-${i}">
+                            <div class="emoji">${packEmoji}</div>
+                            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
+                        </div>`;
+                }
             }
-
-            enemy.currentHealth = enemy.maxHealth;
-            updateHealthBars();
         }
 
         function attackEnemy() {
-            enemy.currentHealth -= getTotalDamage();
+            // Find the FIRST alive enemy in the array to focus fire
+            let target = activeEnemies.find(e => e.hp > 0);
+            if (!target) return; // Everyone is dead
+
+            target.hp -= getTotalDamage();
             
-            let enemyEl = document.getElementById('enemy-emoji');
-            enemyEl.style.transform = 'scale(0.9) translateY(10px)';
-            setTimeout(() => { enemyEl.style.transform = ''; }, 100);
+            let unitDiv = document.getElementById(`enemy-${target.id}`);
+            let hpBarDiv = document.getElementById(`enemy-hp-bar-${target.id}`);
 
-            if (enemy.currentHealth <= 0) { enemyDefeated(); } 
-            else { updateHealthBars(); }
-        }
+            // Visually show taking damage
+            if (unitDiv) {
+                unitDiv.classList.add('hit-anim');
+                setTimeout(() => unitDiv.classList.remove('hit-anim'), 200);
+            }
+            
+            // Update the specific mini HP bar
+            if (hpBarDiv) {
+                let pct = Math.max(0, (target.hp / target.maxHp) * 100);
+                hpBarDiv.style.width = pct + '%';
+            }
 
-        function enemyStrikesBack() {
-            if(document.getElementById('screen-game').classList.contains('active') && player.currentHealth > 0) {
-                player.currentHealth -= enemy.damage;
-                
-                let container = document.getElementById('game-container');
-                container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
-                setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
+            // Handle individual death
+            if (target.hp <= 0 && unitDiv) {
+                unitDiv.classList.add('dead'); // Grays out the enemy and lowers opacity
+            }
 
-                if (player.currentHealth <= 0) { triggerGameOver(); }
-                updateHealthBars();
+            // Check if entire pack is dead
+            if (activeEnemies.every(e => e.hp <= 0)) {
+                setTimeout(packDefeated, 400); // Wait half a second before spawning next wave
             }
         }
 
-        function updateHealthBars() {
-            // Update Enemy Health
-            let ePercent = Math.max(0, (enemy.currentHealth / enemy.maxHealth) * 100);
-            document.getElementById('enemy-health').style.width = ePercent + '%';
-            document.getElementById('enemy-hp-text').innerText = Math.max(0, enemy.currentHealth) + '/' + enemy.maxHealth;
+        function enemyStrikesBack() {
+            if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0) return;
+            
+            let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
+            if(aliveEnemies.length === 0) return;
 
-            // Update Player Health
+            // Make every alive enemy attack the player! Stagger their lunges slightly.
+            aliveEnemies.forEach((e, index) => {
+                setTimeout(() => {
+                    if(player.currentHealth <= 0) return; // Stop hitting if player is already dead
+
+                    // Lunge animation
+                    let unitDiv = document.getElementById(`enemy-${e.id}`);
+                    if(unitDiv) {
+                        unitDiv.classList.add('attack-anim');
+                        setTimeout(() => unitDiv.classList.remove('attack-anim'), 300);
+                    }
+                    
+                    // Deal Damage
+                    player.currentHealth -= e.damage;
+                    updatePlayerHealthBar();
+
+                    // Screen Flash
+                    let container = document.getElementById('game-container');
+                    container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
+                    setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
+
+                    if (player.currentHealth <= 0) { triggerGameOver(); }
+                }, index * 150); // 150ms delay between each enemy jumping
+            });
+        }
+
+        function updatePlayerHealthBar() {
             let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
             let playerHpBar = document.getElementById('player-health');
             
             playerHpBar.style.width = pPercent + '%';
             document.getElementById('player-hp-text').innerText = Math.max(0, player.currentHealth) + '/' + player.maxHealth;
 
-            if (pPercent <= 30) {
-                playerHpBar.style.backgroundColor = '#e74c3c'; // Red
-            } else if (pPercent <= 50) {
-                playerHpBar.style.backgroundColor = '#e67e22'; // Orange
-            } else if (pPercent <= 70) {
-                playerHpBar.style.backgroundColor = '#f1c40f'; // Yellow
-            } else {
-                playerHpBar.style.backgroundColor = '#2ecc71'; // Green
-            }
+            // Color shifts
+            if (pPercent <= 30) { playerHpBar.style.backgroundColor = '#e74c3c'; } 
+            else if (pPercent <= 50) { playerHpBar.style.backgroundColor = '#e67e22'; } 
+            else if (pPercent <= 70) { playerHpBar.style.backgroundColor = '#f1c40f'; } 
+            else { playerHpBar.style.backgroundColor = '#2ecc71'; }
         }
 
-        function enemyDefeated() {
+        function packDefeated() {
+            let isBoss = (waveManager.wave % 15 === 0);
+            let packSize = activeEnemies.length;
+
             // Distribute Gold
-            let baseGold = enemy.isBoss ? (150 * enemy.wave) : (20 * enemy.wave * enemy.count);
+            let baseGold = isBoss ? (150 * waveManager.wave) : (20 * waveManager.wave * packSize);
             player.gold += Math.floor(baseGold * (1 + (player.talents.gold * 0.20)));
             
             // Distribute Gems
-            if (enemy.isBoss) { player.gems += 5; } // Boss always drops 5 gems
+            if (isBoss) { player.gems += 5; } 
             else if (Math.random() > 0.8) { player.gems += 1; } 
 
-            // Distribute EXP & Check Level Up
-            let expGained = enemy.isBoss ? (100 * enemy.wave) : (15 * enemy.wave * enemy.count);
+            // Distribute EXP
+            let expGained = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             player.exp += expGained;
             
             while(player.exp >= player.expNeeded) {
@@ -447,22 +543,20 @@
                 player.expNeeded = Math.floor(player.expNeeded * 1.5);
                 player.talentPoints++;
                 player.maxHealth += 20; 
-                
-                // Heal on level up
-                player.currentHealth = player.maxHealth; 
+                player.currentHealth = player.maxHealth; // Full heal on level up
             }
 
-            enemy.wave++;
+            waveManager.wave++;
             updateUI();
-            spawnEnemy();
+            spawnEnemyPack();
         }
 
         function triggerGameOver() {
             player.currentHealth = 0;
             clearInterval(enemyAttackTimer); 
-            
             document.getElementById('combat-controls').style.display = 'none';
             document.getElementById('game-over-ui').style.display = 'flex';
+            updatePlayerHealthBar();
         }
 
         function returnHome() {
