@@ -129,6 +129,13 @@
         .combat-stats-panel p { margin: 2px 0; display: flex; align-items: center; gap: 5px; }
         .combat-stats-icon { font-size: 2.8rem; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); transition: transform 0.1s; }
 
+        /* --- IN-RUN CURRENCY (RUNES) --- */
+        #in-run-currency {
+            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.4); border: 2px solid #00e5ff;
+            border-radius: 15px; padding: 5px 12px; font-weight: bold; color: #00e5ff; font-size: 1.1rem;
+            display: flex; align-items: center; gap: 5px; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
         /* --- FLOATING COMBAT TEXT & ANIMATIONS --- */
         .floating-text {
             position: absolute; font-family: 'Fredoka One', cursive; pointer-events: none; z-index: 100;
@@ -171,20 +178,27 @@
         .upgrade-btn .info { text-align: left; }
         .upgrade-btn .info h4 { margin: 0; color: #2c3e50; font-size: 1.1rem;}
         .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; font-weight: bold; }
-        .upgrade-btn .cost { font-weight: bold; color: #f39c12; font-size: 1.2rem;}
+        .upgrade-btn .cost { font-weight: bold; color: #00e5ff; font-size: 1.2rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5);}
         
-        /* Cursed Relic specific styling */
         .cursed-btn { background: #1a0b2e; border: 2px solid #8e44ad; }
         .cursed-btn .info h4 { color: #9b59b6; }
         .cursed-btn .info p { color: #ecf0f1; }
         .cursed-btn .curse-text { color: #e74c3c; font-size: 0.75rem; font-weight: bold; margin-top: 3px;}
-        .cursed-btn .cost { color: #fff; font-size: 2rem; }
+        .cursed-btn .cost { color: #fff; font-size: 2rem; text-shadow: none;}
 
         .loot-panel {
             background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; width: 100%; margin-bottom: 20px;
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.3); display: flex; justify-content: space-around;
         }
         .loot-item { display: flex; flex-direction: column; align-items: center; font-size: 1.2rem; font-weight: bold; }
+
+        /* Top Left Retreat Button */
+        .retreat-btn {
+            position: absolute; top: 15px; left: 15px; font-size: 1.5rem; 
+            background: rgba(0,0,0,0.3); border: none; border-radius: 10px; padding: 5px 10px;
+            cursor: pointer; color: white; transition: background 0.2s; z-index: 20;
+        }
+        .retreat-btn:hover { background: rgba(0,0,0,0.6); }
 
     </style>
 </head>
@@ -267,8 +281,11 @@
 
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
             
+            <button class="retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
+            <div id="in-run-currency">🌀 <span id="run-runes-text">0</span></div>
+
             <div style="width: 100%;">
-                <h2 id="level-wave-text" style="color: #f1c40f; margin-top: 10px;">Level 1 - Wave 1</h2>
+                <h2 id="level-wave-text" style="color: #f1c40f; margin-top: 25px;">Level 1 - Wave 1</h2>
                 <div id="enemy-container"></div>
             </div>
 
@@ -290,8 +307,9 @@
 
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
-                <p style="margin-bottom: 25px;">Select an upgrade for this run.</p>
+                <p style="margin-bottom: 25px;">Spend your Runes (🌀) for this run.</p>
                 <div id="upgrade-list" style="width: 100%;"></div>
+                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
             <div id="boss-clear-ui">
@@ -313,7 +331,7 @@
             </div>
 
             <div id="run-summary-ui">
-                <h1 style="color: #e74c3c; font-family: 'Fredoka One'; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
+                <h1 id="run-summary-title" style="font-family: 'Fredoka One'; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
                 <p style="margin-bottom: 25px; font-size: 1.2rem;">Run Summary</p>
                 
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; width: 80%; margin-bottom: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);">
@@ -355,11 +373,12 @@
             talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100
         };
 
-        // Run Stats (Now includes Multipliers for Curses)
+        // Run Stats (Tracks Runes 🌀 separately from Gold 🪙)
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
             dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+            runes: 0, // NEW: In-run shop currency
             expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0
         };
 
@@ -452,6 +471,8 @@
                     <p>🩸 ${Math.round(runStats.lifesteal * 100)}% L.S.</p>
                 </div>
             `;
+            // Update Runes
+            document.getElementById('run-runes-text').innerText = runStats.runes;
         }
 
         function spawnFloatingText(targetId, text, className) {
@@ -475,7 +496,7 @@
                 bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
                 lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
                 dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
-                expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0 
+                runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0 
             };
             
             waveManager.wave = 1;
@@ -677,16 +698,23 @@
             let isBoss = getLevelAndWave().isBoss;
             let packSize = activeEnemies.length;
 
+            // Earn Gold for Meta progression
             let baseGold = isBoss ? (150 * waveManager.wave) : (20 * waveManager.wave * packSize);
             let goldEarned = Math.floor(baseGold * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
             runStats.goldGained += goldEarned;
             
+            // Earn Runes for In-Run Upgrades
+            let baseRunes = isBoss ? (100 * waveManager.wave) : (25 * waveManager.wave * packSize);
+            runStats.runes += Math.floor(baseRunes);
+
             let gemsEarned = 0;
             if (isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1; 
             runStats.gemsGained += gemsEarned;
 
             let expGainedThisWave = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             runStats.expGained += expGainedThisWave;
+
+            updateCombatStatsPanel(); // Refresh Runes display
 
             if(isBoss) { showBossClearUI(); } 
             else { showUpgradeShop(); }
@@ -696,7 +724,7 @@
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
             
-            let baseCost = Math.floor(30 * Math.pow(1.15, waveManager.wave - 1));
+            let baseCost = Math.floor(20 * Math.pow(1.15, waveManager.wave - 1));
 
             let allUpgrades = [
                 { id: 'atk', name: "Sharpen Blade", desc: "+10 Base Attack", cost: baseCost },
@@ -712,11 +740,11 @@
             for (let i = allUpgrades.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allUpgrades[i], allUpgrades[j]] = [allUpgrades[j], allUpgrades[i]]; }
 
             allUpgrades.slice(0, 3).forEach(u => {
-                let canAfford = runStats.goldGained >= u.cost; // Use run gold instead of player gold
+                let canAfford = runStats.runes >= u.cost;
                 list.innerHTML += `
                     <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost}, false)">
                         <div class="info"><h4>${u.name}</h4><p>${u.desc}</p></div>
-                        <div class="cost">${u.cost} 🪙</div>
+                        <div class="cost">${u.cost} 🌀</div>
                     </button>`;
             });
         }
@@ -729,7 +757,6 @@
 
             let list = document.getElementById('cursed-list'); list.innerHTML = '';
             
-            // Randomize and pick 1 cursed relic
             let shuffledCurses = cursedRelicsData.sort(() => 0.5 - Math.random());
             let c = shuffledCurses[0];
 
@@ -739,11 +766,11 @@
                     <div class="cost">${c.icon}</div>
                 </button>`;
             
-            document.getElementById('btn-descend').disabled = true; // Must pick relic to continue
+            document.getElementById('btn-descend').disabled = true; 
         }
 
         function buyRunUpgrade(type, cost, isCursed) {
-            runStats.goldGained -= cost; // Spend run gold
+            runStats.runes -= cost; 
             
             if(type === 'atk') runStats.bonusAtk += 10;
             if(type === 'spd') { runStats.atkSpeedBonus += 0.05; startPlayerAutoAttack(); } 
@@ -759,19 +786,16 @@
         }
 
         function selectCursedRelic(id) {
-            // Apply Cursed Stats
             if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
             if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; startPlayerAutoAttack(); }
             if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
             if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; startPlayerAutoAttack(); }
             if(id === 'blood') { runStats.lifesteal += 0.10; runStats.damageReduction -= 0.15; }
             if(id === 'midas') { runStats.goldMultiplier += 0.50; runStats.enemyHpMultiplier += 0.20; }
-            if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; } // Force 0%
+            if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; } 
             if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; startPlayerAutoAttack(); }
             
             updateCombatStatsPanel();
-            
-            // Visual feedback on selection
             document.getElementById(`btn-curse-${id}`).style.borderColor = '#2ecc71';
             document.getElementById('btn-descend').disabled = false;
         }
@@ -791,17 +815,18 @@
         }
 
         // --- GAME OVER & RUN SUMMARY LOGIC ---
-        function triggerGameOver() {
-            player.currentHealth = 0;
-            updatePlayerHealthBar();
-            clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer);
-            
+        function endRun(titleText, titleColor) {
+            clearInterval(enemyAttackTimer); 
+            clearInterval(playerAttackTimer);
             document.getElementById('wave-upgrade-ui').style.display = 'none';
             document.getElementById('boss-clear-ui').style.display = 'none';
-            document.getElementById('combat-controls').style.display = 'none';
             
-            // Show Summary
             let summaryUi = document.getElementById('run-summary-ui');
+            let titleEl = document.getElementById('run-summary-title');
+            
+            titleEl.innerText = titleText;
+            titleEl.style.color = titleColor;
+            
             document.getElementById('summary-kills').innerText = runStats.enemiesKilled;
             document.getElementById('summary-gold').innerText = runStats.goldGained;
             document.getElementById('summary-exp').innerText = runStats.expGained;
@@ -809,8 +834,17 @@
             summaryUi.style.display = 'flex';
         }
 
+        function triggerGameOver() {
+            player.currentHealth = 0;
+            updatePlayerHealthBar();
+            endRun('DEFEATED', '#e74c3c');
+        }
+
+        function fleeCombat() {
+            endRun('RETREATED', '#f39c12');
+        }
+
         function collectRunRewards() {
-            // Apply all tracked rewards to player profile
             player.gold += runStats.goldGained;
             player.gems += runStats.gemsGained;
             player.exp += runStats.expGained;
@@ -824,7 +858,6 @@
             if(leveledUp) alert("🎉 You Leveled Up from that run!");
 
             document.getElementById('run-summary-ui').style.display = 'none';
-            document.getElementById('boss-clear-ui').style.display = 'none';
             openMenu('home');
             updateUI();
         }
