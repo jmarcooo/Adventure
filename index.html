@@ -64,7 +64,7 @@
             justify-content: center;
             padding: 20px;
             text-align: center;
-            overflow-y: auto; /* Allow scrolling if content overflows */
+            overflow-y: auto; 
         }
 
         .screen.active { display: flex; }
@@ -75,7 +75,7 @@
             font-size: 3.2rem;
             line-height: 1;
             text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             transform: rotate(-3deg);
         }
 
@@ -83,7 +83,7 @@
             width: 160px; height: 160px;
             background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
             display: flex; justify-content: center; align-items: center;
-            border-radius: 50%; margin-bottom: 40px;
+            border-radius: 50%; margin-bottom: 20px;
             animation: bounce 2s infinite ease-in-out;
             position: relative;
         }
@@ -99,8 +99,8 @@
             50% { transform: translateY(-15px); }
         }
 
-        /* --- Hero Selection Cards --- */
-        .hero-list {
+        /* --- Lists & Cards (Heroes & Talents) --- */
+        .list-container {
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -108,7 +108,7 @@
             margin-top: 20px;
         }
 
-        .hero-card {
+        .card {
             background: rgba(255, 255, 255, 0.2);
             border: 3px solid transparent;
             border-radius: 15px;
@@ -120,19 +120,24 @@
             transition: all 0.2s;
         }
 
-        .hero-card:active { transform: scale(0.95); }
+        .card:active { transform: scale(0.95); }
 
-        .hero-card.selected {
+        .card.selected {
             background: rgba(255, 255, 255, 0.9);
             color: #333;
             border-color: #f1c40f;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        .hero-card .hero-icon { font-size: 3rem; }
-        .hero-card .hero-info { text-align: left; }
-        .hero-card h3 { margin: 0; font-size: 1.2rem; }
-        .hero-card p { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+        .card .card-icon { font-size: 3rem; }
+        .card .card-info { text-align: left; }
+        .card h3 { margin: 0; font-size: 1.2rem; }
+        .card p { margin: 0; font-size: 0.9rem; opacity: 0.9; }
+
+        /* --- Progress Bars (Health & EXP) --- */
+        .bar-container { width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin-top: 10px;}
+        .bar-fill { width: 100%; height: 100%; background: #e74c3c; transition: width 0.2s; }
+        .bar-fill.exp { background: #f1c40f; width: 0%; }
 
         /* --- Buttons --- */
         .action-btn {
@@ -155,27 +160,42 @@
 
         /* --- Bottom Navigation --- */
         .bottom-nav {
-            display: flex; justify-content: space-around;
-            background: #fff; padding: 15px 10px 25px 10px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            background: #fff; padding: 10px 15px 20px 15px;
             border-top-left-radius: 25px; border-top-right-radius: 25px;
-            z-index: 10;
+            z-index: 10; position: relative;
         }
 
         .nav-btn {
             background: none; border: none; display: flex; flex-direction: column;
             align-items: center; font-family: 'Nunito', sans-serif;
-            font-size: 0.9rem; font-weight: bold; color: #95a5a6; cursor: pointer;
+            font-size: 0.8rem; font-weight: bold; color: #95a5a6; cursor: pointer;
+            flex: 1;
         }
 
-        .nav-btn .icon { font-size: 1.8rem; margin-bottom: 5px; transition: transform 0.2s;}
+        .nav-btn .icon { font-size: 1.5rem; margin-bottom: 5px; transition: transform 0.2s;}
         .nav-btn.active { color: #3498db; }
         .nav-btn.active .icon { transform: scale(1.2); }
+
+        /* Special Styling for the Middle Home Button */
+        .nav-btn.home-btn {
+            transform: translateY(-15px); /* Pops out slightly */
+            color: #333;
+        }
+        .nav-btn.home-btn .icon {
+            font-size: 2.5rem;
+            background: #f1c40f;
+            border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            color: white;
+            border: 4px solid #fff;
+        }
+        .nav-btn.home-btn.active { color: #f39c12; }
 
         /* --- Enemy Style --- */
         .enemy { font-size: 5rem; animation: shake 0.5s infinite alternate; }
         @keyframes shake { 0% { transform: translateX(-5px); } 100% { transform: translateX(5px); } }
-        .health-bar { width: 100%; height: 20px; background: #ddd; border-radius: 10px; margin-top: 20px; overflow: hidden; }
-        .health-fill { width: 100%; height: 100%; background: #e74c3c; transition: width 0.2s; }
     </style>
 </head>
 <body>
@@ -188,38 +208,44 @@
 
         <div id="screen-home" class="screen active">
             <h1 class="game-title">POCKET<br>HEROES</h1>
+            
             <div class="character-display">
                 <div class="hero-emoji" id="home-hero">🧑‍🎤</div>
                 <div class="weapon-emoji" id="home-weapon">⚔️</div>
             </div>
+
+            <div style="width: 85%; margin-bottom: 25px;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">
+                    <span>Level <span id="player-level-text">1</span></span>
+                    <span style="font-size: 0.9rem; color: #f1c40f;">EXP</span>
+                </div>
+                <div class="bar-container" style="height: 12px; background: rgba(0,0,0,0.3);">
+                    <div class="bar-fill exp" id="player-exp-fill"></div>
+                </div>
+            </div>
+
             <button class="action-btn" onclick="startGame()">PLAY</button>
         </div>
 
         <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
             <h2>Select Hero</h2>
-            
-            <div class="hero-list">
-                <div class="hero-card selected" id="card-warrior" onclick="selectHero('warrior')">
-                    <div class="hero-icon">🧑‍🎤</div>
-                    <div class="hero-info">
-                        <h3>Warrior</h3>
-                        <p id="stat-warrior">Base Damage: 20</p>
+            <div class="list-container">
+                <div class="card selected" id="card-warrior" onclick="selectHero('warrior')">
+                    <div class="card-icon">🧑‍🎤</div>
+                    <div class="card-info">
+                        <h3>Warrior</h3><p>Base Damage: 20</p>
                     </div>
                 </div>
-
-                <div class="hero-card" id="card-mage" onclick="selectHero('mage')">
-                    <div class="hero-icon">🧙‍♂️</div>
-                    <div class="hero-info">
-                        <h3>Mage</h3>
-                        <p id="stat-mage">Base Damage: 35</p>
+                <div class="card" id="card-mage" onclick="selectHero('mage')">
+                    <div class="card-icon">🧙‍♂️</div>
+                    <div class="card-info">
+                        <h3>Mage</h3><p>Base Damage: 35</p>
                     </div>
                 </div>
-
-                <div class="hero-card" id="card-archer" onclick="selectHero('archer')">
-                    <div class="hero-icon">🧝‍♂️</div>
-                    <div class="hero-info">
-                        <h3>Archer</h3>
-                        <p id="stat-archer">Base Damage: 25</p>
+                <div class="card" id="card-archer" onclick="selectHero('archer')">
+                    <div class="card-icon">🧝‍♂️</div>
+                    <div class="card-info">
+                        <h3>Archer</h3><p>Base Damage: 25</p>
                     </div>
                 </div>
             </div>
@@ -227,8 +253,34 @@
 
         <div id="screen-gear" class="screen">
             <h2>Equipment</h2>
-            <p>Upgrade your heroes' strength.</p>
-            <button class="action-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="buyUpgrade()">Upgrade Damage (100 🪙)</button>
+            <p>Upgrade raw strength with Gold.</p>
+            <button class="action-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="buyUpgrade()">Upgrade Base DMG (100 🪙)</button>
+        </div>
+
+        <div id="screen-talents" class="screen" style="justify-content: flex-start;">
+            <h2>Talent Tree</h2>
+            <p style="color: #f1c40f; font-size: 1.2rem; margin-top: 5px; font-weight: bold;">
+                Talent Points: <span id="tp-amount">0</span>
+            </p>
+            
+            <div class="list-container">
+                <div class="card" onclick="upgradeTalent('damage')">
+                    <div class="card-icon">💥</div>
+                    <div class="card-info">
+                        <h3 style="color: #fff;">Fierce Strike</h3>
+                        <p style="color: #f1c40f;">+10% Total Damage</p>
+                        <p style="font-size: 0.8rem;">Level: <span id="talent-lvl-damage">0</span></p>
+                    </div>
+                </div>
+                <div class="card" onclick="upgradeTalent('gold')">
+                    <div class="card-icon">💰</div>
+                    <div class="card-info">
+                        <h3 style="color: #fff;">Bounty Hunter</h3>
+                        <p style="color: #f1c40f;">+20% Gold Drops</p>
+                        <p style="font-size: 0.8rem;">Level: <span id="talent-lvl-gold">0</span></p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="screen-shop" class="screen">
@@ -238,9 +290,9 @@
         </div>
 
         <div id="screen-game" class="screen" style="background: #2c3e50;">
-            <h2 id="level-text">Level 1</h2>
+            <h2 id="level-text">Enemy Level 1</h2>
             <div class="enemy" id="enemy-emoji">👾</div>
-            <div class="health-bar"><div class="health-fill" id="enemy-health"></div></div>
+            <div class="bar-container"><div class="bar-fill" id="enemy-health"></div></div>
             <button class="action-btn red" onclick="attackEnemy()" style="margin-top: 40px; font-size: 2rem;">ATTACK!</button>
             <button class="action-btn" onclick="openMenu('home')" style="font-size: 1rem; padding: 10px 20px; margin-top: 20px; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Flee</button>
         </div>
@@ -248,26 +300,36 @@
         <div class="bottom-nav" id="bottom-nav-bar">
             <button class="nav-btn" id="btn-heroes" onclick="openMenu('heroes')"><span class="icon">🦸‍♂️</span>Heroes</button>
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
-            <button class="nav-btn active" id="btn-home" onclick="openMenu('home')"><span class="icon">🏠</span>Home</button>
+            
+            <button class="nav-btn home-btn active" id="btn-home" onclick="openMenu('home')"><span class="icon">🏠</span>Home</button>
+            
+            <button class="nav-btn" id="btn-talents" onclick="openMenu('talents')"><span class="icon">✨</span>Talents</button>
             <button class="nav-btn" id="btn-shop" onclick="openMenu('shop')"><span class="icon">🏪</span>Shop</button>
         </div>
     </div>
 
     <script>
-        // --- 1. GAME DATA ---
-        
-        // Define our available heroes
+        // --- GAME DATA ---
         const heroData = {
             warrior: { id: 'warrior', emoji: '🧑‍🎤', weapon: '⚔️', baseDamage: 20 },
             mage: { id: 'mage', emoji: '🧙‍♂️', weapon: '🔮', baseDamage: 35 },
             archer: { id: 'archer', emoji: '🧝‍♂️', weapon: '🏹', baseDamage: 25 }
         };
 
+        // Added Level, EXP, and Talents state
         let player = {
+            level: 1,
+            exp: 0,
+            expNeeded: 100,
+            talentPoints: 0,
             gold: 0,
             gems: 0,
-            currentHero: 'warrior', // Default hero
-            bonusDamage: 0 // Damage added via upgrades
+            currentHero: 'warrior',
+            bonusDamage: 0, 
+            talents: {
+                damage: 0, // Level of damage talent
+                gold: 0    // Level of gold talent
+            }
         };
 
         let enemy = {
@@ -277,31 +339,8 @@
             emojis: ['👾', '🧟', '🦇', '👹', '🐉']
         };
 
-        // --- 2. HERO SELECTION LOGIC ---
-        function selectHero(heroId) {
-            // Update player state
-            player.currentHero = heroId;
-
-            // Remove 'selected' class from all cards
-            document.querySelectorAll('.hero-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // Add 'selected' class to clicked card
-            document.getElementById('card-' + heroId).classList.add('selected');
-
-            // Update Home Screen graphics
-            document.getElementById('home-hero').innerText = heroData[heroId].emoji;
-            document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
-        }
-
-        // Calculate total damage (Base hero damage + any bought upgrades)
-        function getTotalDamage() {
-            return heroData[player.currentHero].baseDamage + player.bonusDamage;
-        }
-
-        // --- 3. NAVIGATION LOGIC ---
-        const screens = ['home', 'heroes', 'gear', 'shop', 'game'];
+        // --- NAVIGATION LOGIC ---
+        const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
 
         function openMenu(targetScreen) {
             screens.forEach(screen => {
@@ -322,33 +361,46 @@
             }
         }
 
-        function startGame() {
-            openMenu('game');
-            spawnEnemy();
+        function startGame() { openMenu('game'); spawnEnemy(); }
+
+        // --- HERO & TALENT LOGIC ---
+        function selectHero(heroId) {
+            player.currentHero = heroId;
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('selected'));
+            document.getElementById('card-' + heroId).classList.add('selected');
+            document.getElementById('home-hero').innerText = heroData[heroId].emoji;
+            document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
         }
 
-        // --- 4. CURRENCY & UI LOGIC ---
-        function updateUI() {
-            document.getElementById('gold-amount').innerText = player.gold;
-            document.getElementById('gem-amount').innerText = player.gems;
+        function upgradeTalent(type) {
+            if (player.talentPoints > 0) {
+                player.talentPoints--;
+                player.talents[type]++;
+                updateUI();
+            } else {
+                alert("You need Talent Points! Keep fighting to level up.");
+            }
         }
 
-        // --- 5. COMBAT LOGIC ---
+        function getTotalDamage() {
+            // Base Damage + Gear Upgrades
+            let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage;
+            // Apply Talent Multiplier (10% per level)
+            let multiplier = 1 + (player.talents.damage * 0.10);
+            return Math.floor(rawDamage * multiplier);
+        }
+
+        // --- COMBAT & PROGRESSION LOGIC ---
         function spawnEnemy() {
             enemy.maxHealth = 100 * enemy.level;
             enemy.currentHealth = enemy.maxHealth;
-            document.getElementById('level-text').innerText = "Level " + enemy.level;
-            
-            let randomEmoji = enemy.emojis[Math.floor(Math.random() * enemy.emojis.length)];
-            document.getElementById('enemy-emoji').innerText = randomEmoji;
-            
+            document.getElementById('level-text').innerText = "Enemy Level " + enemy.level;
+            document.getElementById('enemy-emoji').innerText = enemy.emojis[Math.floor(Math.random() * enemy.emojis.length)];
             updateHealthBar();
         }
 
         function attackEnemy() {
-            // Use dynamically calculated damage based on the selected hero
             enemy.currentHealth -= getTotalDamage();
-            
             let enemyEl = document.getElementById('enemy-emoji');
             enemyEl.style.transform = 'scale(0.8) rotate(-10deg)';
             setTimeout(() => { enemyEl.style.transform = ''; }, 100);
@@ -361,33 +413,64 @@
         }
 
         function updateHealthBar() {
-            let percentage = (enemy.currentHealth / enemy.maxHealth) * 100;
+            let percentage = Math.max(0, (enemy.currentHealth / enemy.maxHealth) * 100);
             document.getElementById('enemy-health').style.width = percentage + '%';
         }
 
         function enemyDefeated() {
-            let goldReward = 50 * enemy.level;
-            player.gold += goldReward;
+            // Gold Reward with Talent Multiplier (20% per level)
+            let baseGold = 50 * enemy.level;
+            let goldMultiplier = 1 + (player.talents.gold * 0.20);
+            player.gold += Math.floor(baseGold * goldMultiplier);
+            
             if(Math.random() > 0.9) player.gems += 1; 
+
+            // EXP & Level Up Logic
+            let expGained = 35 * enemy.level;
+            player.exp += expGained;
+            
+            if(player.exp >= player.expNeeded) {
+                player.level++;
+                player.exp -= player.expNeeded;
+                player.expNeeded = Math.floor(player.expNeeded * 1.5); // Next level requires 50% more EXP
+                player.talentPoints++;
+                
+                // Show level up message briefly
+                setTimeout(() => alert("🎉 LEVEL UP! You reached Level " + player.level + " and gained 1 Talent Point!"), 100);
+            }
 
             updateUI();
             enemy.level++;
             spawnEnemy();
         }
 
-        // --- 6. UPGRADE LOGIC ---
         function buyUpgrade() {
             if(player.gold >= 100) {
                 player.gold -= 100;
-                player.bonusDamage += 15; // Adds to the bonus damage pool, affecting ALL heroes
+                player.bonusDamage += 15;
                 updateUI();
-                alert("Damage upgraded! Your overall damage increased by 15.");
             } else {
-                alert("Not enough Gold! Go fight some monsters.");
+                alert("Not enough Gold!");
             }
         }
 
-        // Initialize UI on load
+        // --- UI REFRESH ---
+        function updateUI() {
+            document.getElementById('gold-amount').innerText = player.gold;
+            document.getElementById('gem-amount').innerText = player.gems;
+            
+            // Player Level & EXP
+            document.getElementById('player-level-text').innerText = player.level;
+            let expPercent = (player.exp / player.expNeeded) * 100;
+            document.getElementById('player-exp-fill').style.width = expPercent + '%';
+
+            // Talents
+            document.getElementById('tp-amount').innerText = player.talentPoints;
+            document.getElementById('talent-lvl-damage').innerText = player.talents.damage;
+            document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
+        }
+
+        // Initialize UI
         updateUI();
     </script>
 </body>
