@@ -474,7 +474,6 @@
             gameSpeed = gameSpeed === 1 ? 2 : 1;
             getEl('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
             
-            // Instantly re-schedule timers with new speed if in combat
             if (!waveManager.isUpgrading && getEl('screen-game').classList.contains('active')) {
                 schedulePlayerAttack();
                 scheduleEnemyAttack();
@@ -670,8 +669,6 @@
             }
             
             updateCombatStatsPanel();
-            
-            // Kickstart combat loops safely
             schedulePlayerAttack(); 
             scheduleEnemyAttack();
         }
@@ -710,6 +707,13 @@
                 unitDiv.classList.add('dead'); 
                 setTimeout(() => unitDiv.style.display = 'none', 300); 
             }
+
+            // --- THE FIX: INSTANT WAVE CLEAR CHECK ---
+            if (activeEnemies.every(e => e.isDead)) {
+                setTimeout(() => {
+                    packDefeated();
+                }, 600); // Give time for loot animations to finish
+            }
         }
 
         function animateHit(unitId, damageDealt, isCrit, specialText) {
@@ -743,7 +747,7 @@
         }
 
         function processHitTarget(target, isCounter = false) {
-            if(!target || target.hp <= 0) return;
+            if(!target || target.isDead || target.hp <= 0) return;
             let dmg = getTotalDamage();
 
             // Archer Mark
@@ -808,7 +812,7 @@
             if (runStats.splashDmg > 0 && !isCounter) {
                 let sDmg = Math.floor(dmg * runStats.splashDmg);
                 activeEnemies.forEach(e => { 
-                    if (e.id !== target.id && e.hp > 0) { 
+                    if (e.id !== target.id && !e.isDead && e.hp > 0) { 
                         e.hp -= sDmg; 
                         animateHit(e.id, sDmg, false); 
                     } 
@@ -819,7 +823,7 @@
         function autoAttackEnemy() {
             if(waveManager.isUpgrading || player.currentHealth <= 0 || !getEl('screen-game').classList.contains('active')) return;
             
-            let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
+            let aliveEnemies = activeEnemies.filter(e => !e.isDead);
             if(aliveEnemies.length === 0) return;
 
             let pIcon = getEl('player-combat-icon');
@@ -832,7 +836,7 @@
 
             for (let s = 0; s < strikes; s++) {
                 setTimeout(() => {
-                    let target = activeEnemies.find(e => e.hp > 0);
+                    let target = activeEnemies.find(e => !e.isDead);
                     if (!target) return;
 
                     processHitTarget(target);
@@ -843,7 +847,7 @@
                         if(runStats.mageAttackCount % 5 === 0) {
                             spawnFloatingText('player-combat-area', "OVERLOAD!", "float-crit");
                             activeEnemies.forEach(en => { 
-                                if(en.hp > 0 && en.id !== target.id) processHitTarget(en, true); 
+                                if(!en.isDead && en.id !== target.id) processHitTarget(en, true); 
                             });
                         }
                     }
@@ -852,7 +856,7 @@
                     if(player.currentHero === 'mage' && getUpgradeLvl('mage_chain') > 0) {
                         let chainChance = [0.15, 0.30, 0.45][getUpgradeLvl('mage_chain') - 1];
                         if(Math.random() < chainChance) {
-                            let others = activeEnemies.filter(e => e.hp > 0 && e.id !== target.id);
+                            let others = activeEnemies.filter(e => !e.isDead && e.id !== target.id);
                             if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
                         }
                     }
@@ -861,28 +865,21 @@
                     if(player.currentHero === 'archer' && getUpgradeLvl('arc_multi') > 0) {
                         let multiChance = [0.20, 0.40, 0.60][getUpgradeLvl('arc_multi') - 1];
                         if(Math.random() < multiChance) {
-                            let others = activeEnemies.filter(e => e.hp > 0 && e.id !== target.id);
+                            let others = activeEnemies.filter(e => !e.isDead && e.id !== target.id);
                             if(others.length > 0) processHitTarget(others[Math.floor(Math.random()*others.length)], true);
                         }
                     }
                 }, s * 150);
             }
-
-            // Let attack animations finish before checking wave clear
-            setTimeout(() => { 
-                if (activeEnemies.every(e => e.hp <= 0)) {
-                    packDefeated(); 
-                }
-            }, 400); 
         }
 
         function enemyStrikesBack() {
             if(!getEl('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
             
-            let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
+            let aliveEnemies = activeEnemies.filter(e => !e.isDead);
             aliveEnemies.forEach((e, index) => {
                 setTimeout(() => {
-                    if(player.currentHealth <= 0 || waveManager.isUpgrading || e.hp <= 0) return; 
+                    if(player.currentHealth <= 0 || waveManager.isUpgrading || e.isDead) return; 
 
                     if(e.isStunned) { e.isStunned = false; return; }
                     if(e.isFrozen) { e.isFrozen = false; return; }
@@ -906,7 +903,7 @@
                         runStats.mageShieldActive = false; 
                         incomingDmg = 0; 
                         runStats.tempAtkSpeed = 0.5; 
-                        schedulePlayerAttack(); // Immediately apply speed boost
+                        schedulePlayerAttack(); 
                         updateCombatStatsPanel();
                         spawnFloatingText('player-combat-area', "SHIELD BLOCKED!", "float-miss"); 
                         return;
@@ -975,19 +972,18 @@
             });
         }
 
-        // --- MANUAL SHOP LOGIC (NO AUTO-SKIP) ---
+        // --- WAVE DEFEATED & SMART SHOP ---
         function packDefeated() {
             if(waveManager.isUpgrading) return; 
             waveManager.isUpgrading = true; 
             
             let stageInfo = getLevelAndWave();
-            let packSize = activeEnemies.length;
 
             let gemsEarned = 0;
             if (stageInfo.isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1; 
             runStats.gemsGained += gemsEarned;
 
-            let expGainedThisWave = stageInfo.isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
+            let expGainedThisWave = stageInfo.isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * activeEnemies.length);
             runStats.expGained += expGainedThisWave;
 
             updateCombatStatsPanel(); 
@@ -1005,6 +1001,7 @@
 
         function showUpgradeShop(availableUpgrades) {
             getEl('wave-upgrade-ui').style.display = 'flex';
+            
             getEl('shop-title').style.color = '#f1c40f';
             getEl('shop-title').innerText = 'WAVE CLEARED!';
             getEl('shop-desc').innerText = 'Spend your Runes for this run.';
@@ -1032,7 +1029,6 @@
                 let cost = 1 + (currentLvl * 2); 
                 let canAfford = runStats.runes >= cost;
                 
-                // If they can't afford it, the button is rendered with the 'disabled' class
                 list.innerHTML += `
                     <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${cost})">
                         <div class="info">
