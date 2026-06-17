@@ -81,8 +81,6 @@
             box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3); transition: transform 0.1s, box-shadow 0.1s; text-transform: uppercase; margin-top: 10px; width: 100%;
         }
         .action-btn:active { transform: translateY(8px); box-shadow: 0 0px 0 #d35400, 0 5px 10px rgba(0,0,0,0.3); }
-        .action-btn.red { background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 8px 0 #922b21; }
-        .action-btn.red:active { box-shadow: 0 0px 0 #922b21; }
 
         /* --- Bottom Navigation --- */
         .bottom-nav {
@@ -131,11 +129,25 @@
         .combat-stats-panel p { margin: 2px 0; display: flex; align-items: center; gap: 5px; }
         .combat-stats-icon { font-size: 2.8rem; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); transition: transform 0.1s; }
 
-        /* --- IN-RUN CURRENCY (RUNES) --- */
+        /* Top Controls: Retreat, Speed, Runes */
+        #top-right-ui {
+            position: absolute; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 20; align-items: center;
+        }
+        .hud-btn {
+            background: rgba(0,0,0,0.3); border: none; border-radius: 10px; padding: 5px 10px;
+            cursor: pointer; color: white; transition: background 0.2s; font-size: 1.2rem; font-weight: bold;
+        }
+        .hud-btn:hover { background: rgba(0,0,0,0.6); }
+
         #in-run-currency {
-            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.4); border: 2px solid #00e5ff;
+            background: rgba(0,0,0,0.4); border: 2px solid #00e5ff;
             border-radius: 15px; padding: 5px 12px; font-weight: bold; color: #00e5ff; font-size: 1.1rem;
-            display: flex; align-items: center; gap: 5px; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* Top Left Retreat Button */
+        .retreat-btn {
+            position: absolute; top: 15px; left: 15px; z-index: 20;
         }
 
         /* --- FLOATING COMBAT TEXT & LOOT ANIMATIONS --- */
@@ -154,7 +166,6 @@
             100% { opacity: 0; transform: translateY(-40px) scale(1); }
         }
 
-        /* Physical drop animation for Runes and Coins */
         .loot-drop {
             position: absolute; font-size: 1.8rem; z-index: 105; pointer-events: none;
             animation: lootPop 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
@@ -205,14 +216,6 @@
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.3); display: flex; justify-content: space-around;
         }
         .loot-item { display: flex; flex-direction: column; align-items: center; font-size: 1.2rem; font-weight: bold; }
-
-        /* Top Left Retreat Button */
-        .retreat-btn {
-            position: absolute; top: 15px; left: 15px; font-size: 1.5rem; 
-            background: rgba(0,0,0,0.3); border: none; border-radius: 10px; padding: 5px 10px;
-            cursor: pointer; color: white; transition: background 0.2s; z-index: 20;
-        }
-        .retreat-btn:hover { background: rgba(0,0,0,0.6); }
 
         .lvl-badge { font-size: 0.8rem; color: #3498db; font-weight: bold; margin-left: 5px; }
 
@@ -297,8 +300,12 @@
 
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
             
-            <button class="retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
-            <div id="in-run-currency">🌀 <span id="run-runes-text">0</span></div>
+            <button class="hud-btn retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
+            
+            <div id="top-right-ui">
+                <button id="speed-toggle-btn" class="hud-btn" onclick="toggleGameSpeed()">▶️ x1</button>
+                <div id="in-run-currency">🌀 <span id="run-runes-text">0</span></div>
+            </div>
 
             <div style="width: 100%;">
                 <h2 id="level-wave-text" style="color: #f1c40f; margin-top: 25px;">Level 1 - Wave 1</h2>
@@ -382,6 +389,8 @@
 
     <script>
         // --- GAME DATA ---
+        let gameSpeed = 1; // 1 = Slow (Default), 2 = Fast
+
         const heroData = {
             warrior: { id: 'warrior', emoji: '🧑‍🎤', weapon: '⚔️', baseDamage: 20 },
             mage: { id: 'mage', emoji: '🧙‍♂️', weapon: '🔮', baseDamage: 35 },
@@ -403,10 +412,18 @@
             upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 }
         };
 
-        let activeEnemies = [];
-        let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
-        
-        // BOSS SKILLS & CURSED RELICS DATABASE
+        // MASTER UPGRADE DATABASE
+        const runUpgradeData = [
+            { id: 'atk', name: "Sharpen Blade", desc: "+20 Base Attack", maxLevel: 5 },
+            { id: 'spd', name: "Swift Strikes", desc: "+10% Attack Speed", maxLevel: 5 },
+            { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", maxLevel: 3 },
+            { id: 'double', name: "Lightning Reflex", desc: "+10% Double Strike", maxLevel: 5 },
+            { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Chance", maxLevel: 5 },
+            { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", maxLevel: 3 },
+            { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", maxLevel: 5 },
+            { id: 'armor', name: "Iron Skin", desc: "+5% Damage Reduction", maxLevel: 5 }
+        ];
+
         const bossSkillsData = [
             { id: 'crit', name: 'Critical Strike', icon: '🎯', desc: '25% chance for 2x DMG' },
             { id: 'armor', name: 'Thick Hide', icon: '🛡️', desc: 'Takes 30% less DMG' },
@@ -425,6 +442,8 @@
             { id: 'spiked', name: "Spiked Armor", desc: "+20% Damage Reduction", curseDesc: "-10% Attack Speed", icon: "🐢" }
         ];
 
+        let activeEnemies = [];
+        let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
         let enemyAttackTimer;
         let playerAttackTimer;
 
@@ -467,6 +486,18 @@
             if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); alert("Purchased 1,000 Gold!"); } 
             else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); alert("Purchased +50 Permanent DMG!"); } 
             else { alert("Not enough Gems!"); }
+        }
+
+        // --- GAME SPEED TOGGLE ---
+        function toggleGameSpeed() {
+            gameSpeed = gameSpeed === 1 ? 2 : 1;
+            document.getElementById('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
+            
+            // Instantly apply the new speed if in combat
+            if (!waveManager.isUpgrading && document.getElementById('screen-game').classList.contains('active')) {
+                startPlayerAutoAttack();
+                startEnemyAutoAttack();
+            }
         }
 
         // --- COMBAT CORE ---
@@ -551,14 +582,20 @@
             openMenu('game');
             spawnEnemyPack();
             
-            clearInterval(enemyAttackTimer);
-            enemyAttackTimer = setInterval(enemyStrikesBack, 1500);
+            startEnemyAutoAttack();
             startPlayerAutoAttack();
+        }
+
+        function startEnemyAutoAttack() {
+            clearInterval(enemyAttackTimer);
+            // Default speed (1) = 3 seconds. Fast speed (2) = 1.5 seconds.
+            enemyAttackTimer = setInterval(enemyStrikesBack, 3000 / gameSpeed);
         }
 
         function startPlayerAutoAttack() {
             clearInterval(playerAttackTimer);
-            let interval = 1000 / Math.max(0.1, (1 + runStats.atkSpeedBonus));
+            // Default speed (1) = 2 seconds. Fast speed (2) = 1 second. (Modified by Atk Speed Bonus)
+            let interval = 2000 / (gameSpeed * Math.max(0.1, (1 + runStats.atkSpeedBonus)));
             playerAttackTimer = setInterval(autoAttackEnemy, interval);
         }
 
@@ -754,7 +791,7 @@
             else pBar.style.backgroundColor = '#2ecc71';
         }
 
-        // --- WAVE DEFEATED & SHOP ---
+        // --- WAVE DEFEATED & SMART SHOP ---
         function packDefeated() {
             if(waveManager.isUpgrading) return; 
             waveManager.isUpgrading = true; 
@@ -771,34 +808,28 @@
 
             updateCombatStatsPanel(); 
 
-            if(isBoss) { showBossClearUI(); } 
-            else { showUpgradeShop(); }
+            // Calculate if the player can afford any non-maxed upgrades
+            let availableUpgrades = runUpgradeData.filter(u => runStats.upgradeLevels[u.id] < u.maxLevel);
+            let canAffordAny = availableUpgrades.some(u => {
+                let cost = 1 + (runStats.upgradeLevels[u.id] * 2);
+                return runStats.runes >= cost;
+            });
+
+            if(isBoss) { 
+                showBossClearUI(); 
+            } else if (availableUpgrades.length === 0 || !canAffordAny) {
+                // Instantly skip the shop if maxed out or too poor!
+                setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); 
+            } else { 
+                showUpgradeShop(availableUpgrades); 
+            }
         }
 
-        function showUpgradeShop() {
+        function showUpgradeShop(availableUpgrades) {
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
             document.getElementById('shop-runes-display').innerText = runStats.runes; 
 
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
-            
-            // Base values defined - cost is dynamically calculated based on current skill level
-            let allUpgrades = [
-                { id: 'atk', name: "Sharpen Blade", desc: "+20 Base Attack", maxLevel: 5 },
-                { id: 'spd', name: "Swift Strikes", desc: "+10% Attack Speed", maxLevel: 5 },
-                { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", maxLevel: 3 },
-                { id: 'double', name: "Lightning Reflex", desc: "+10% Double Strike", maxLevel: 5 },
-                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Chance", maxLevel: 5 },
-                { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", maxLevel: 3 },
-                { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", maxLevel: 5 },
-                { id: 'armor', name: "Iron Skin", desc: "+5% Damage Reduction", maxLevel: 5 }
-            ];
-
-            let availableUpgrades = allUpgrades.filter(u => runStats.upgradeLevels[u.id] < u.maxLevel);
-
-            if (availableUpgrades.length === 0) {
-                list.innerHTML = `<h2 style="color: #2ecc71;">All Upgrades Maxed!</h2>`;
-                return;
-            }
 
             for (let i = availableUpgrades.length - 1; i > 0; i--) { 
                 const j = Math.floor(Math.random() * (i + 1)); 
@@ -807,7 +838,7 @@
 
             availableUpgrades.slice(0, 3).forEach(u => {
                 let currentLvl = runStats.upgradeLevels[u.id];
-                let cost = 1 + (currentLvl * 2); // Dynamic Cost: Level 0 costs 1, Lv 1 costs 3, Lv 2 costs 5...
+                let cost = 1 + (currentLvl * 2); // Level 0 costs 1, Lv 1 costs 3, Lv 2 costs 5...
                 
                 let canAfford = runStats.runes >= cost;
                 
