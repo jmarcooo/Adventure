@@ -190,6 +190,7 @@
         .upgrade-btn .info h4 { margin: 0; color: #2c3e50; font-size: 1.1rem;}
         .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; font-weight: bold; }
         .upgrade-btn .cost { font-weight: bold; color: #00e5ff; font-size: 1.2rem; text-shadow: 0 1px 2px rgba(0,0,0,0.5);}
+        .upgrade-btn.disabled { opacity: 0.5; pointer-events: none; filter: grayscale(50%); }
         
         .cursed-btn { background: #1a0b2e; border: 2px solid #8e44ad; }
         .cursed-btn .info h4 { color: #9b59b6; }
@@ -318,7 +319,12 @@
 
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
-                <p style="margin-bottom: 25px;">Spend your Runes (🌀) for this run.</p>
+                <p style="margin-bottom: 10px;">Spend your Runes for this run.</p>
+                
+                <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 20px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">
+                    🌀 <span id="shop-runes-display">0</span>
+                </div>
+
                 <div id="upgrade-list" style="width: 100%;"></div>
                 <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
@@ -384,13 +390,12 @@
             talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100
         };
 
-        // Run Stats (Tracks Runes 🌀 separately from Gold 🪙)
+        // Run Stats
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
             dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
-            runes: 0, // NEW: In-run shop currency
-            expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0
+            runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0
         };
 
         let activeEnemies = [];
@@ -482,7 +487,6 @@
                     <p>🩸 ${Math.round(runStats.lifesteal * 100)}% L.S.</p>
                 </div>
             `;
-            // Update Runes
             document.getElementById('run-runes-text').innerText = runStats.runes;
         }
 
@@ -502,7 +506,6 @@
             setTimeout(() => { if(ft.parentElement) ft.remove(); }, 800);
         }
 
-        // Spawns physical drops from enemies when they die
         function spawnLootDrop(targetId, type) {
             let targetDiv = document.getElementById(targetId);
             if(!targetDiv) return;
@@ -602,14 +605,12 @@
             }
         }
 
-        // Handles the death mechanics, animation, and drop chance of an enemy
         function handleEnemyDeath(target, unitId, unitDiv) {
             if (target.isDead) return;
             target.isDead = true; 
             runStats.enemiesKilled++;
 
             if (target.isBoss) {
-                // Bosses shower loot
                 runStats.runes += (5 + waveManager.wave);
                 let goldEarned = Math.floor((150 * waveManager.wave) * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
                 runStats.goldGained += goldEarned;
@@ -619,13 +620,8 @@
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), (i * 150) + 75);
                 }
             } else {
-                // Normal units have 50% chance to drop 1 Rune
-                if (Math.random() < 0.5) {
-                    runStats.runes += 1;
-                    spawnLootDrop(`enemy-${unitId}`, 'rune');
-                }
+                if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); }
                 
-                // Normal units drop a fixed amount of gold immediately
                 let goldEarned = Math.floor((20 * waveManager.wave) * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
                 runStats.goldGained += goldEarned;
                 spawnLootDrop(`enemy-${unitId}`, 'gold');
@@ -633,10 +629,7 @@
 
             document.getElementById('run-runes-text').innerText = runStats.runes;
 
-            if(unitDiv) { 
-                unitDiv.classList.add('dead'); 
-                setTimeout(() => unitDiv.style.display = 'none', 300); 
-            }
+            if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
         }
 
         function animateHit(unitId, damageDealt, isCrit) {
@@ -660,9 +653,7 @@
             if (hpBarDiv) hpBarDiv.style.width = (displayHp / target.maxHp) * 100 + '%';
             if (hpTextDiv) hpTextDiv.innerText = `${displayHp}/${target.maxHp}`;
             
-            if (target.hp <= 0 && !target.isDead) {
-                handleEnemyDeath(target, unitId, unitDiv);
-            }
+            if (target.hp <= 0 && !target.isDead) { handleEnemyDeath(target, unitId, unitDiv); }
         }
 
         function autoAttackEnemy() {
@@ -780,9 +771,10 @@
 
         function showUpgradeShop() {
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
+            document.getElementById('shop-runes-display').innerText = runStats.runes; // NEW: Update shop display
+
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
             
-            // Rebalanced Base Cost based on the much lower 50% single rune drop rate
             let baseCost = Math.max(1, Math.floor(waveManager.wave / 3) + 1);
             let medCost = Math.max(1, Math.ceil(baseCost * 1.5));
             let highCost = Math.max(2, baseCost * 2);
@@ -831,6 +823,11 @@
         }
 
         function buyRunUpgrade(type, cost) {
+            // FIX: Strict validation check added here
+            if (runStats.runes < cost) {
+                return; // Do nothing if they try to hack around the disabled button
+            }
+
             runStats.runes -= cost; 
             
             if(type === 'atk') runStats.bonusAtk += 10;
