@@ -10,28 +10,16 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Nunito', sans-serif;
-            background-color: #2c3e50;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: #fff;
+            font-family: 'Nunito', sans-serif; background-color: #2c3e50;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; color: #fff;
         }
 
         #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            height: 100%;
-            max-height: 850px;
+            position: relative; width: 100%; max-width: 400px; height: 100%; max-height: 850px;
             background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: background-color 0.1s;
+            overflow: hidden; display: flex; flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: background-color 0.1s;
         }
 
         /* --- Top Bar (Currencies) --- */
@@ -42,54 +30,39 @@
         }
         .currency {
             background: rgba(255, 255, 255, 0.95); padding: 8px 15px;
-            border-radius: 20px; display: flex; align-items: center;
-            gap: 8px; font-weight: bold; color: #333;
+            border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: bold; color: #333;
         }
 
         /* --- Screens --- */
         .screen {
-            flex-grow: 1; display: none; flex-direction: column;
-            align-items: center; justify-content: center;
+            flex-grow: 1; display: none; flex-direction: column; align-items: center; justify-content: center;
             padding: 20px; text-align: center; overflow-y: auto; 
         }
         .screen.active { display: flex; }
 
         /* --- Home Screen Elements --- */
         .game-title {
-            font-family: 'Fredoka One', cursive; font-size: 3.2rem;
-            line-height: 1; text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3);
-            margin-bottom: 20px; transform: rotate(-3deg);
+            font-family: 'Fredoka One', cursive; font-size: 3.2rem; line-height: 1;
+            text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3); margin-bottom: 20px; transform: rotate(-3deg);
         }
         .character-display {
-            width: 160px; height: 160px;
-            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 50%; margin-bottom: 20px;
+            width: 160px; height: 160px; background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+            display: flex; justify-content: center; align-items: center; border-radius: 50%; margin-bottom: 20px;
             animation: bounce 2s infinite ease-in-out; position: relative;
         }
         .character-display .hero-emoji { font-size: 6rem; z-index: 2; }
-        .character-display .weapon-emoji {
-            font-size: 2.5rem; position: absolute; bottom: 20px; right: 10px;
-            z-index: 3; transform: rotate(15deg);
-        }
+        .character-display .weapon-emoji { font-size: 2.5rem; position: absolute; bottom: 20px; right: 10px; z-index: 3; transform: rotate(15deg); }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
 
         /* --- Lists & Cards --- */
         .list-container { display: flex; flex-direction: column; gap: 15px; width: 100%; margin-top: 20px; }
         .card {
-            background: rgba(255, 255, 255, 0.2); border: 3px solid transparent;
-            border-radius: 15px; padding: 15px; display: flex; align-items: center;
-            gap: 15px; cursor: pointer; transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.2); border: 3px solid transparent; border-radius: 15px; padding: 15px;
+            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s;
         }
         .card:active { transform: scale(0.95); }
-        .card.selected {
-            background: rgba(255, 255, 255, 0.9); color: #333;
-            border-color: #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+        .card.selected { background: rgba(255, 255, 255, 0.9); color: #333; border-color: #f1c40f; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .card .card-icon { font-size: 3rem; }
         .card .card-info { text-align: left; }
         .card h3 { margin: 0; font-size: 1.2rem; }
@@ -104,9 +77,8 @@
         /* --- Buttons --- */
         .action-btn {
             font-family: 'Fredoka One', cursive; background: linear-gradient(180deg, #f1c40f 0%, #f39c12 100%);
-            color: white; border: none; padding: 20px 60px; font-size: 2.5rem;
-            border-radius: 50px; cursor: pointer; box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3);
-            transition: transform 0.1s, box-shadow 0.1s; text-transform: uppercase; margin-top: 10px;
+            color: white; border: none; padding: 20px 60px; font-size: 2.5rem; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3); transition: transform 0.1s, box-shadow 0.1s; text-transform: uppercase; margin-top: 10px; width: 100%;
         }
         .action-btn:active { transform: translateY(8px); box-shadow: 0 0px 0 #d35400, 0 5px 10px rgba(0,0,0,0.3); }
         .action-btn.red { background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 8px 0 #922b21; }
@@ -114,14 +86,11 @@
 
         /* --- Bottom Navigation --- */
         .bottom-nav {
-            display: flex; justify-content: space-between; align-items: flex-end;
-            background: #fff; padding: 10px 15px 20px 15px;
-            border-top-left-radius: 25px; border-top-right-radius: 25px;
-            z-index: 10; position: relative;
+            display: flex; justify-content: space-between; align-items: flex-end; background: #fff; padding: 10px 15px 20px 15px;
+            border-top-left-radius: 25px; border-top-right-radius: 25px; z-index: 10; position: relative;
         }
         .nav-btn {
-            background: none; border: none; display: flex; flex-direction: column;
-            align-items: center; font-family: 'Nunito', sans-serif;
+            background: none; border: none; display: flex; flex-direction: column; align-items: center; font-family: 'Nunito', sans-serif;
             font-size: 0.8rem; font-weight: bold; color: #95a5a6; cursor: pointer; flex: 1;
         }
         .nav-btn .icon { font-size: 1.5rem; margin-bottom: 5px; transition: transform 0.2s;}
@@ -129,72 +98,46 @@
         .nav-btn.active .icon { transform: scale(1.2); }
         .nav-btn.home-btn { transform: translateY(-15px); color: #333; }
         .nav-btn.home-btn .icon {
-            font-size: 2.5rem; background: #f1c40f; border-radius: 50%;
-            padding: 10px; box-shadow: 0 5px 10px rgba(0,0,0,0.2); color: white; border: 4px solid #fff;
+            font-size: 2.5rem; background: #f1c40f; border-radius: 50%; padding: 10px; box-shadow: 0 5px 10px rgba(0,0,0,0.2); color: white; border: 4px solid #fff;
         }
         .nav-btn.home-btn.active { color: #f39c12; }
 
         /* --- INDIVIDUAL ENEMY STYLES --- */
         #enemy-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 15px;
-            min-height: 180px; /* Reserves space so buttons don't jump around */
-            align-items: flex-end;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; min-height: 180px; align-items: flex-end;
         }
-        .enemy-unit {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: opacity 0.3s, transform 0.1s;
-        }
-        .enemy-unit.dead {
-            opacity: 0.2;
-            filter: grayscale(100%);
-        }
-        .enemy-unit .emoji {
-            font-size: 3.5rem;
-            margin-bottom: 5px;
-            text-shadow: 0 5px 10px rgba(0,0,0,0.3);
-        }
-        .enemy-unit.boss .emoji {
-            font-size: 7rem;
-        }
-        .mini-bar-container {
-            width: 50px;
-            height: 8px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 4px;
-            overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
-        }
-        .mini-bar-fill {
-            width: 100%;
-            height: 100%;
-            background: #e74c3c;
-            transition: width 0.1s;
-        }
-        .boss .mini-bar-container {
-            width: 120px; /* Bosses get bigger bars */
-            height: 12px;
-        }
+        .enemy-unit { display: flex; flex-direction: column; align-items: center; transition: opacity 0.3s, transform 0.1s; }
+        .enemy-unit.dead { opacity: 0; pointer-events: none; }
+        .enemy-unit .emoji { font-size: 3.5rem; margin-bottom: 5px; text-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        .enemy-unit.boss .emoji { font-size: 7rem; }
+        .mini-bar-container { width: 50px; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        .mini-bar-fill { width: 100%; height: 100%; background: #e74c3c; transition: width 0.1s; }
+        .boss .mini-bar-container { width: 120px; height: 12px; }
 
         /* Combat Animations */
         .hit-anim { animation: takeDamage 0.2s; }
-        @keyframes takeDamage {
-            0% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(0.8) rotate(-15deg); filter: brightness(2) }
-            100% { transform: scale(1) rotate(0deg); }
-        }
-
+        @keyframes takeDamage { 0% { transform: scale(1) rotate(0deg); } 50% { transform: scale(0.8) rotate(-15deg); filter: brightness(2) } 100% { transform: scale(1) rotate(0deg); } }
         .attack-anim { animation: lunge 0.3s ease-in-out; }
-        @keyframes lunge {
-            0% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(20px) scale(1.15); z-index: 10;} /* Lunges downward toward player */
-            100% { transform: translateY(0) scale(1); }
+        @keyframes lunge { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(20px) scale(1.15); z-index: 10;} 100% { transform: translateY(0) scale(1); } }
+
+        /* --- END OF WAVE UPGRADE UI --- */
+        #wave-upgrade-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(44, 62, 80, 0.95); z-index: 50; display: none; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px; text-align: center;
         }
+        .upgrade-btn {
+            background: #fff; border: none; border-radius: 10px; padding: 15px; width: 100%;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; box-shadow: 0 5px 10px rgba(0,0,0,0.2); font-family: 'Nunito', sans-serif;
+            transition: transform 0.1s;
+        }
+        .upgrade-btn:active { transform: scale(0.95); }
+        .upgrade-btn .info { text-align: left; }
+        .upgrade-btn .info h4 { margin: 0; color: #2c3e50; font-size: 1.1rem;}
+        .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; }
+        .upgrade-btn .cost { font-weight: bold; color: #f39c12; font-size: 1.2rem;}
+        .upgrade-btn.disabled { opacity: 0.5; pointer-events: none; }
 
     </style>
 </head>
@@ -208,22 +151,17 @@
 
         <div id="screen-home" class="screen active">
             <h1 class="game-title">POCKET<br>HEROES</h1>
-            
             <div class="character-display">
                 <div class="hero-emoji" id="home-hero">🧑‍🎤</div>
                 <div class="weapon-emoji" id="home-weapon">⚔️</div>
             </div>
-
             <div style="width: 85%; margin-bottom: 25px;">
                 <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">
                     <span>Level <span id="player-level-text">1</span></span>
                     <span style="font-size: 0.9rem; color: #f1c40f;">EXP <span id="player-exp-text" style="color: #fff;">0/100</span></span>
                 </div>
-                <div class="bar-container" style="height: 12px;">
-                    <div class="bar-fill exp" id="player-exp-fill"></div>
-                </div>
+                <div class="bar-container" style="height: 12px;"><div class="bar-fill exp" id="player-exp-fill"></div></div>
             </div>
-
             <button class="action-btn" onclick="startGame()">PLAY</button>
         </div>
 
@@ -231,24 +169,21 @@
             <h2>Select Hero</h2>
             <div class="list-container">
                 <div class="card selected" id="card-warrior" onclick="selectHero('warrior')">
-                    <div class="card-icon">🧑‍🎤</div>
-                    <div class="card-info"><h3>Warrior</h3><p>Base Damage: 20</p></div>
+                    <div class="card-icon">🧑‍🎤</div><div class="card-info"><h3>Warrior</h3><p>Base Damage: 20</p></div>
                 </div>
                 <div class="card" id="card-mage" onclick="selectHero('mage')">
-                    <div class="card-icon">🧙‍♂️</div>
-                    <div class="card-info"><h3>Mage</h3><p>Base Damage: 35</p></div>
+                    <div class="card-icon">🧙‍♂️</div><div class="card-info"><h3>Mage</h3><p>Base Damage: 35</p></div>
                 </div>
                 <div class="card" id="card-archer" onclick="selectHero('archer')">
-                    <div class="card-icon">🧝‍♂️</div>
-                    <div class="card-info"><h3>Archer</h3><p>Base Damage: 25</p></div>
+                    <div class="card-icon">🧝‍♂️</div><div class="card-info"><h3>Archer</h3><p>Base Damage: 25</p></div>
                 </div>
             </div>
         </div>
 
         <div id="screen-gear" class="screen">
-            <h2>Equipment</h2>
-            <p>Upgrade raw strength with Gold.</p>
-            <button class="action-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="buyUpgrade()">Upgrade Base DMG (100 🪙)</button>
+            <h2>Permanent Gear</h2>
+            <p>Upgrade raw strength forever.</p>
+            <button class="action-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="buyPermanentUpgrade()">Upgrade Base DMG (100 🪙)</button>
         </div>
 
         <div id="screen-talents" class="screen" style="justify-content: flex-start;">
@@ -266,16 +201,10 @@
             </div>
         </div>
 
-        <div id="screen-shop" class="screen">
-            <h2>Item Shop</h2>
-            <p>Coming Soon!</p>
-            <div style="font-size: 4rem; margin: 20px;">🛒</div>
-        </div>
-
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around;">
             
             <div style="width: 100%;">
-                <h2 id="level-wave-text" style="color: #f1c40f;">Wave 1</h2>
+                <h2 id="level-wave-text" style="color: #f1c40f;">Level 1 - Wave 1</h2>
                 <div id="enemy-container"></div>
             </div>
 
@@ -289,10 +218,18 @@
                 <div class="bar-container" style="width: 80%; margin: 5px auto 10px auto;"><div class="bar-fill player-hp" id="player-health"></div></div>
             </div>
 
-            <div id="combat-controls">
+            <div id="combat-controls" style="width: 80%;">
                 <button class="action-btn red" onclick="attackEnemy()" style="margin-top: 10px; font-size: 2rem;">ATTACK!</button>
-                <br>
                 <button class="action-btn" onclick="fleeCombat()" style="font-size: 1rem; padding: 10px 20px; margin-top: 15px; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Flee</button>
+            </div>
+
+            <div id="wave-upgrade-ui">
+                <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
+                <p style="margin-bottom: 25px;">Buy upgrades for this run.</p>
+
+                <div id="upgrade-list" style="width: 100%;"></div>
+
+                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
             <div id="game-over-ui" style="display: none; flex-direction: column; align-items: center;">
@@ -307,7 +244,6 @@
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
             <button class="nav-btn home-btn active" id="btn-home" onclick="openMenu('home')"><span class="icon">🏠</span>Home</button>
             <button class="nav-btn" id="btn-talents" onclick="openMenu('talents')"><span class="icon">✨</span>Talents</button>
-            <button class="nav-btn" id="btn-shop" onclick="openMenu('shop')"><span class="icon">🏪</span>Shop</button>
         </div>
     </div>
 
@@ -326,31 +262,30 @@
             maxHealth: 100, currentHealth: 100
         };
 
-        // NEW: Array to hold multiple active enemies on screen
-        let activeEnemies = [];
-
-        let waveManager = {
-            wave: 1,
-            normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'],
-            bossEmojis: ['🐉', '👹', '🦑', '🦖']
+        // NEW: Temporary stats that reset on death
+        let runStats = {
+            bonusAtk: 0,
+            splashDmg: 0.0, // Percentage (0.1 = 10%)
+            doubleHitChance: 0.0, // Percentage (0.1 = 10%)
+            critChance: 0.0 // Percentage
         };
 
+        let activeEnemies = [];
+        let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
         let enemyAttackTimer;
 
         // --- NAVIGATION LOGIC ---
-        const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
+        const screens = ['home', 'heroes', 'gear', 'talents', 'game'];
 
         function openMenu(targetScreen) {
-            if(targetScreen !== 'game') { clearInterval(enemyAttackTimer); }
+            if(targetScreen !== 'game') clearInterval(enemyAttackTimer);
 
-            screens.forEach(screen => document.getElementById('screen-' + screen).classList.remove('active'));
+            screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
             document.getElementById('screen-' + targetScreen).classList.add('active');
 
             if(targetScreen !== 'game') {
                 document.getElementById('bottom-nav-bar').style.display = 'flex';
-                screens.forEach(screen => {
-                    if(document.getElementById('btn-' + screen)) document.getElementById('btn-' + screen).classList.remove('active');
-                });
+                screens.forEach(s => { if(document.getElementById('btn-' + s)) document.getElementById('btn-' + s).classList.remove('active'); });
                 document.getElementById('btn-' + targetScreen).classList.add('active');
             } else {
                 document.getElementById('bottom-nav-bar').style.display = 'none';
@@ -359,7 +294,7 @@
 
         function selectHero(heroId) {
             player.currentHero = heroId;
-            document.querySelectorAll('.card').forEach(card => card.classList.remove('selected'));
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
             document.getElementById('card-' + heroId).classList.add('selected');
             document.getElementById('home-hero').innerText = heroData[heroId].emoji;
             document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
@@ -370,23 +305,27 @@
             else { alert("You need Talent Points! Keep fighting to level up."); }
         }
 
-        function getTotalDamage() {
-            let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage;
-            return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)));
-        }
-
-        function buyUpgrade() {
+        function buyPermanentUpgrade() {
             if(player.gold >= 100) { player.gold -= 100; player.bonusDamage += 15; updateUI(); } 
             else { alert("Not enough Gold!"); }
         }
 
-        // --- COMBAT & WAVE LOGIC ---
+        // --- COMBAT CORE ---
+        function getTotalDamage() {
+            let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage + runStats.bonusAtk;
+            return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)));
+        }
+
         function startGame() {
+            // Reset Run Stats
+            runStats = { bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0 };
+            waveManager.wave = 1;
             player.currentHealth = player.maxHealth; 
             
             document.getElementById('combat-controls').style.display = 'block';
             document.getElementById('game-over-ui').style.display = 'none';
-            document.getElementById('screen-game').style.backgroundColor = '#2c3e50';
+            document.getElementById('wave-upgrade-ui').style.display = 'none';
+            waveManager.isUpgrading = false;
 
             openMenu('game');
             spawnEnemyPack();
@@ -395,44 +334,42 @@
             enemyAttackTimer = setInterval(enemyStrikesBack, 1500);
         }
 
+        function getLevelAndWave() {
+            let stageLvl = Math.floor((waveManager.wave - 1) / 15) + 1;
+            let stageWave = ((waveManager.wave - 1) % 15) + 1;
+            return { level: stageLvl, wave: stageWave, isBoss: stageWave === 15 };
+        }
+
         function spawnEnemyPack() {
             let container = document.getElementById('enemy-container');
             let textEl = document.getElementById('level-wave-text');
             
-            container.innerHTML = ''; // Clear previous wave
-            activeEnemies = []; // Reset array
+            container.innerHTML = ''; 
+            activeEnemies = []; 
+            waveManager.isUpgrading = false;
 
-            let isBoss = (waveManager.wave % 15 === 0);
+            let stageInfo = getLevelAndWave();
 
-            if (isBoss) {
-                // SPAWN 1 MASSIVE BOSS
-                let bossMaxHp = 200 * waveManager.wave;
-                let bossDamage = 8 * waveManager.wave;
-                let bossEmoji = waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)];
+            if (stageInfo.isBoss) {
+                let bossHp = 200 * waveManager.wave;
+                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: 8 * waveManager.wave });
                 
-                activeEnemies.push({ id: 0, maxHp: bossMaxHp, hp: bossMaxHp, damage: bossDamage, isBoss: true });
-                
-                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS WAVE ${waveManager.wave} ⚠️</span>`;
+                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
                 
                 container.innerHTML = `
                     <div class="enemy-unit boss" id="enemy-0">
-                        <div class="emoji">${bossEmoji}</div>
+                        <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
                         <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                     </div>`;
             } else {
-                // SPAWN 1 TO 6 NORMAL ENEMIES
-                // Cycle 1-14 gives us packs from 1 to 6 enemies (e.g., Wave 1 is 1 enemy, Wave 12 is 6 enemies)
                 let enemyCount = Math.min(6, Math.floor(((waveManager.wave - 1) % 15) / 2) + 1);
-                
-                let normMaxHp = 50 * waveManager.wave;
-                let normDamage = 3 * waveManager.wave;
+                let normHp = 50 * waveManager.wave;
                 let packEmoji = waveManager.normalEmojis[Math.floor(Math.random() * waveManager.normalEmojis.length)];
 
-                textEl.innerHTML = `Wave ${waveManager.wave} <span style="font-size: 1rem; color:#aaa;">(x${enemyCount} Pack)</span>`;
+                textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
                 for(let i = 0; i < enemyCount; i++) {
-                    activeEnemies.push({ id: i, maxHp: normMaxHp, hp: normMaxHp, damage: normDamage, isBoss: false });
-                    
+                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: 3 * waveManager.wave });
                     container.innerHTML += `
                         <div class="enemy-unit" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
@@ -442,115 +379,167 @@
             }
         }
 
-        function attackEnemy() {
-            // Find the FIRST alive enemy in the array to focus fire
-            let target = activeEnemies.find(e => e.hp > 0);
-            if (!target) return; // Everyone is dead
+        // Apply visual damage
+        function animateHit(unitId, isCrit) {
+            let unitDiv = document.getElementById(`enemy-${unitId}`);
+            let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
+            let target = activeEnemies.find(e => e.id === unitId);
 
-            target.hp -= getTotalDamage();
-            
-            let unitDiv = document.getElementById(`enemy-${target.id}`);
-            let hpBarDiv = document.getElementById(`enemy-hp-bar-${target.id}`);
-
-            // Visually show taking damage
             if (unitDiv) {
                 unitDiv.classList.add('hit-anim');
-                setTimeout(() => unitDiv.classList.remove('hit-anim'), 200);
+                if(isCrit) unitDiv.style.filter = "drop-shadow(0 0 10px red)"; // Crit visual flair
+                setTimeout(() => {
+                    unitDiv.classList.remove('hit-anim');
+                    unitDiv.style.filter = "";
+                }, 200);
             }
-            
-            // Update the specific mini HP bar
-            if (hpBarDiv) {
-                let pct = Math.max(0, (target.hp / target.maxHp) * 100);
-                hpBarDiv.style.width = pct + '%';
+            if (hpBarDiv && target) {
+                hpBarDiv.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + '%';
+            }
+            if (target && target.hp <= 0 && unitDiv) {
+                unitDiv.classList.add('dead');
+                setTimeout(() => unitDiv.style.display = 'none', 300); // Remove from layout after death
+            }
+        }
+
+        function attackEnemy() {
+            if(waveManager.isUpgrading) return; // Can't attack during shop phase
+
+            let strikes = (Math.random() < runStats.doubleHitChance) ? 2 : 1;
+
+            for (let s = 0; s < strikes; s++) {
+                let target = activeEnemies.find(e => e.hp > 0);
+                if (!target) break; // Pack is dead
+
+                let dmg = getTotalDamage();
+                let isCrit = Math.random() < runStats.critChance;
+                if (isCrit) dmg *= 2.5; // Crits do 250% damage
+
+                target.hp -= dmg;
+                animateHit(target.id, isCrit);
+
+                // Calculate Splash Damage to all OTHER enemies
+                if (runStats.splashDmg > 0) {
+                    let sDmg = dmg * runStats.splashDmg;
+                    activeEnemies.forEach(e => {
+                        if (e.id !== target.id && e.hp > 0) {
+                            e.hp -= sDmg;
+                            animateHit(e.id, false);
+                        }
+                    });
+                }
             }
 
-            // Handle individual death
-            if (target.hp <= 0 && unitDiv) {
-                unitDiv.classList.add('dead'); // Grays out the enemy and lowers opacity
-            }
-
-            // Check if entire pack is dead
             if (activeEnemies.every(e => e.hp <= 0)) {
-                setTimeout(packDefeated, 400); // Wait half a second before spawning next wave
+                setTimeout(packDefeated, 400); 
             }
         }
 
         function enemyStrikesBack() {
-            if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0) return;
+            if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
             
             let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
-            if(aliveEnemies.length === 0) return;
-
-            // Make every alive enemy attack the player! Stagger their lunges slightly.
             aliveEnemies.forEach((e, index) => {
                 setTimeout(() => {
-                    if(player.currentHealth <= 0) return; // Stop hitting if player is already dead
+                    if(player.currentHealth <= 0 || waveManager.isUpgrading) return; 
 
-                    // Lunge animation
                     let unitDiv = document.getElementById(`enemy-${e.id}`);
                     if(unitDiv) {
                         unitDiv.classList.add('attack-anim');
                         setTimeout(() => unitDiv.classList.remove('attack-anim'), 300);
                     }
                     
-                    // Deal Damage
                     player.currentHealth -= e.damage;
                     updatePlayerHealthBar();
 
-                    // Screen Flash
                     let container = document.getElementById('game-container');
                     container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
                     setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
-                    if (player.currentHealth <= 0) { triggerGameOver(); }
-                }, index * 150); // 150ms delay between each enemy jumping
+                    if (player.currentHealth <= 0) triggerGameOver();
+                }, index * 150); 
             });
         }
 
         function updatePlayerHealthBar() {
             let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
-            let playerHpBar = document.getElementById('player-health');
-            
-            playerHpBar.style.width = pPercent + '%';
-            document.getElementById('player-hp-text').innerText = Math.max(0, player.currentHealth) + '/' + player.maxHealth;
+            let pBar = document.getElementById('player-health');
+            pBar.style.width = pPercent + '%';
+            document.getElementById('player-hp-text').innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
 
-            // Color shifts
-            if (pPercent <= 30) { playerHpBar.style.backgroundColor = '#e74c3c'; } 
-            else if (pPercent <= 50) { playerHpBar.style.backgroundColor = '#e67e22'; } 
-            else if (pPercent <= 70) { playerHpBar.style.backgroundColor = '#f1c40f'; } 
-            else { playerHpBar.style.backgroundColor = '#2ecc71'; }
+            if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
+            else if (pPercent <= 50) pBar.style.backgroundColor = '#e67e22';
+            else if (pPercent <= 70) pBar.style.backgroundColor = '#f1c40f';
+            else pBar.style.backgroundColor = '#2ecc71';
         }
 
+        // --- END OF WAVE & UPGRADE UI ---
         function packDefeated() {
-            let isBoss = (waveManager.wave % 15 === 0);
+            waveManager.isUpgrading = true; // Pause combat
+            let isBoss = getLevelAndWave().isBoss;
             let packSize = activeEnemies.length;
 
-            // Distribute Gold
             let baseGold = isBoss ? (150 * waveManager.wave) : (20 * waveManager.wave * packSize);
             player.gold += Math.floor(baseGold * (1 + (player.talents.gold * 0.20)));
-            
-            // Distribute Gems
-            if (isBoss) { player.gems += 5; } 
-            else if (Math.random() > 0.8) { player.gems += 1; } 
+            if (isBoss) player.gems += 5; else if (Math.random() > 0.8) player.gems += 1; 
 
-            // Distribute EXP
             let expGained = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             player.exp += expGained;
             
             while(player.exp >= player.expNeeded) {
-                player.level++;
-                player.exp -= player.expNeeded;
-                player.expNeeded = Math.floor(player.expNeeded * 1.5);
-                player.talentPoints++;
-                player.maxHealth += 20; 
-                player.currentHealth = player.maxHealth; // Full heal on level up
+                player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
+                player.talentPoints++; player.maxHealth += 20; player.currentHealth = player.maxHealth; 
             }
 
-            waveManager.wave++;
             updateUI();
+            showUpgradeShop();
+        }
+
+        function showUpgradeShop() {
+            document.getElementById('wave-upgrade-ui').style.display = 'flex';
+            let list = document.getElementById('upgrade-list');
+            list.innerHTML = '';
+
+            let baseCost = 25 * waveManager.wave;
+
+            const upgrades = [
+                { id: 'atk', name: "Sharpen Blade", desc: "+15 Base Attack", cost: baseCost },
+                { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", cost: Math.floor(baseCost * 1.5) },
+                { id: 'double', name: "Lightning Reflex", desc: "+10% Chance to Double Strike", cost: Math.floor(baseCost * 1.5) },
+                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Hit Chance", cost: Math.floor(baseCost * 1.5) }
+            ];
+
+            upgrades.forEach(u => {
+                let canAfford = player.gold >= u.cost;
+                list.innerHTML += `
+                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost})">
+                        <div class="info"><h4>${u.name}</h4><p>${u.desc}</p></div>
+                        <div class="cost">${u.cost} 🪙</div>
+                    </button>`;
+            });
+        }
+
+        function buyRunUpgrade(type, cost) {
+            if(player.gold >= cost) {
+                player.gold -= cost;
+                
+                if(type === 'atk') runStats.bonusAtk += 15;
+                if(type === 'splash') runStats.splashDmg += 0.1;
+                if(type === 'double') runStats.doubleHitChance += 0.1;
+                if(type === 'crit') runStats.critChance += 0.1;
+                
+                updateUI();
+                continueToNextWave();
+            }
+        }
+
+        function continueToNextWave() {
+            document.getElementById('wave-upgrade-ui').style.display = 'none';
+            waveManager.wave++;
             spawnEnemyPack();
         }
 
+        // --- GAME OVER LOGIC ---
         function triggerGameOver() {
             player.currentHealth = 0;
             clearInterval(enemyAttackTimer); 
