@@ -155,11 +155,12 @@
         @keyframes playerLunge { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-25px) scale(1.15); } 100% { transform: translateY(0) scale(1); } }
 
         /* --- END OF WAVE & SUMMARY UI --- */
-        #wave-upgrade-ui, #run-summary-ui {
+        #wave-upgrade-ui, #run-summary-ui, #boss-clear-ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(44, 62, 80, 0.95); z-index: 60; display: none; flex-direction: column;
-            align-items: center; justify-content: center; padding: 20px; text-align: center;
+            align-items: center; justify-content: center; padding: 20px; text-align: center; overflow-y: auto;
         }
+
         .upgrade-btn {
             background: #fff; border: none; border-radius: 10px; padding: 15px; width: 100%;
             margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
@@ -171,15 +172,19 @@
         .upgrade-btn .info h4 { margin: 0; color: #2c3e50; font-size: 1.1rem;}
         .upgrade-btn .info p { margin: 0; color: #7f8c8d; font-size: 0.8rem; font-weight: bold; }
         .upgrade-btn .cost { font-weight: bold; color: #f39c12; font-size: 1.2rem;}
-        .upgrade-btn.disabled { opacity: 0.5; pointer-events: none; }
+        
+        /* Cursed Relic specific styling */
+        .cursed-btn { background: #1a0b2e; border: 2px solid #8e44ad; }
+        .cursed-btn .info h4 { color: #9b59b6; }
+        .cursed-btn .info p { color: #ecf0f1; }
+        .cursed-btn .curse-text { color: #e74c3c; font-size: 0.75rem; font-weight: bold; margin-top: 3px;}
+        .cursed-btn .cost { color: #fff; font-size: 2rem; }
 
-        /* Top Left Retreat Button */
-        .retreat-btn {
-            position: absolute; top: 15px; left: 15px; font-size: 1.5rem; 
-            background: rgba(0,0,0,0.3); border: none; border-radius: 10px; padding: 5px 10px;
-            cursor: pointer; color: white; transition: background 0.2s; z-index: 20;
+        .loot-panel {
+            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; width: 100%; margin-bottom: 20px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3); display: flex; justify-content: space-around;
         }
-        .retreat-btn:hover { background: rgba(0,0,0,0.6); }
+        .loot-item { display: flex; flex-direction: column; align-items: center; font-size: 1.2rem; font-weight: bold; }
 
     </style>
 </head>
@@ -262,8 +267,6 @@
 
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
             
-            <button class="retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
-
             <div style="width: 100%;">
                 <h2 id="level-wave-text" style="color: #f1c40f; margin-top: 10px;">Level 1 - Wave 1</h2>
                 <div id="enemy-container"></div>
@@ -289,21 +292,39 @@
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
                 <p style="margin-bottom: 25px;">Select an upgrade for this run.</p>
                 <div id="upgrade-list" style="width: 100%;"></div>
-                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
+            </div>
+
+            <div id="boss-clear-ui">
+                <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 2.5rem;">BOSS SLAIN!</h1>
+                <p style="margin-bottom: 15px;">You found powerful cursed relics...</p>
+                
+                <div class="loot-panel">
+                    <div class="loot-item"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
+                    <div class="loot-item"><span style="font-size: 1.5rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
+                    <div class="loot-item"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
+                </div>
+
+                <div id="cursed-list" style="width: 100%; margin-bottom: 10px;"></div>
+
+                <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+                    <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Escape & Claim</button>
+                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #e74c3c; box-shadow: 0 5px 0 #c0392b;" id="btn-descend" disabled>Descend Deeper</button>
+                </div>
             </div>
 
             <div id="run-summary-ui">
-                <h1 id="run-end-title" style="font-family: 'Fredoka One', cursive; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">RUN ENDED</h1>
+                <h1 style="color: #e74c3c; font-family: 'Fredoka One'; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
                 <p style="margin-bottom: 25px; font-size: 1.2rem;">Run Summary</p>
                 
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; width: 80%; margin-bottom: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);">
                     <div style="font-size: 1.5rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                        <span>💀 Kills:</span>
-                        <span id="summary-kills" style="color: #e74c3c; font-weight: bold;">0</span>
+                        <span>💀 Kills:</span> <span id="summary-kills" style="color: #e74c3c; font-weight: bold;">0</span>
+                    </div>
+                    <div style="font-size: 1.5rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                        <span>🪙 Gold:</span> <span id="summary-gold" style="color: #f1c40f; font-weight: bold;">0</span>
                     </div>
                     <div style="font-size: 1.5rem; display: flex; justify-content: space-between; padding-top: 5px;">
-                        <span>🌟 EXP Gained:</span>
-                        <span id="summary-exp" style="color: #f1c40f; font-weight: bold;">0</span>
+                        <span>🌟 EXP:</span> <span id="summary-exp" style="color: #9b59b6; font-weight: bold;">0</span>
                     </div>
                 </div>
 
@@ -331,26 +352,37 @@
         let player = {
             level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
             gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0, 
-            talents: { damage: 0, gold: 0 },
-            maxHealth: 100, currentHealth: 100
+            talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100
         };
 
-        // Run Stats (Now tracks EXP and Kills for the summary screen)
+        // Run Stats (Now includes Multipliers for Curses)
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
-            expGained: 0, enemiesKilled: 0
+            dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+            expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0
         };
 
         let activeEnemies = [];
         let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
         
-        // BOSS SKILLS DATABASE
+        // BOSS SKILLS & CURSED RELICS DATABASE
         const bossSkillsData = [
             { id: 'crit', name: 'Critical Strike', icon: '🎯', desc: '25% chance for 2x DMG' },
             { id: 'armor', name: 'Thick Hide', icon: '🛡️', desc: 'Takes 30% less DMG' },
             { id: 'magic', name: 'Magic Aura', icon: '✨', desc: 'Ignores Player Armor/Dodge' },
             { id: 'vampire', name: 'Vampiric', icon: '🦇', desc: 'Heals 50% of DMG dealt' }
+        ];
+
+        const cursedRelicsData = [
+            { id: 'glass', name: "Glass Cannon", desc: "+20% DMG, +25% Crit", curseDesc: "-30% Max HP", icon: "🧨" },
+            { id: 'berserk', name: "Berserker's Frenzy", desc: "+40% Attack Speed", curseDesc: "-15 Base Attack", icon: "🩸" },
+            { id: 'phantom', name: "Phantom Step", desc: "+15% Dodge Chance", curseDesc: "-20% Max HP", icon: "👻" },
+            { id: 'giant', name: "Giant's Burden", desc: "+30 Base Attack, +10% Splash", curseDesc: "-20% Attack Speed", icon: "🗿" },
+            { id: 'blood', name: "Blood Pact", desc: "+10% Lifesteal", curseDesc: "-15% Damage Reduction", icon: "💉" },
+            { id: 'midas', name: "Midas Curse", desc: "+50% Gold Earned", curseDesc: "Enemies have +20% HP", icon: "👑" },
+            { id: 'reckless', name: "Reckless Abandon", desc: "+15% Double Strike", curseDesc: "Evasion drops to 0%", icon: "⚔️" },
+            { id: 'spiked', name: "Spiked Armor", desc: "+20% Damage Reduction", curseDesc: "-10% Attack Speed", icon: "🐢" }
         ];
 
         let enemyAttackTimer;
@@ -360,11 +392,7 @@
         const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
 
         function openMenu(targetScreen) {
-            if(targetScreen !== 'game') {
-                clearInterval(enemyAttackTimer);
-                clearInterval(playerAttackTimer);
-            }
-
+            if(targetScreen !== 'game') { clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer); }
             screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
             document.getElementById('screen-' + targetScreen).classList.add('active');
 
@@ -387,7 +415,7 @@
 
         function upgradeTalent(type) {
             if (player.talentPoints > 0) { player.talentPoints--; player.talents[type]++; updateUI(); } 
-            else { alert("You need Talent Points! Keep fighting to level up."); }
+            else { alert("You need Talent Points!"); }
         }
 
         function buyPermanentUpgrade() {
@@ -396,19 +424,15 @@
         }
 
         function buyPremium(item) {
-            if (item === 'gold') {
-                if (player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); alert("Purchased 1,000 Gold!"); } 
-                else { alert("Not enough Gems!"); }
-            } else if (item === 'damage') {
-                if (player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); alert("Purchased +50 Permanent Damage!"); } 
-                else { alert("Not enough Gems!"); }
-            }
+            if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); alert("Purchased 1,000 Gold!"); } 
+            else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); alert("Purchased +50 Permanent DMG!"); } 
+            else { alert("Not enough Gems!"); }
         }
 
         // --- COMBAT CORE ---
         function getTotalDamage() {
             let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage + runStats.bonusAtk;
-            return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)));
+            return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)) * runStats.dmgMultiplier);
         }
 
         function updateCombatStatsPanel() {
@@ -450,7 +474,8 @@
             runStats = { 
                 bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
                 lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
-                expGained: 0, enemiesKilled: 0 // Reset run tracking
+                dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+                expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0 
             };
             
             waveManager.wave = 1;
@@ -458,6 +483,7 @@
             
             document.getElementById('run-summary-ui').style.display = 'none';
             document.getElementById('wave-upgrade-ui').style.display = 'none';
+            document.getElementById('boss-clear-ui').style.display = 'none';
             waveManager.isUpgrading = false;
 
             updateCombatStatsPanel();
@@ -471,7 +497,7 @@
 
         function startPlayerAutoAttack() {
             clearInterval(playerAttackTimer);
-            let interval = 1000 / (1 + runStats.atkSpeedBonus);
+            let interval = 1000 / Math.max(0.1, (1 + runStats.atkSpeedBonus));
             playerAttackTimer = setInterval(autoAttackEnemy, interval);
         }
 
@@ -485,24 +511,18 @@
             let container = document.getElementById('enemy-container');
             let textEl = document.getElementById('level-wave-text');
             
-            container.innerHTML = ''; 
-            activeEnemies = []; 
-            waveManager.isUpgrading = false;
+            container.innerHTML = ''; activeEnemies = []; waveManager.isUpgrading = false;
 
             let stageInfo = getLevelAndWave();
 
             if (stageInfo.isBoss) {
-                // Boss Scaling
-                let bossHp = 150 + (waveManager.wave * 25);
+                let bossHp = Math.floor((150 + (waveManager.wave * 25)) * runStats.enemyHpMultiplier);
                 let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
-                
-                // Assign Random Boss Skill
                 let bSkill = bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)];
 
                 activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false });
                 
                 textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
-                
                 container.innerHTML = `
                     <div class="enemy-unit boss" id="enemy-0">
                         <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
@@ -511,11 +531,9 @@
                         <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
                     </div>`;
             } else {
-                // Normal Enemy Scaling
                 let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
-                let normHp = 20 + (waveManager.wave * 10);
+                let normHp = Math.floor((20 + (waveManager.wave * 10)) * runStats.enemyHpMultiplier);
                 let normDmg = Math.max(1, Math.floor(waveManager.wave * 0.6));
-
                 let packEmoji = waveManager.normalEmojis[Math.floor(Math.random() * waveManager.normalEmojis.length)];
 
                 textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
@@ -540,36 +558,25 @@
 
             if (!target) return;
 
-            // Visual impact
             if (unitDiv) {
                 unitDiv.classList.add('hit-anim');
                 if(isCrit) {
                     unitDiv.style.filter = "drop-shadow(0 0 10px red)"; 
                     spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit");
-                } else {
-                    spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg");
-                }
+                } else { spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg"); }
                 setTimeout(() => { unitDiv.classList.remove('hit-anim'); unitDiv.style.filter = ""; }, 200);
             }
 
-            // Update Bars and Text
             let displayHp = Math.max(0, Math.ceil(target.hp));
             if (hpBarDiv) hpBarDiv.style.width = (displayHp / target.maxHp) * 100 + '%';
             if (hpTextDiv) hpTextDiv.innerText = `${displayHp}/${target.maxHp}`;
             
-            // Death State
             if (target.hp <= 0 && !target.isDead) {
-                target.isDead = true;
-                runStats.enemiesKilled++; // Track kill for the run summary
-
-                if(unitDiv) {
-                    unitDiv.classList.add('dead');
-                    setTimeout(() => unitDiv.style.display = 'none', 300); 
-                }
+                target.isDead = true; runStats.enemiesKilled++;
+                if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
             }
         }
 
-        // AUTO-ATTACK LOOP
         function autoAttackEnemy() {
             if(waveManager.isUpgrading || player.currentHealth <= 0 || !document.getElementById('screen-game').classList.contains('active')) return;
             
@@ -577,10 +584,7 @@
             if(aliveEnemies.length === 0) return;
 
             let pIcon = document.getElementById('player-combat-icon');
-            if(pIcon) {
-                pIcon.classList.add('player-attack-anim');
-                setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200);
-            }
+            if(pIcon) { pIcon.classList.add('player-attack-anim'); setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); }
 
             let strikes = (Math.random() < runStats.doubleHitChance) ? 2 : 1;
 
@@ -593,31 +597,20 @@
                     let isCrit = Math.random() < runStats.critChance;
                     if (isCrit) dmg = Math.floor(dmg * 2.5); 
 
-                    // BOSS SKILL: Thick Hide (Armor)
-                    if (target.skill === 'armor') {
-                        dmg = Math.floor(dmg * 0.70); // 30% damage reduction
-                    }
+                    if (target.skill === 'armor') dmg = Math.floor(dmg * 0.70); 
 
                     target.hp -= dmg;
                     animateHit(target.id, dmg, isCrit);
 
-                    // Lifesteal
                     if (runStats.lifesteal > 0) {
                         let healAmount = Math.floor(dmg * runStats.lifesteal);
-                        if (healAmount > 0) {
-                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
-                            updatePlayerHealthBar();
-                        }
+                        if (healAmount > 0) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount); updatePlayerHealthBar(); }
                     }
 
-                    // Splash
                     if (runStats.splashDmg > 0) {
                         let sDmg = Math.floor(dmg * runStats.splashDmg);
                         activeEnemies.forEach(e => {
-                            if (e.id !== target.id && e.hp > 0) {
-                                e.hp -= sDmg;
-                                animateHit(e.id, sDmg, false);
-                            }
+                            if (e.id !== target.id && e.hp > 0) { e.hp -= sDmg; animateHit(e.id, sDmg, false); }
                         });
                     }
                 }, s * 150);
@@ -635,51 +628,31 @@
                     if(player.currentHealth <= 0 || waveManager.isUpgrading) return; 
 
                     let unitDiv = document.getElementById(`enemy-${e.id}`);
-                    if(unitDiv) {
-                        unitDiv.classList.add('attack-anim');
-                        setTimeout(() => unitDiv.classList.remove('attack-anim'), 300);
-                    }
+                    if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
                     
                     let incomingDmg = e.damage;
 
-                    // BOSS SKILL: Critical Strike
-                    if (e.skill === 'crit' && Math.random() < 0.25) {
-                        incomingDmg = Math.floor(incomingDmg * 2);
-                        spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg");
-                    }
-                    
-                    // Dodge Logic (Ignored by Boss Magic Skill)
-                    if (e.skill !== 'magic' && Math.random() < runStats.evasion) {
-                        spawnFloatingText('player-combat-area', "MISS!", "float-miss");
-                        return; 
-                    }
-
-                    // Armor Logic (Ignored by Boss Magic Skill)
-                    if (e.skill !== 'magic') {
-                        incomingDmg = Math.floor(incomingDmg * (1 - runStats.damageReduction));
-                    }
+                    if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg"); }
+                    if (e.skill !== 'magic' && Math.random() < runStats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
+                    if (e.skill !== 'magic') { incomingDmg = Math.floor(incomingDmg * (1 - runStats.damageReduction)); }
                     if(incomingDmg < 1) incomingDmg = 1; 
 
-                    // Deal Damage
                     player.currentHealth -= incomingDmg;
                     updatePlayerHealthBar();
                     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
-                    // BOSS SKILL: Vampiric
                     if (e.skill === 'vampire') {
                         e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
-                        let hpBarDiv = document.getElementById(`enemy-hp-bar-${e.id}`);
-                        let hpTextDiv = document.getElementById(`enemy-hp-text-${e.id}`);
+                        let hpBarDiv = document.getElementById(`enemy-hp-bar-${e.id}`); let hpTextDiv = document.getElementById(`enemy-hp-text-${e.id}`);
                         if (hpBarDiv) hpBarDiv.style.width = (e.hp / e.maxHp) * 100 + '%';
                         if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(e.hp)}/${e.maxHp}`;
                     }
 
-                    // Flash Screen
                     let container = document.getElementById('game-container');
                     container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
                     setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
-                    if (player.currentHealth <= 0) triggerGameOver();
+                    if (player.currentHealth <= 0) { triggerGameOver(); }
                 }, index * 150); 
             });
         }
@@ -704,129 +677,154 @@
             let isBoss = getLevelAndWave().isBoss;
             let packSize = activeEnemies.length;
 
-            // Gold and Gems are still immediate rewards to let players buy shop items
             let baseGold = isBoss ? (150 * waveManager.wave) : (20 * waveManager.wave * packSize);
-            player.gold += Math.floor(baseGold * (1 + (player.talents.gold * 0.20)));
-            if (isBoss) player.gems += 5; else if (Math.random() > 0.8) player.gems += 1; 
+            let goldEarned = Math.floor(baseGold * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
+            runStats.goldGained += goldEarned;
+            
+            let gemsEarned = 0;
+            if (isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1; 
+            runStats.gemsGained += gemsEarned;
 
-            // Track EXP for the end of the run summary (does not immediately apply)
             let expGainedThisWave = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             runStats.expGained += expGainedThisWave;
 
-            updateUI();
-            showUpgradeShop();
+            if(isBoss) { showBossClearUI(); } 
+            else { showUpgradeShop(); }
         }
 
         function showUpgradeShop() {
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
-            let list = document.getElementById('upgrade-list');
-            list.innerHTML = '';
-
+            let list = document.getElementById('upgrade-list'); list.innerHTML = '';
+            
             let baseCost = Math.floor(30 * Math.pow(1.15, waveManager.wave - 1));
 
             let allUpgrades = [
                 { id: 'atk', name: "Sharpen Blade", desc: "+10 Base Attack", cost: baseCost },
                 { id: 'spd', name: "Swift Strikes", desc: "+5% Attack Speed", cost: Math.floor(baseCost * 1.5) },
                 { id: 'splash', name: "Explosive Hits", desc: "+5% Splash Damage", cost: Math.floor(baseCost * 1.5) },
-                { id: 'double', name: "Lightning Reflex", desc: "+5% Double Strike Chance", cost: Math.floor(baseCost * 1.5) },
+                { id: 'double', name: "Lightning Reflex", desc: "+5% Double Strike", cost: Math.floor(baseCost * 1.5) },
                 { id: 'crit', name: "Deadly Aim", desc: "+5% Critical Chance", cost: Math.floor(baseCost * 1.5) },
                 { id: 'lifesteal', name: "Vampiric Touch", desc: "+2% Lifesteal", cost: Math.floor(baseCost * 2) },
                 { id: 'evasion', name: "Shadow Step", desc: "+3% Dodge Chance", cost: Math.floor(baseCost * 1.5) },
                 { id: 'armor', name: "Iron Skin", desc: "+4% Damage Reduction", cost: Math.floor(baseCost * 1.5) }
             ];
 
-            for (let i = allUpgrades.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [allUpgrades[i], allUpgrades[j]] = [allUpgrades[j], allUpgrades[i]];
-            }
+            for (let i = allUpgrades.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allUpgrades[i], allUpgrades[j]] = [allUpgrades[j], allUpgrades[i]]; }
 
-            let selectedUpgrades = allUpgrades.slice(0, 3);
-
-            selectedUpgrades.forEach(u => {
-                let canAfford = player.gold >= u.cost;
+            allUpgrades.slice(0, 3).forEach(u => {
+                let canAfford = runStats.goldGained >= u.cost; // Use run gold instead of player gold
                 list.innerHTML += `
-                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost})">
+                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost}, false)">
                         <div class="info"><h4>${u.name}</h4><p>${u.desc}</p></div>
                         <div class="cost">${u.cost} 🪙</div>
                     </button>`;
             });
         }
 
-        function buyRunUpgrade(type, cost) {
-            if(player.gold >= cost) {
-                player.gold -= cost;
-                
-                if(type === 'atk') runStats.bonusAtk += 10;
-                if(type === 'spd') { runStats.atkSpeedBonus += 0.05; startPlayerAutoAttack(); } 
-                if(type === 'splash') runStats.splashDmg += 0.05;
-                if(type === 'double') runStats.doubleHitChance += 0.05;
-                if(type === 'crit') runStats.critChance += 0.05;
-                if(type === 'lifesteal') runStats.lifesteal += 0.02;
-                if(type === 'evasion') runStats.evasion += 0.03;
-                if(type === 'armor') runStats.damageReduction += 0.04;
-                
-                updateUI();
-                updateCombatStatsPanel(); 
-                continueToNextWave(); 
-            }
+        function showBossClearUI() {
+            document.getElementById('boss-clear-ui').style.display = 'flex';
+            document.getElementById('boss-ui-gold').innerText = runStats.goldGained;
+            document.getElementById('boss-ui-gems').innerText = runStats.gemsGained;
+            document.getElementById('boss-ui-exp').innerText = runStats.expGained;
+
+            let list = document.getElementById('cursed-list'); list.innerHTML = '';
+            
+            // Randomize and pick 1 cursed relic
+            let shuffledCurses = cursedRelicsData.sort(() => 0.5 - Math.random());
+            let c = shuffledCurses[0];
+
+            list.innerHTML = `
+                <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
+                    <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
+                    <div class="cost">${c.icon}</div>
+                </button>`;
+            
+            document.getElementById('btn-descend').disabled = true; // Must pick relic to continue
+        }
+
+        function buyRunUpgrade(type, cost, isCursed) {
+            runStats.goldGained -= cost; // Spend run gold
+            
+            if(type === 'atk') runStats.bonusAtk += 10;
+            if(type === 'spd') { runStats.atkSpeedBonus += 0.05; startPlayerAutoAttack(); } 
+            if(type === 'splash') runStats.splashDmg += 0.05;
+            if(type === 'double') runStats.doubleHitChance += 0.05;
+            if(type === 'crit') runStats.critChance += 0.05;
+            if(type === 'lifesteal') runStats.lifesteal += 0.02;
+            if(type === 'evasion') runStats.evasion += 0.03;
+            if(type === 'armor') runStats.damageReduction += 0.04;
+            
+            updateCombatStatsPanel(); 
+            continueToNextWave(); 
+        }
+
+        function selectCursedRelic(id) {
+            // Apply Cursed Stats
+            if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
+            if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; startPlayerAutoAttack(); }
+            if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
+            if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; startPlayerAutoAttack(); }
+            if(id === 'blood') { runStats.lifesteal += 0.10; runStats.damageReduction -= 0.15; }
+            if(id === 'midas') { runStats.goldMultiplier += 0.50; runStats.enemyHpMultiplier += 0.20; }
+            if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; } // Force 0%
+            if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; startPlayerAutoAttack(); }
+            
+            updateCombatStatsPanel();
+            
+            // Visual feedback on selection
+            document.getElementById(`btn-curse-${id}`).style.borderColor = '#2ecc71';
+            document.getElementById('btn-descend').disabled = false;
+        }
+
+        function adjustMaxHp(percentChange) {
+            let changeAmount = Math.floor(player.maxHealth * percentChange);
+            player.maxHealth += changeAmount;
+            if(player.currentHealth > player.maxHealth) player.currentHealth = player.maxHealth;
+            updatePlayerHealthBar();
         }
 
         function continueToNextWave() {
             document.getElementById('wave-upgrade-ui').style.display = 'none';
+            document.getElementById('boss-clear-ui').style.display = 'none';
             waveManager.wave++;
             spawnEnemyPack();
         }
 
         // --- GAME OVER & RUN SUMMARY LOGIC ---
-        function endRun(reasonTitle) {
-            clearInterval(enemyAttackTimer); 
-            clearInterval(playerAttackTimer);
+        function triggerGameOver() {
+            player.currentHealth = 0;
+            updatePlayerHealthBar();
+            clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer);
+            
             document.getElementById('wave-upgrade-ui').style.display = 'none';
+            document.getElementById('boss-clear-ui').style.display = 'none';
+            document.getElementById('combat-controls').style.display = 'none';
             
-            // Populate Summary
+            // Show Summary
             let summaryUi = document.getElementById('run-summary-ui');
-            let titleEl = document.getElementById('run-end-title');
-            
-            titleEl.innerText = reasonTitle;
-            titleEl.style.color = reasonTitle === 'DEFEATED' ? '#e74c3c' : '#f1c40f';
-            
             document.getElementById('summary-kills').innerText = runStats.enemiesKilled;
+            document.getElementById('summary-gold').innerText = runStats.goldGained;
             document.getElementById('summary-exp').innerText = runStats.expGained;
             
             summaryUi.style.display = 'flex';
         }
 
-        function triggerGameOver() {
-            player.currentHealth = 0;
-            updatePlayerHealthBar();
-            endRun('DEFEATED');
-        }
-
-        function fleeCombat() {
-            endRun('RETREATED');
-        }
-
         function collectRunRewards() {
-            // Add the tracked EXP to the player
+            // Apply all tracked rewards to player profile
+            player.gold += runStats.goldGained;
+            player.gems += runStats.gemsGained;
             player.exp += runStats.expGained;
             
-            // Perform Level Ups if applicable
             let leveledUp = false;
             while(player.exp >= player.expNeeded) {
-                player.level++; 
-                player.exp -= player.expNeeded; 
-                player.expNeeded = Math.floor(player.expNeeded * 1.5);
-                player.talentPoints++; 
-                player.maxHealth += 25; 
-                player.currentHealth = player.maxHealth; 
+                player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
+                player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; 
                 leveledUp = true;
             }
-
-            if(leveledUp) {
-                alert("🎉 You Leveled Up from that run!");
-            }
+            if(leveledUp) alert("🎉 You Leveled Up from that run!");
 
             document.getElementById('run-summary-ui').style.display = 'none';
+            document.getElementById('boss-clear-ui').style.display = 'none';
             openMenu('home');
             updateUI();
         }
