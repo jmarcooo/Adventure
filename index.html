@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cup Heroes Clone - Functional</title>
+    <title>Pocket Heroes</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700&display=swap');
 
@@ -58,22 +58,21 @@
         /* --- Screens --- */
         .screen {
             flex-grow: 1;
-            display: none; /* Hidden by default */
+            display: none; 
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
             text-align: center;
+            overflow-y: auto; /* Allow scrolling if content overflows */
         }
 
-        .screen.active {
-            display: flex; /* Only the active screen shows */
-        }
+        .screen.active { display: flex; }
 
         /* --- Home Screen Elements --- */
         .game-title {
             font-family: 'Fredoka One', cursive;
-            font-size: 3.5rem;
+            font-size: 3.2rem;
             line-height: 1;
             text-shadow: 0 5px 0 #2980b9, 0 8px 10px rgba(0,0,0,0.3);
             margin-bottom: 30px;
@@ -84,8 +83,7 @@
             width: 160px; height: 160px;
             background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
             display: flex; justify-content: center; align-items: center;
-            border-radius: 50%;
-            margin-bottom: 40px;
+            border-radius: 50%; margin-bottom: 40px;
             animation: bounce 2s infinite ease-in-out;
             position: relative;
         }
@@ -100,6 +98,41 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-15px); }
         }
+
+        /* --- Hero Selection Cards --- */
+        .hero-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .hero-card {
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid transparent;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .hero-card:active { transform: scale(0.95); }
+
+        .hero-card.selected {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border-color: #f1c40f;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .hero-card .hero-icon { font-size: 3rem; }
+        .hero-card .hero-info { text-align: left; }
+        .hero-card h3 { margin: 0; font-size: 1.2rem; }
+        .hero-card p { margin: 0; font-size: 0.9rem; opacity: 0.8; }
 
         /* --- Buttons --- */
         .action-btn {
@@ -154,30 +187,54 @@
         </div>
 
         <div id="screen-home" class="screen active">
-            <h1 class="game-title">CUP<br>HEROES</h1>
+            <h1 class="game-title">POCKET<br>HEROES</h1>
             <div class="character-display">
-                <div class="hero-emoji">🥤</div>
-                <div class="weapon-emoji">🗡️</div>
+                <div class="hero-emoji" id="home-hero">🧑‍🎤</div>
+                <div class="weapon-emoji" id="home-weapon">⚔️</div>
             </div>
             <button class="action-btn" onclick="startGame()">PLAY</button>
         </div>
 
-        <div id="screen-heroes" class="screen">
+        <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
             <h2>Select Hero</h2>
-            <p>Unlock new cups here!</p>
-            <div style="font-size: 4rem; margin: 20px;">☕ 🍵 🍼</div>
+            
+            <div class="hero-list">
+                <div class="hero-card selected" id="card-warrior" onclick="selectHero('warrior')">
+                    <div class="hero-icon">🧑‍🎤</div>
+                    <div class="hero-info">
+                        <h3>Warrior</h3>
+                        <p id="stat-warrior">Base Damage: 20</p>
+                    </div>
+                </div>
+
+                <div class="hero-card" id="card-mage" onclick="selectHero('mage')">
+                    <div class="hero-icon">🧙‍♂️</div>
+                    <div class="hero-info">
+                        <h3>Mage</h3>
+                        <p id="stat-mage">Base Damage: 35</p>
+                    </div>
+                </div>
+
+                <div class="hero-card" id="card-archer" onclick="selectHero('archer')">
+                    <div class="hero-icon">🧝‍♂️</div>
+                    <div class="hero-info">
+                        <h3>Archer</h3>
+                        <p id="stat-archer">Base Damage: 25</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="screen-gear" class="screen">
             <h2>Equipment</h2>
-            <p>Upgrade your weapons.</p>
+            <p>Upgrade your heroes' strength.</p>
             <button class="action-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="buyUpgrade()">Upgrade Damage (100 🪙)</button>
         </div>
 
         <div id="screen-shop" class="screen">
             <h2>Item Shop</h2>
-            <p>Buy gems and gold here.</p>
-            <div style="font-size: 4rem; margin: 20px;">💰 🛒</div>
+            <p>Coming Soon!</p>
+            <div style="font-size: 4rem; margin: 20px;">🛒</div>
         </div>
 
         <div id="screen-game" class="screen" style="background: #2c3e50;">
@@ -197,11 +254,20 @@
     </div>
 
     <script>
-        // --- 1. GAME STATE ---
+        // --- 1. GAME DATA ---
+        
+        // Define our available heroes
+        const heroData = {
+            warrior: { id: 'warrior', emoji: '🧑‍🎤', weapon: '⚔️', baseDamage: 20 },
+            mage: { id: 'mage', emoji: '🧙‍♂️', weapon: '🔮', baseDamage: 35 },
+            archer: { id: 'archer', emoji: '🧝‍♂️', weapon: '🏹', baseDamage: 25 }
+        };
+
         let player = {
             gold: 0,
             gems: 0,
-            damage: 20
+            currentHero: 'warrior', // Default hero
+            bonusDamage: 0 // Damage added via upgrades
         };
 
         let enemy = {
@@ -211,20 +277,40 @@
             emojis: ['👾', '🧟', '🦇', '👹', '🐉']
         };
 
-        // --- 2. NAVIGATION LOGIC ---
+        // --- 2. HERO SELECTION LOGIC ---
+        function selectHero(heroId) {
+            // Update player state
+            player.currentHero = heroId;
+
+            // Remove 'selected' class from all cards
+            document.querySelectorAll('.hero-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add 'selected' class to clicked card
+            document.getElementById('card-' + heroId).classList.add('selected');
+
+            // Update Home Screen graphics
+            document.getElementById('home-hero').innerText = heroData[heroId].emoji;
+            document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
+        }
+
+        // Calculate total damage (Base hero damage + any bought upgrades)
+        function getTotalDamage() {
+            return heroData[player.currentHero].baseDamage + player.bonusDamage;
+        }
+
+        // --- 3. NAVIGATION LOGIC ---
         const screens = ['home', 'heroes', 'gear', 'shop', 'game'];
 
         function openMenu(targetScreen) {
-            // Hide all screens
             screens.forEach(screen => {
                 document.getElementById('screen-' + screen).classList.remove('active');
             });
-            // Show target screen
             document.getElementById('screen-' + targetScreen).classList.add('active');
 
-            // Handle bottom nav highlights
             if(targetScreen !== 'game') {
-                document.getElementById('bottom-nav-bar').style.display = 'flex'; // Show nav bar
+                document.getElementById('bottom-nav-bar').style.display = 'flex';
                 screens.forEach(screen => {
                     if(document.getElementById('btn-' + screen)) {
                         document.getElementById('btn-' + screen).classList.remove('active');
@@ -232,7 +318,7 @@
                 });
                 document.getElementById('btn-' + targetScreen).classList.add('active');
             } else {
-                document.getElementById('bottom-nav-bar').style.display = 'none'; // Hide nav bar during game
+                document.getElementById('bottom-nav-bar').style.display = 'none';
             }
         }
 
@@ -241,19 +327,18 @@
             spawnEnemy();
         }
 
-        // --- 3. CURRENCY LOGIC ---
+        // --- 4. CURRENCY & UI LOGIC ---
         function updateUI() {
             document.getElementById('gold-amount').innerText = player.gold;
             document.getElementById('gem-amount').innerText = player.gems;
         }
 
-        // --- 4. COMBAT LOGIC ---
+        // --- 5. COMBAT LOGIC ---
         function spawnEnemy() {
             enemy.maxHealth = 100 * enemy.level;
             enemy.currentHealth = enemy.maxHealth;
             document.getElementById('level-text').innerText = "Level " + enemy.level;
             
-            // Pick a random enemy emoji
             let randomEmoji = enemy.emojis[Math.floor(Math.random() * enemy.emojis.length)];
             document.getElementById('enemy-emoji').innerText = randomEmoji;
             
@@ -261,9 +346,9 @@
         }
 
         function attackEnemy() {
-            enemy.currentHealth -= player.damage;
+            // Use dynamically calculated damage based on the selected hero
+            enemy.currentHealth -= getTotalDamage();
             
-            // Visual feedback for attack
             let enemyEl = document.getElementById('enemy-emoji');
             enemyEl.style.transform = 'scale(0.8) rotate(-10deg)';
             setTimeout(() => { enemyEl.style.transform = ''; }, 100);
@@ -281,27 +366,22 @@
         }
 
         function enemyDefeated() {
-            // Give rewards
             let goldReward = 50 * enemy.level;
             player.gold += goldReward;
-            
-            // 10% chance for a gem
             if(Math.random() > 0.9) player.gems += 1; 
 
             updateUI();
-            
-            // Next level
             enemy.level++;
             spawnEnemy();
         }
 
-        // --- 5. UPGRADE LOGIC ---
+        // --- 6. UPGRADE LOGIC ---
         function buyUpgrade() {
             if(player.gold >= 100) {
                 player.gold -= 100;
-                player.damage += 15;
+                player.bonusDamage += 15; // Adds to the bonus damage pool, affecting ALL heroes
                 updateUI();
-                alert("Damage upgraded! You now do " + player.damage + " damage per click.");
+                alert("Damage upgraded! Your overall damage increased by 15.");
             } else {
                 alert("Not enough Gold! Go fight some monsters.");
             }
