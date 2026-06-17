@@ -212,6 +212,8 @@
         }
         .retreat-btn:hover { background: rgba(0,0,0,0.6); }
 
+        .lvl-badge { font-size: 0.8rem; color: #3498db; font-weight: bold; margin-left: 5px; }
+
     </style>
 </head>
 <body>
@@ -390,12 +392,13 @@
             talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100
         };
 
-        // Run Stats
+        // Run Stats & Upgrade Tracking
         let runStats = {
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
             dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
-            runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0
+            runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
+            upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 }
         };
 
         let activeEnemies = [];
@@ -530,7 +533,8 @@
                 bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
                 lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
                 dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
-                runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0 
+                runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
+                upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 }
             };
             
             waveManager.wave = 1;
@@ -771,7 +775,7 @@
 
         function showUpgradeShop() {
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
-            document.getElementById('shop-runes-display').innerText = runStats.runes; // NEW: Update shop display
+            document.getElementById('shop-runes-display').innerText = runStats.runes; 
 
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
             
@@ -780,23 +784,38 @@
             let highCost = Math.max(2, baseCost * 2);
 
             let allUpgrades = [
-                { id: 'atk', name: "Sharpen Blade", desc: "+10 Base Attack", cost: baseCost },
-                { id: 'spd', name: "Swift Strikes", desc: "+5% Attack Speed", cost: medCost },
-                { id: 'splash', name: "Explosive Hits", desc: "+5% Splash Damage", cost: medCost },
-                { id: 'double', name: "Lightning Reflex", desc: "+5% Double Strike", cost: medCost },
-                { id: 'crit', name: "Deadly Aim", desc: "+5% Critical Chance", cost: medCost },
-                { id: 'lifesteal', name: "Vampiric Touch", desc: "+2% Lifesteal", cost: highCost },
-                { id: 'evasion', name: "Shadow Step", desc: "+3% Dodge Chance", cost: medCost },
-                { id: 'armor', name: "Iron Skin", desc: "+4% Damage Reduction", cost: medCost }
+                { id: 'atk', name: "Sharpen Blade", desc: "+20 Base Attack", cost: baseCost, maxLevel: 5 },
+                { id: 'spd', name: "Swift Strikes", desc: "+10% Attack Speed", cost: medCost, maxLevel: 5 },
+                { id: 'splash', name: "Explosive Hits", desc: "+10% Splash Damage", cost: medCost, maxLevel: 3 },
+                { id: 'double', name: "Lightning Reflex", desc: "+10% Double Strike", cost: medCost, maxLevel: 5 },
+                { id: 'crit', name: "Deadly Aim", desc: "+10% Critical Chance", cost: medCost, maxLevel: 5 },
+                { id: 'lifesteal', name: "Vampiric Touch", desc: "+5% Lifesteal", cost: highCost, maxLevel: 3 },
+                { id: 'evasion', name: "Shadow Step", desc: "+5% Dodge Chance", cost: medCost, maxLevel: 5 },
+                { id: 'armor', name: "Iron Skin", desc: "+5% Damage Reduction", cost: medCost, maxLevel: 5 }
             ];
 
-            for (let i = allUpgrades.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allUpgrades[i], allUpgrades[j]] = [allUpgrades[j], allUpgrades[i]]; }
+            // Filter out upgrades that have reached their max level
+            let availableUpgrades = allUpgrades.filter(u => runStats.upgradeLevels[u.id] < u.maxLevel);
 
-            allUpgrades.slice(0, 3).forEach(u => {
+            if (availableUpgrades.length === 0) {
+                list.innerHTML = `<h2 style="color: #2ecc71;">All Upgrades Maxed!</h2>`;
+                return;
+            }
+
+            for (let i = availableUpgrades.length - 1; i > 0; i--) { 
+                const j = Math.floor(Math.random() * (i + 1)); 
+                [availableUpgrades[i], availableUpgrades[j]] = [availableUpgrades[j], availableUpgrades[i]]; 
+            }
+
+            availableUpgrades.slice(0, 3).forEach(u => {
                 let canAfford = runStats.runes >= u.cost;
+                let currentLvl = runStats.upgradeLevels[u.id];
                 list.innerHTML += `
                     <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost})">
-                        <div class="info"><h4>${u.name}</h4><p>${u.desc}</p></div>
+                        <div class="info">
+                            <h4>${u.name} <span class="lvl-badge">(Lv ${currentLvl}/${u.maxLevel})</span></h4>
+                            <p>${u.desc}</p>
+                        </div>
                         <div class="cost">${u.cost} 🌀</div>
                     </button>`;
             });
@@ -823,21 +842,19 @@
         }
 
         function buyRunUpgrade(type, cost) {
-            // FIX: Strict validation check added here
-            if (runStats.runes < cost) {
-                return; // Do nothing if they try to hack around the disabled button
-            }
+            if (runStats.runes < cost) return; 
 
             runStats.runes -= cost; 
+            runStats.upgradeLevels[type]++; 
             
-            if(type === 'atk') runStats.bonusAtk += 10;
-            if(type === 'spd') { runStats.atkSpeedBonus += 0.05; startPlayerAutoAttack(); } 
-            if(type === 'splash') runStats.splashDmg += 0.05;
-            if(type === 'double') runStats.doubleHitChance += 0.05;
-            if(type === 'crit') runStats.critChance += 0.05;
-            if(type === 'lifesteal') runStats.lifesteal += 0.02;
-            if(type === 'evasion') runStats.evasion += 0.03;
-            if(type === 'armor') runStats.damageReduction += 0.04;
+            if(type === 'atk') runStats.bonusAtk += 20;
+            if(type === 'spd') { runStats.atkSpeedBonus += 0.10; startPlayerAutoAttack(); } 
+            if(type === 'splash') runStats.splashDmg += 0.10;
+            if(type === 'double') runStats.doubleHitChance += 0.10;
+            if(type === 'crit') runStats.critChance += 0.10;
+            if(type === 'lifesteal') runStats.lifesteal += 0.05;
+            if(type === 'evasion') runStats.evasion += 0.05;
+            if(type === 'armor') runStats.damageReduction += 0.05;
             
             updateCombatStatsPanel(); 
             continueToNextWave(); 
