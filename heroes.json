@@ -1,0 +1,29 @@
+{
+  "warrior": {
+    "id": "warrior",
+    "name": "Warrior",
+    "emoji": "🧑‍🎤",
+    "weapon": "⚔️",
+    "baseDamage": 20,
+    "innate": { "splashDmg": 0.20 },
+    "innateDesc": "+20% Splash Damage"
+  },
+  "mage": {
+    "id": "mage",
+    "name": "Mage",
+    "emoji": "🧙‍♂️",
+    "weapon": "🔮",
+    "baseDamage": 35,
+    "innate": { "lifesteal": 0.10 },
+    "innateDesc": "+10% Lifesteal"
+  },
+  "archer": {
+    "id": "archer",
+    "name": "Archer",
+    "emoji": "🧝‍♂️",
+    "weapon": "🏹",
+    "baseDamage": 25,
+    "innate": { "critChance": 0.15 },
+    "innateDesc": "+15% Critical Chance"
+  }
+}
