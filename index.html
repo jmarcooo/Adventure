@@ -136,7 +136,7 @@
             display: flex; align-items: center; gap: 5px; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
-        /* --- FLOATING COMBAT TEXT & ANIMATIONS --- */
+        /* --- FLOATING COMBAT TEXT & LOOT ANIMATIONS --- */
         .floating-text {
             position: absolute; font-family: 'Fredoka One', cursive; pointer-events: none; z-index: 100;
             animation: floatUpAndFade 0.8s ease-out forwards;
@@ -150,6 +150,17 @@
             0% { opacity: 1; transform: translateY(0) scale(0.8); }
             50% { transform: translateY(-20px) scale(1.1); }
             100% { opacity: 0; transform: translateY(-40px) scale(1); }
+        }
+
+        /* Physical drop animation for Runes and Coins */
+        .loot-drop {
+            position: absolute; font-size: 1.8rem; z-index: 105; pointer-events: none;
+            animation: lootPop 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes lootPop {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 1; }
+            50% { transform: translate(calc(var(--dirX) * 40px), -60px) scale(1.2); opacity: 1; }
+            100% { transform: translate(calc(var(--dirX) * 60px), 20px) scale(1); opacity: 0; }
         }
 
         .hit-anim { animation: takeDamage 0.2s; }
@@ -491,6 +502,26 @@
             setTimeout(() => { if(ft.parentElement) ft.remove(); }, 800);
         }
 
+        // Spawns physical drops from enemies when they die
+        function spawnLootDrop(targetId, type) {
+            let targetDiv = document.getElementById(targetId);
+            if(!targetDiv) return;
+
+            let emoji = type === 'rune' ? '🌀' : '🪙';
+            let ft = document.createElement('div');
+            ft.className = 'loot-drop';
+            ft.innerText = emoji;
+            
+            let dirX = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random());
+            ft.style.setProperty('--dirX', dirX);
+            
+            ft.style.left = '50%';
+            ft.style.top = '30%';
+
+            targetDiv.appendChild(ft);
+            setTimeout(() => { if(ft.parentElement) ft.remove(); }, 800);
+        }
+
         function startGame() {
             runStats = { 
                 bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0, 
@@ -541,7 +572,7 @@
                 let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
                 let bSkill = bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)];
 
-                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false });
+                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true });
                 
                 textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
                 container.innerHTML = `
@@ -560,7 +591,7 @@
                 textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
                 for(let i = 0; i < enemyCount; i++) {
-                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg, skill: null, isDead: false });
+                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg, skill: null, isDead: false, isBoss: false });
                     container.innerHTML += `
                         <div class="enemy-unit" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
@@ -568,6 +599,43 @@
                             <div class="mini-hp-text" id="enemy-hp-text-${i}">${normHp}/${normHp}</div>
                         </div>`;
                 }
+            }
+        }
+
+        // Handles the death mechanics, animation, and drop chance of an enemy
+        function handleEnemyDeath(target, unitId, unitDiv) {
+            if (target.isDead) return;
+            target.isDead = true; 
+            runStats.enemiesKilled++;
+
+            if (target.isBoss) {
+                // Bosses shower loot
+                runStats.runes += (5 + waveManager.wave);
+                let goldEarned = Math.floor((150 * waveManager.wave) * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
+                runStats.goldGained += goldEarned;
+                
+                for(let i=0; i<5; i++) {
+                    setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'rune'), i * 150);
+                    setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), (i * 150) + 75);
+                }
+            } else {
+                // Normal units have 50% chance to drop 1 Rune
+                if (Math.random() < 0.5) {
+                    runStats.runes += 1;
+                    spawnLootDrop(`enemy-${unitId}`, 'rune');
+                }
+                
+                // Normal units drop a fixed amount of gold immediately
+                let goldEarned = Math.floor((20 * waveManager.wave) * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
+                runStats.goldGained += goldEarned;
+                spawnLootDrop(`enemy-${unitId}`, 'gold');
+            }
+
+            document.getElementById('run-runes-text').innerText = runStats.runes;
+
+            if(unitDiv) { 
+                unitDiv.classList.add('dead'); 
+                setTimeout(() => unitDiv.style.display = 'none', 300); 
             }
         }
 
@@ -593,8 +661,7 @@
             if (hpTextDiv) hpTextDiv.innerText = `${displayHp}/${target.maxHp}`;
             
             if (target.hp <= 0 && !target.isDead) {
-                target.isDead = true; runStats.enemiesKilled++;
-                if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
+                handleEnemyDeath(target, unitId, unitDiv);
             }
         }
 
@@ -698,15 +765,6 @@
             let isBoss = getLevelAndWave().isBoss;
             let packSize = activeEnemies.length;
 
-            // Earn Gold for Meta progression
-            let baseGold = isBoss ? (150 * waveManager.wave) : (20 * waveManager.wave * packSize);
-            let goldEarned = Math.floor(baseGold * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
-            runStats.goldGained += goldEarned;
-            
-            // Earn Runes for In-Run Upgrades
-            let baseRunes = isBoss ? (100 * waveManager.wave) : (25 * waveManager.wave * packSize);
-            runStats.runes += Math.floor(baseRunes);
-
             let gemsEarned = 0;
             if (isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1; 
             runStats.gemsGained += gemsEarned;
@@ -714,7 +772,7 @@
             let expGainedThisWave = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             runStats.expGained += expGainedThisWave;
 
-            updateCombatStatsPanel(); // Refresh Runes display
+            updateCombatStatsPanel(); 
 
             if(isBoss) { showBossClearUI(); } 
             else { showUpgradeShop(); }
@@ -724,17 +782,20 @@
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
             
-            let baseCost = Math.floor(20 * Math.pow(1.15, waveManager.wave - 1));
+            // Rebalanced Base Cost based on the much lower 50% single rune drop rate
+            let baseCost = Math.max(1, Math.floor(waveManager.wave / 3) + 1);
+            let medCost = Math.max(1, Math.ceil(baseCost * 1.5));
+            let highCost = Math.max(2, baseCost * 2);
 
             let allUpgrades = [
                 { id: 'atk', name: "Sharpen Blade", desc: "+10 Base Attack", cost: baseCost },
-                { id: 'spd', name: "Swift Strikes", desc: "+5% Attack Speed", cost: Math.floor(baseCost * 1.5) },
-                { id: 'splash', name: "Explosive Hits", desc: "+5% Splash Damage", cost: Math.floor(baseCost * 1.5) },
-                { id: 'double', name: "Lightning Reflex", desc: "+5% Double Strike", cost: Math.floor(baseCost * 1.5) },
-                { id: 'crit', name: "Deadly Aim", desc: "+5% Critical Chance", cost: Math.floor(baseCost * 1.5) },
-                { id: 'lifesteal', name: "Vampiric Touch", desc: "+2% Lifesteal", cost: Math.floor(baseCost * 2) },
-                { id: 'evasion', name: "Shadow Step", desc: "+3% Dodge Chance", cost: Math.floor(baseCost * 1.5) },
-                { id: 'armor', name: "Iron Skin", desc: "+4% Damage Reduction", cost: Math.floor(baseCost * 1.5) }
+                { id: 'spd', name: "Swift Strikes", desc: "+5% Attack Speed", cost: medCost },
+                { id: 'splash', name: "Explosive Hits", desc: "+5% Splash Damage", cost: medCost },
+                { id: 'double', name: "Lightning Reflex", desc: "+5% Double Strike", cost: medCost },
+                { id: 'crit', name: "Deadly Aim", desc: "+5% Critical Chance", cost: medCost },
+                { id: 'lifesteal', name: "Vampiric Touch", desc: "+2% Lifesteal", cost: highCost },
+                { id: 'evasion', name: "Shadow Step", desc: "+3% Dodge Chance", cost: medCost },
+                { id: 'armor', name: "Iron Skin", desc: "+4% Damage Reduction", cost: medCost }
             ];
 
             for (let i = allUpgrades.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allUpgrades[i], allUpgrades[j]] = [allUpgrades[j], allUpgrades[i]]; }
@@ -742,7 +803,7 @@
             allUpgrades.slice(0, 3).forEach(u => {
                 let canAfford = runStats.runes >= u.cost;
                 list.innerHTML += `
-                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost}, false)">
+                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${u.cost})">
                         <div class="info"><h4>${u.name}</h4><p>${u.desc}</p></div>
                         <div class="cost">${u.cost} 🌀</div>
                     </button>`;
@@ -769,7 +830,7 @@
             document.getElementById('btn-descend').disabled = true; 
         }
 
-        function buyRunUpgrade(type, cost, isCursed) {
+        function buyRunUpgrade(type, cost) {
             runStats.runes -= cost; 
             
             if(type === 'atk') runStats.bonusAtk += 10;
