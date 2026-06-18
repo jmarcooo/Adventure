@@ -18,7 +18,7 @@ let heroData = {};
             goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
 
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-                upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
+                upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
                 hasRareUpgrade: false, hasUltimateUpgrade: false,
                 commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
 };
@@ -321,7 +321,7 @@ let heroData = {};
                 goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
 
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-                upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
+                upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
                 hasRareUpgrade: false, hasUltimateUpgrade: false,
                 commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
 };
@@ -758,14 +758,16 @@ waveManager.wave = 1;
 
             if (upgrade.rarity === 'uncommon') {
                 runStats.upgradeLevels[upgrade.id]++;
-                if(upgrade.id === 'atk') { runStats.pAtk += 10; runStats.mAtk += 10; }
+                if(upgrade.id === 'p_atk') runStats.pAtk += 10;
+                if(upgrade.id === 'm_atk') runStats.mAtk += 10;
                 if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; startPlayerAutoAttack(); }
                 if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
                 if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
                 if(upgrade.id === 'crit') runStats.crit += 0.10;
                 if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.05;
                 if(upgrade.id === 'evasion') runStats.evasion += 0.05;
-                if(upgrade.id === 'armor') { runStats.pDef += 10; runStats.mDef += 10; }
+                if(upgrade.id === 'p_def') runStats.pDef += 10;
+                if(upgrade.id === 'm_def') runStats.mDef += 10;
             } else if (upgrade.rarity === 'common') {
                 runStats.commonUpgradeCounts[upgrade.id]++;
                 if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }

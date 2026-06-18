@@ -1,11 +1,18 @@
 {
   "runUpgradeData": [
     {
-      "id": "atk",
+      "id": "p_atk",
       "name": "Sharpen Blade",
-      "desc": "+10 P.Atk / +10 M.Atk",
+      "desc": "+10 P.Atk",
       "maxLevel": 5,
       "icon": "\u2694\ufe0f"
+    },
+    {
+      "id": "m_atk",
+      "name": "Magic Wand",
+      "desc": "+10 M.Atk",
+      "maxLevel": 5,
+      "icon": "\ud83e\ude84"
     },
     {
       "id": "spd",
@@ -50,11 +57,18 @@
       "icon": "\ud83d\udca8"
     },
     {
-      "id": "armor",
+      "id": "p_def",
       "name": "Iron Skin",
-      "desc": "+10 P.Def / +10 M.Def",
+      "desc": "+10 P.Def",
       "maxLevel": 5,
       "icon": "\ud83d\udee1\ufe0f"
+    },
+    {
+      "id": "m_def",
+      "name": "Magic Cloak",
+      "desc": "+10 M.Def",
+      "maxLevel": 5,
+      "icon": "\ud83e\udde5"
     }
   ],
   "bossSkillsData": [
