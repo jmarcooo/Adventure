@@ -23,6 +23,15 @@
         "dmgMultiplier": 0.5,
         "damageReduction": 0.2
       }
+    },
+    "innateSkill": {
+      "type": "warrior_splash",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to splash 100% damage"
     }
   },
   "mage": {
@@ -49,31 +58,15 @@
         "dmgMultiplier": 0.6,
         "lifesteal": 0.15
       }
-    }
-  },
-  "archer": {
-    "id": "archer",
-    "name": "Archer",
-    "emoji": "\ud83e\udddd\u200d\u2642\ufe0f",
-    "weapon": "\ud83c\udff9",
-    "baseDamage": 25,
-    "innate": {
-      "critChance": 0.15
     },
-    "innateDesc": "+15% Critical Chance",
-    "rareUpgrade": {
-      "name": "Piercing Arrow",
-      "desc": "+20% Double Strike",
-      "effect": {
-        "doubleHitChance": 0.2
-      }
-    },
-    "ultimateUpgrade": {
-      "name": "Sniper",
-      "desc": "+50% Crit Chance",
-      "effect": {
-        "critChance": 0.5
-      }
+    "innateSkill": {
+      "type": "mage_arcane",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to cast arcane blast (100% magic damage to all)"
     }
   },
   "paladin": {
@@ -100,6 +93,15 @@
         "damageReduction": 0.5,
         "lifesteal": 0.2
       }
+    },
+    "innateSkill": {
+      "type": "paladin_heal",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to heal 20% max HP on attack"
     }
   },
   "rogue": {
@@ -127,6 +129,15 @@
         "evasion": 0.4,
         "critChance": 0.4
       }
+    },
+    "innateSkill": {
+      "type": "rogue_steal",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to steal 5 gold on attack"
     }
   },
   "berserker": {
@@ -154,6 +165,15 @@
         "atkSpeedBonus": 1.0,
         "dmgMultiplier": 0.5
       }
+    },
+    "innateSkill": {
+      "type": "berserker_rage",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to deal 200% damage"
     }
   },
   "necromancer": {
@@ -181,6 +201,15 @@
         "splashDmg": 0.5,
         "critChance": 0.5
       }
+    },
+    "innateSkill": {
+      "type": "necro_summon",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to deal 50% dmg to all & heal"
     }
   },
   "beast_tamer": {
@@ -208,6 +237,15 @@
         "doubleHitChance": 0.5,
         "evasion": 0.3
       }
+    },
+    "innateSkill": {
+      "type": "beast_bite",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance for beast to bite (150% dmg)"
     }
   },
   "cleric": {
@@ -235,6 +273,15 @@
         "lifesteal": 0.5,
         "maxHealth": 100
       }
+    },
+    "innateSkill": {
+      "type": "cleric_smite",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to smite (100% true damage)"
     }
   },
   "monk": {
@@ -261,6 +308,15 @@
         "evasion": 0.6,
         "atkSpeedBonus": 0.5
       }
+    },
+    "innateSkill": {
+      "type": "monk_combo",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to strike 3 times instantly"
     }
   },
   "bard": {
@@ -288,6 +344,15 @@
         "goldMultiplier": 1.0,
         "evasion": 0.4
       }
+    },
+    "innateSkill": {
+      "type": "bard_song",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to gain 1 Rune on attack"
     }
   },
   "druid": {
@@ -315,6 +380,15 @@
         "lifesteal": 0.5,
         "splashDmg": 0.5
       }
+    },
+    "innateSkill": {
+      "type": "druid_roots",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to entangle (50% dmg to all)"
     }
   },
   "warlock": {
@@ -342,6 +416,49 @@
         "dmgMultiplier": 1.0,
         "lifesteal": 0.2
       }
+    },
+    "innateSkill": {
+      "type": "warlock_curse",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to deal 300% dmg but take 5% max HP dmg"
+    }
+  },
+  "hunter": {
+    "id": "hunter",
+    "name": "Hunter",
+    "emoji": "\ud83e\udddd\u200d\u2642\ufe0f",
+    "weapon": "\ud83c\udff9",
+    "baseDamage": 25,
+    "innate": {
+      "critChance": 0.15
+    },
+    "innateDesc": "+15% Critical Chance",
+    "rareUpgrade": {
+      "name": "Piercing Arrow",
+      "desc": "+20% Double Strike",
+      "effect": {
+        "doubleHitChance": 0.2
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Sniper",
+      "desc": "+50% Crit Chance",
+      "effect": {
+        "critChance": 0.5
+      }
+    },
+    "innateSkill": {
+      "type": "hunter_instakill",
+      "chances": [
+        0.03,
+        0.05,
+        0.07
+      ],
+      "desc": "Chance to instantly kill enemy"
     }
   }
 }

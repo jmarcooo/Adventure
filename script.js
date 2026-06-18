@@ -6,7 +6,8 @@ let heroData = {};
         let player = {
             level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
             gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
-            talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100
+            talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
+            heroSkillLevels: {}
         };
 
         // Run Stats & Upgrade Tracking
@@ -58,15 +59,44 @@ let heroData = {};
             for (let heroId in heroData) {
                 let hero = heroData[heroId];
                 let isSelected = player.currentHero === heroId ? 'selected' : '';
+                let skillLvl = player.heroSkillLevels[heroId] || 0;
+                let cost = (skillLvl + 1) * 500;
+                let btnText = skillLvl >= 2 ? "MAX" : `Upg. Skill (${cost}🪙)`;
+
+                let skillDesc = hero.innateSkill ? hero.innateSkill.desc : "";
+                let skillChance = hero.innateSkill ? Math.round(hero.innateSkill.chances[skillLvl] * 100) : 0;
+
                 container.innerHTML += `
                 <div class="card ${isSelected}" id="card-${heroId}" onclick="selectHero('${heroId}')">
                     <div class="card-icon">${hero.emoji}</div>
-                    <div class="card-info">
+                    <div class="card-info" style="flex-grow: 1;">
                         <h3>${hero.name}</h3>
-                        <p>Base Damage: ${hero.baseDamage}</p>
+                        <p>Base DMG: ${hero.baseDamage}</p>
                         <p style="color: #f1c40f; font-size: 0.8rem;">${hero.innateDesc || ''}</p>
+                        ${skillDesc ? `<p style="color: #3498db; font-size: 0.8rem; margin-top: 5px;">✨ <b>${skillChance}%</b> ${skillDesc}</p>` : ''}
                     </div>
+                    <button class="hud-btn" style="font-size: 0.8rem; padding: 5px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
                 </div>`;
+            }
+        }
+
+
+        function upgradeHeroSkill(heroId) {
+            event.stopPropagation(); // prevent selectHero from firing
+            let currentLvl = player.heroSkillLevels[heroId];
+            if (currentLvl >= 2) {
+                alert("Skill is already Max Level!");
+                return;
+            }
+            let cost = (currentLvl + 1) * 500;
+            if (player.gold >= cost) {
+                player.gold -= cost;
+                player.heroSkillLevels[heroId]++;
+                updateUI();
+                renderHeroSelection();
+                alert(`Skill Upgraded to Level ${player.heroSkillLevels[heroId] + 1}!`);
+            } else {
+                alert(`Not enough Gold! Need ${cost} 🪙`);
             }
         }
 
@@ -354,10 +384,69 @@ waveManager.wave = 1;
                     let isCrit = Math.random() < runStats.critChance;
                     if (isCrit) dmg = Math.floor(dmg * 2.5);
 
-                    if (target.skill === 'armor') dmg = Math.floor(dmg * 0.70);
+                    let hero = heroData[player.currentHero];
+                    let innateLvl = player.heroSkillLevels[player.currentHero] || 0;
+                    let innateTrigger = false;
+
+                    if (hero.innateSkill && Math.random() < hero.innateSkill.chances[innateLvl]) {
+                        innateTrigger = true;
+                    }
+
+                    // Pre-damage Innate Logic
+                    if (innateTrigger) {
+                        spawnFloatingText('player-combat-area', "SKILL!", "float-crit");
+                        if (hero.innateSkill.type === 'hunter_instakill' && !target.isBoss) {
+                            dmg = target.hp; // Instakill normal/elite
+                        } else if (hero.innateSkill.type === 'berserker_rage') {
+                            dmg = dmg * 2;
+                        } else if (hero.innateSkill.type === 'warlock_curse') {
+                            dmg = dmg * 3;
+                            player.currentHealth -= Math.floor(player.maxHealth * 0.05);
+                            updatePlayerHealthBar();
+                            if (player.currentHealth <= 0) { triggerGameOver(); return; }
+                        }
+                    }
+
+                    if (target.skill === 'armor' && !(innateTrigger && (hero.innateSkill.type === 'mage_arcane' || hero.innateSkill.type === 'cleric_smite'))) {
+                        dmg = Math.floor(dmg * 0.70);
+                    }
 
                     target.hp -= dmg;
                     animateHit(target.id, dmg, isCrit);
+
+                    // Post-damage Innate Logic
+                    if (innateTrigger) {
+                        if (hero.innateSkill.type === 'warrior_splash') {
+                            activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
+                        } else if (hero.innateSkill.type === 'mage_arcane') {
+                            activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
+                        } else if (hero.innateSkill.type === 'paladin_heal') {
+                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + Math.floor(player.maxHealth * 0.20));
+                            updatePlayerHealthBar();
+                        } else if (hero.innateSkill.type === 'rogue_steal') {
+                            runStats.goldGained += 5;
+                            spawnLootDrop(`enemy-${target.id}`, 'gold');
+                        } else if (hero.innateSkill.type === 'necro_summon') {
+                            let d = Math.floor(dmg * 0.5);
+                            activeEnemies.forEach(e => { if (e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
+                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + d);
+                            updatePlayerHealthBar();
+                        } else if (hero.innateSkill.type === 'beast_bite') {
+                            let biteDmg = Math.floor(dmg * 1.5);
+                            target.hp -= biteDmg;
+                            animateHit(target.id, biteDmg, false);
+                        } else if (hero.innateSkill.type === 'monk_combo') {
+                            // Extra strikes processed immediately without recursive setTimeouts to avoid complex state tracking
+                            target.hp -= dmg; animateHit(target.id, dmg, false);
+                            target.hp -= dmg; animateHit(target.id, dmg, false);
+                        } else if (hero.innateSkill.type === 'bard_song') {
+                            runStats.runes += 1;
+                            spawnLootDrop('player-combat-area', 'rune');
+                        } else if (hero.innateSkill.type === 'druid_roots') {
+                            let d = Math.floor(dmg * 0.5);
+                            activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
+                        }
+                    }
 
                     if (runStats.lifesteal > 0) {
                         let healAmount = Math.floor(dmg * runStats.lifesteal);
@@ -682,6 +771,14 @@ async function initGame() {
         if (heroData.warrior) {
              selectHero('warrior');
         }
+
+        // Initialize heroSkillLevels
+        for (let h in heroData) {
+            if (player.heroSkillLevels[h] === undefined) {
+                player.heroSkillLevels[h] = 0;
+            }
+        }
+        renderHeroSelection();
     } catch (error) {
         console.error("Failed to load game data:", error);
     }
