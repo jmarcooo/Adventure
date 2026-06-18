@@ -299,6 +299,52 @@ let heroData = {};
             renderGearMenu();
         }
 
+        function generateRandomEquipment() {
+            const slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
+            const slot = slots[Math.floor(Math.random() * slots.length)];
+
+            const prefixes = ['Rusty', 'Iron', 'Steel', 'Mithril', 'Adamant', 'Divine'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+
+            const itemTypes = {
+                'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
+                'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
+                'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
+                'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+                'shield': { name: 'Shield', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp'] },
+                'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
+                'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
+            };
+
+            const itemDef = itemTypes[slot];
+            const name = `${prefix} ${itemDef.name}`;
+
+            let stats = {};
+            // Pick 1-3 random stats from the allowed pool for this item type
+            let numStats = Math.floor(Math.random() * 3) + 1;
+            for(let i=0; i<numStats; i++) {
+                let statName = itemDef.stats[Math.floor(Math.random() * itemDef.stats.length)];
+                // Generate a random value. Different stats have different value ranges.
+                let val = 0;
+                if (statName === 'atkSpd') val = parseFloat((Math.random() * 0.2 + 0.05).toFixed(2));
+                else if (statName === 'crit' || statName === 'evasion') val = parseFloat((Math.random() * 0.1 + 0.02).toFixed(2));
+                else if (statName === 'maxHp') val = Math.floor(Math.random() * 50) + 10;
+                else if (statName === 'luck') val = Math.floor(Math.random() * 3) + 1;
+                else val = Math.floor(Math.random() * 10) + 2; // flat stats
+
+                if(!stats[statName]) stats[statName] = val;
+                else stats[statName] += val;
+            }
+
+            return {
+                name: name,
+                type: slot,
+                slot: slot,
+                icon: itemDef.icon,
+                stats: stats
+            };
+        }
+
         function updateGearStatsPanel() {
             let panel = document.getElementById('gear-hero-stats');
             if (!panel) return;
@@ -326,6 +372,13 @@ let heroData = {};
         function buyPremium(item) {
             if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
             else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
+            else if (item === 'chest' && player.gems >= 20) {
+                player.gems -= 20;
+                let newGear = generateRandomEquipment();
+                player.inventory.push(newGear);
+                updateUI();
+                showNotification(`You got a ${newGear.name}!`);
+            }
             else { showNotification("Not enough Gems!"); }
         }
 
