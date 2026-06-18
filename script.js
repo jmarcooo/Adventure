@@ -29,6 +29,7 @@ let heroData = {};
 
         let cursedRelicsData = [];
 
+        let viewingHero = null;
         let activeEnemies = [];
         let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
         let enemyAttackTimer;
@@ -39,6 +40,7 @@ let heroData = {};
 
         function openMenu(targetScreen) {
             if(targetScreen !== 'game') { clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer); }
+            if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
             screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
             document.getElementById('screen-' + targetScreen).classList.add('active');
 
@@ -52,37 +54,81 @@ let heroData = {};
         }
 
 
-        function renderHeroSelection() {
-            let container = document.querySelector('#screen-heroes .list-container');
+                function renderHeroSelection() {
+            let listView = document.getElementById('heroes-list-view');
+            let detailsView = document.getElementById('hero-details-view');
+
+            if (!viewingHero) {
+                listView.style.display = 'block';
+                detailsView.style.display = 'none';
+                renderHeroList();
+            } else {
+                listView.style.display = 'none';
+                detailsView.style.display = 'flex';
+                renderHeroDetails(viewingHero);
+            }
+        }
+
+        function renderHeroList() {
+            let container = document.getElementById('heroes-list-container');
             if (!container) return;
             container.innerHTML = '';
             for (let heroId in heroData) {
                 let hero = heroData[heroId];
                 let isSelected = player.currentHero === heroId ? 'selected' : '';
-                let skillLvl = player.heroSkillLevels[heroId] || 0;
-                let cost = (skillLvl + 1) * 500;
-                let btnText = skillLvl >= 2 ? "MAX" : `Upg. Skill (${cost}🪙)`;
-
-                let skillDesc = hero.innateSkill ? hero.innateSkill.desc : "";
-                let skillChance = hero.innateSkill ? Math.round(hero.innateSkill.chances[skillLvl] * 100) : 0;
-
                 container.innerHTML += `
-                <div class="card ${isSelected}" id="card-${heroId}" onclick="selectHero('${heroId}')">
-                    <div class="card-icon">${hero.emoji}</div>
-                    <div class="card-info" style="flex-grow: 1;">
-                        <h3>${hero.name}</h3>
-                        <p>Base DMG: ${hero.baseDamage}</p>
-                        <p style="color: #f1c40f; font-size: 0.8rem;">${hero.innateDesc || ''}</p>
-                        ${skillDesc ? `<p style="color: #3498db; font-size: 0.8rem; margin-top: 5px;">✨ <b>${skillChance}%</b> ${skillDesc}</p>` : ''}
+                <div class="card ${isSelected}" style="flex-direction: column; text-align: center; gap: 5px;" onclick="viewingHero = '${heroId}'; renderHeroSelection();">
+                    <div class="card-icon" style="font-size: 2.5rem;">${hero.emoji}</div>
+                    <div class="card-info" style="text-align: center;">
+                        <h3 style="font-size: 1rem;">${hero.name}</h3>
                     </div>
-                    <button class="hud-btn" style="font-size: 0.8rem; padding: 5px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
                 </div>`;
             }
         }
 
+        function renderHeroDetails(heroId) {
+            let hero = heroData[heroId];
+            let skillLvl = player.heroSkillLevels[heroId] || 0;
+            let cost = (skillLvl + 1) * 500;
+            let btnText = skillLvl >= 2 ? "MAX LEVEL" : `Upgrade Skill (${cost}🪙)`;
+            let skillChance = hero.innateSkill ? Math.round(hero.innateSkill.chances[skillLvl] * 100) : 0;
+
+            let contentDiv = document.getElementById('hero-details-content');
+            contentDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <div style="font-size: 4rem;">${hero.emoji}</div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 2rem;">${hero.name}</h2>
+                        <p style="margin: 0; font-size: 1.2rem;">Weapon: ${hero.weapon}</p>
+                    </div>
+                </div>
+                <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
+                <p><b>Base Damage:</b> <span style="color: #e74c3c;">${hero.baseDamage}</span></p>
+                <p style="margin-top: 5px;"><b>Innate Passive:</b> <span style="color: #f1c40f;">${hero.innateDesc || 'None'}</span></p>
+                <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
+
+                <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
+
+                <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+                <p style="font-size: 0.9rem; color: #95a5a6;">Shop Exclusives (Unlock in Run):</p>
+                <p style="font-size: 0.85rem; margin-top: 5px;">🟩 <b>${hero.rareUpgrade ? hero.rareUpgrade.name : 'N/A'}:</b> ${hero.rareUpgrade ? hero.rareUpgrade.desc : ''}</p>
+                <p style="font-size: 0.85rem; margin-top: 5px;">🟥 <b>${hero.ultimateUpgrade ? hero.ultimateUpgrade.name : 'N/A'}:</b> ${hero.ultimateUpgrade ? hero.ultimateUpgrade.desc : ''}</p>
+            `;
+
+            let btnActive = document.getElementById('btn-set-active');
+            btnActive.onclick = () => setActiveHero(heroId);
+            if (player.currentHero === heroId) {
+                btnActive.innerText = "CURRENTLY ACTIVE";
+                btnActive.style.background = "#2ecc71";
+                btnActive.disabled = true;
+            } else {
+                btnActive.innerText = "SET ACTIVE";
+                btnActive.style.background = "linear-gradient(180deg, #f1c40f 0%, #f39c12 100%)";
+                btnActive.disabled = false;
+            }
+        }
 
         function upgradeHeroSkill(heroId) {
-            event.stopPropagation(); // prevent selectHero from firing
             let currentLvl = player.heroSkillLevels[heroId];
             if (currentLvl >= 2) {
                 alert("Skill is already Max Level!");
@@ -100,12 +146,12 @@ let heroData = {};
             }
         }
 
-        function selectHero(heroId) {
+        function setActiveHero(heroId) {
             player.currentHero = heroId;
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-            document.getElementById('card-' + heroId).classList.add('selected');
             document.getElementById('home-hero').innerText = heroData[heroId].emoji;
             document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
+            renderHeroSelection(); // refresh to show it's active
+            alert(`${heroData[heroId].name} is now your active hero!`);
         }
 
         function upgradeTalent(type) {
@@ -790,7 +836,7 @@ async function initGame() {
 
         // Select warrior by default if available
         if (heroData.warrior) {
-             selectHero('warrior');
+             setActiveHero('warrior');
         }
 
         // Initialize heroSkillLevels
