@@ -43,10 +43,25 @@
             </div>
         </div>
 
-        <div id="screen-gear" class="screen">
-            <h2>Permanent Gear</h2>
-            <p>Upgrade raw strength forever.</p>
-            <button class="action-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="buyPermanentUpgrade()">Upgrade Base DMG (100 🪙)</button>
+        <div id="screen-gear" class="screen" style="justify-content: flex-start; padding-top: 10px;">
+            <div class="equipment-container">
+                <div class="equip-top">
+                    <div style="font-size: 8rem; opacity: 0.5;">🧍</div>
+                    <div class="equip-slot" id="slot-head"></div>
+                    <div class="equip-slot" id="slot-body"></div>
+                    <div class="equip-slot" id="slot-legs"></div>
+                    <div class="equip-slot" id="slot-weapon"></div>
+                    <div class="equip-slot" id="slot-shield"></div>
+                    <div class="equip-slot" id="slot-ring"></div>
+                    <div class="equip-slot" id="slot-amulet"></div>
+                </div>
+                <div class="equip-bottom">
+                    <h3 style="margin-top: 0; margin-bottom: 10px; text-align: left; font-size: 1rem; color: #f1c40f;">INVENTORY</h3>
+                    <div class="inventory-grid" id="inventory-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="screen-talents" class="screen" style="justify-content: flex-start;">

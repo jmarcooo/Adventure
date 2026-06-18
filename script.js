@@ -7,7 +7,9 @@ let heroData = {};
             level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
             gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
             talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
-            heroSkillLevels: {}
+            heroSkillLevels: {},
+            equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
+            inventory: []
         };
 
         // Run Stats & Upgrade Tracking
@@ -55,6 +57,7 @@ let heroData = {};
         function openMenu(targetScreen) {
             if(targetScreen !== 'game') { clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer); }
             if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
+            if(targetScreen === 'gear') { renderGearMenu(); }
             screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
             document.getElementById('screen-' + targetScreen).classList.add('active');
 
@@ -185,9 +188,31 @@ let heroData = {};
             else { showNotification("You need Talent Points!"); }
         }
 
-        function buyPermanentUpgrade() {
-            if(player.gold >= 100) { player.gold -= 100; player.bonusDamage += 15; updateUI(); }
-            else { showNotification("Not enough Gold!"); }
+        function renderGearMenu() {
+            // Render Equipped Slots
+            let slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
+            slots.forEach(slot => {
+                let el = document.getElementById(`slot-${slot}`);
+                if (el) {
+                    if (player.equipment[slot]) {
+                        el.innerText = player.equipment[slot].icon;
+                    } else {
+                        el.innerText = '';
+                    }
+                }
+            });
+
+            // Render Inventory
+            let grid = document.getElementById('inventory-grid');
+            if (grid) {
+                grid.innerHTML = '';
+                // Fill minimum 12 slots for visual aesthetics
+                let totalSlots = Math.max(12, player.inventory.length);
+                for(let i=0; i < totalSlots; i++) {
+                    let item = player.inventory[i];
+                    grid.innerHTML += `<div class="inv-slot">${item ? item.icon : ''}</div>`;
+                }
+            }
         }
 
         function buyPremium(item) {
