@@ -8,7 +8,22 @@
     "innate": {
       "splashDmg": 0.2
     },
-    "innateDesc": "+20% Splash Damage"
+    "innateDesc": "+20% Splash Damage",
+    "rareUpgrade": {
+      "name": "Cleaving Strike",
+      "desc": "+30% Splash Damage",
+      "effect": {
+        "splashDmg": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Juggernaut",
+      "desc": "+50% Damage, +20% Damage Reduction",
+      "effect": {
+        "dmgMultiplier": 0.5,
+        "damageReduction": 0.2
+      }
+    }
   },
   "mage": {
     "id": "mage",
@@ -19,7 +34,22 @@
     "innate": {
       "lifesteal": 0.1
     },
-    "innateDesc": "+10% Lifesteal"
+    "innateDesc": "+10% Lifesteal",
+    "rareUpgrade": {
+      "name": "Mana Shield",
+      "desc": "+25% Damage Reduction",
+      "effect": {
+        "damageReduction": 0.25
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Archmage",
+      "desc": "+60% Damage, +15% Lifesteal",
+      "effect": {
+        "dmgMultiplier": 0.6,
+        "lifesteal": 0.15
+      }
+    }
   },
   "archer": {
     "id": "archer",
@@ -30,7 +60,21 @@
     "innate": {
       "critChance": 0.15
     },
-    "innateDesc": "+15% Critical Chance"
+    "innateDesc": "+15% Critical Chance",
+    "rareUpgrade": {
+      "name": "Piercing Arrow",
+      "desc": "+20% Double Strike",
+      "effect": {
+        "doubleHitChance": 0.2
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Sniper",
+      "desc": "+50% Crit Chance",
+      "effect": {
+        "critChance": 0.5
+      }
+    }
   },
   "paladin": {
     "id": "paladin",
@@ -41,7 +85,22 @@
     "innate": {
       "damageReduction": 0.15
     },
-    "innateDesc": "+15% Damage Reduction"
+    "innateDesc": "+15% Damage Reduction",
+    "rareUpgrade": {
+      "name": "Holy Light",
+      "desc": "Heal 50 HP",
+      "effect": {
+        "heal": 50
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Divine Intervention",
+      "desc": "+50% Damage Reduction, +20% Lifesteal",
+      "effect": {
+        "damageReduction": 0.5,
+        "lifesteal": 0.2
+      }
+    }
   },
   "rogue": {
     "id": "rogue",
@@ -53,7 +112,22 @@
       "evasion": 0.15,
       "doubleHitChance": 0.1
     },
-    "innateDesc": "+15% Dodge, +10% Double Strike"
+    "innateDesc": "+15% Dodge, +10% Double Strike",
+    "rareUpgrade": {
+      "name": "Shadow Strike",
+      "desc": "+30% Double Strike",
+      "effect": {
+        "doubleHitChance": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Assassin",
+      "desc": "+40% Dodge, +40% Crit Chance",
+      "effect": {
+        "evasion": 0.4,
+        "critChance": 0.4
+      }
+    }
   },
   "berserker": {
     "id": "berserker",
@@ -65,7 +139,22 @@
       "atkSpeedBonus": 0.2,
       "damageReduction": -0.1
     },
-    "innateDesc": "+20% Attack Speed, -10% Damage Reduction"
+    "innateDesc": "+20% Attack Speed, -10% Damage Reduction",
+    "rareUpgrade": {
+      "name": "Bloodthirst",
+      "desc": "+20% Lifesteal",
+      "effect": {
+        "lifesteal": 0.2
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Rage",
+      "desc": "+100% Attack Speed, +50% Damage",
+      "effect": {
+        "atkSpeedBonus": 1.0,
+        "dmgMultiplier": 0.5
+      }
+    }
   },
   "necromancer": {
     "id": "necromancer",
@@ -77,7 +166,22 @@
       "lifesteal": 0.15,
       "critChance": 0.1
     },
-    "innateDesc": "+15% Lifesteal, +10% Crit Chance"
+    "innateDesc": "+15% Lifesteal, +10% Crit Chance",
+    "rareUpgrade": {
+      "name": "Soul Harvest",
+      "desc": "+30% Lifesteal",
+      "effect": {
+        "lifesteal": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Lich King",
+      "desc": "+50% Splash Damage, +50% Crit Chance",
+      "effect": {
+        "splashDmg": 0.5,
+        "critChance": 0.5
+      }
+    }
   },
   "beast_tamer": {
     "id": "beast_tamer",
@@ -89,7 +193,22 @@
       "atkSpeedBonus": 0.15,
       "doubleHitChance": 0.15
     },
-    "innateDesc": "+15% Attack Speed, +15% Double Strike"
+    "innateDesc": "+15% Attack Speed, +15% Double Strike",
+    "rareUpgrade": {
+      "name": "Feral Instinct",
+      "desc": "+30% Attack Speed",
+      "effect": {
+        "atkSpeedBonus": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Alpha",
+      "desc": "+50% Double Strike, +30% Dodge",
+      "effect": {
+        "doubleHitChance": 0.5,
+        "evasion": 0.3
+      }
+    }
   },
   "cleric": {
     "id": "cleric",
@@ -101,7 +220,22 @@
       "damageReduction": 0.2,
       "lifesteal": 0.05
     },
-    "innateDesc": "+20% Damage Reduction, +5% Lifesteal"
+    "innateDesc": "+20% Damage Reduction, +5% Lifesteal",
+    "rareUpgrade": {
+      "name": "Divine Grace",
+      "desc": "+30% Damage Reduction",
+      "effect": {
+        "damageReduction": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "High Priest",
+      "desc": "+50% Lifesteal, +100 Max HP",
+      "effect": {
+        "lifesteal": 0.5,
+        "maxHealth": 100
+      }
+    }
   },
   "monk": {
     "id": "monk",
@@ -112,7 +246,22 @@
     "innate": {
       "evasion": 0.25
     },
-    "innateDesc": "+25% Dodge Chance"
+    "innateDesc": "+25% Dodge Chance",
+    "rareUpgrade": {
+      "name": "Zen State",
+      "desc": "+30% Dodge",
+      "effect": {
+        "evasion": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Grandmaster",
+      "desc": "+60% Dodge, +50% Attack Speed",
+      "effect": {
+        "evasion": 0.6,
+        "atkSpeedBonus": 0.5
+      }
+    }
   },
   "bard": {
     "id": "bard",
@@ -124,7 +273,22 @@
       "goldMultiplier": 0.5,
       "evasion": 0.1
     },
-    "innateDesc": "+50% Gold Earned, +10% Dodge Chance"
+    "innateDesc": "+50% Gold Earned, +10% Dodge Chance",
+    "rareUpgrade": {
+      "name": "Inspiring Tune",
+      "desc": "+50% Gold Earned",
+      "effect": {
+        "goldMultiplier": 0.5
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Maestro",
+      "desc": "+100% Gold Earned, +40% Dodge",
+      "effect": {
+        "goldMultiplier": 1.0,
+        "evasion": 0.4
+      }
+    }
   },
   "druid": {
     "id": "druid",
@@ -136,7 +300,22 @@
       "splashDmg": 0.15,
       "lifesteal": 0.1
     },
-    "innateDesc": "+15% Splash Damage, +10% Lifesteal"
+    "innateDesc": "+15% Splash Damage, +10% Lifesteal",
+    "rareUpgrade": {
+      "name": "Nature's Wrath",
+      "desc": "+30% Splash Damage",
+      "effect": {
+        "splashDmg": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Archdruid",
+      "desc": "+50% Lifesteal, +50% Splash Damage",
+      "effect": {
+        "lifesteal": 0.5,
+        "splashDmg": 0.5
+      }
+    }
   },
   "warlock": {
     "id": "warlock",
@@ -148,6 +327,21 @@
       "dmgMultiplier": 0.3,
       "damageReduction": -0.2
     },
-    "innateDesc": "+30% Damage, -20% Damage Reduction"
+    "innateDesc": "+30% Damage, -20% Damage Reduction",
+    "rareUpgrade": {
+      "name": "Dark Pact",
+      "desc": "+40% Damage",
+      "effect": {
+        "dmgMultiplier": 0.4
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Demon Lord",
+      "desc": "+100% Damage, +20% Lifesteal",
+      "effect": {
+        "dmgMultiplier": 1.0,
+        "lifesteal": 0.2
+      }
+    }
   }
 }

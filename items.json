@@ -1,28 +1,165 @@
 {
   "runUpgradeData": [
-    { "id": "atk", "name": "Sharpen Blade", "desc": "+20 Base Attack", "maxLevel": 5 },
-    { "id": "spd", "name": "Swift Strikes", "desc": "+10% Attack Speed", "maxLevel": 5 },
-    { "id": "splash", "name": "Explosive Hits", "desc": "+10% Splash Damage", "maxLevel": 3 },
-    { "id": "double", "name": "Lightning Reflex", "desc": "+10% Double Strike", "maxLevel": 5 },
-    { "id": "crit", "name": "Deadly Aim", "desc": "+10% Critical Chance", "maxLevel": 5 },
-    { "id": "lifesteal", "name": "Vampiric Touch", "desc": "+5% Lifesteal", "maxLevel": 3 },
-    { "id": "evasion", "name": "Shadow Step", "desc": "+5% Dodge Chance", "maxLevel": 5 },
-    { "id": "armor", "name": "Iron Skin", "desc": "+5% Damage Reduction", "maxLevel": 5 }
+    {
+      "id": "atk",
+      "name": "Sharpen Blade",
+      "desc": "+20 Base Attack",
+      "maxLevel": 5
+    },
+    {
+      "id": "spd",
+      "name": "Swift Strikes",
+      "desc": "+10% Attack Speed",
+      "maxLevel": 5
+    },
+    {
+      "id": "splash",
+      "name": "Explosive Hits",
+      "desc": "+10% Splash Damage",
+      "maxLevel": 3
+    },
+    {
+      "id": "double",
+      "name": "Lightning Reflex",
+      "desc": "+10% Double Strike",
+      "maxLevel": 5
+    },
+    {
+      "id": "crit",
+      "name": "Deadly Aim",
+      "desc": "+10% Critical Chance",
+      "maxLevel": 5
+    },
+    {
+      "id": "lifesteal",
+      "name": "Vampiric Touch",
+      "desc": "+5% Lifesteal",
+      "maxLevel": 3
+    },
+    {
+      "id": "evasion",
+      "name": "Shadow Step",
+      "desc": "+5% Dodge Chance",
+      "maxLevel": 5
+    },
+    {
+      "id": "armor",
+      "name": "Iron Skin",
+      "desc": "+5% Damage Reduction",
+      "maxLevel": 5
+    }
   ],
   "bossSkillsData": [
-    { "id": "crit", "name": "Critical Strike", "icon": "🎯", "desc": "25% chance for 2x DMG" },
-    { "id": "armor", "name": "Thick Hide", "icon": "🛡️", "desc": "Takes 30% less DMG" },
-    { "id": "magic", "name": "Magic Aura", "icon": "✨", "desc": "Ignores Player Armor/Dodge" },
-    { "id": "vampire", "name": "Vampiric", "icon": "🦇", "desc": "Heals 50% of DMG dealt" }
+    {
+      "id": "crit",
+      "name": "Critical Strike",
+      "icon": "\ud83c\udfaf",
+      "desc": "25% chance for 2x DMG"
+    },
+    {
+      "id": "armor",
+      "name": "Thick Hide",
+      "icon": "\ud83d\udee1\ufe0f",
+      "desc": "Takes 30% less DMG"
+    },
+    {
+      "id": "magic",
+      "name": "Magic Aura",
+      "icon": "\u2728",
+      "desc": "Ignores Player Armor/Dodge"
+    },
+    {
+      "id": "vampire",
+      "name": "Vampiric",
+      "icon": "\ud83e\udd87",
+      "desc": "Heals 50% of DMG dealt"
+    }
   ],
   "cursedRelicsData": [
-    { "id": "glass", "name": "Glass Cannon", "desc": "+20% DMG, +25% Crit", "curseDesc": "-30% Max HP", "icon": "🧨" },
-    { "id": "berserk", "name": "Berserker's Frenzy", "desc": "+40% Attack Speed", "curseDesc": "-15 Base Attack", "icon": "🩸" },
-    { "id": "phantom", "name": "Phantom Step", "desc": "+15% Dodge Chance", "curseDesc": "-20% Max HP", "icon": "👻" },
-    { "id": "giant", "name": "Giant's Burden", "desc": "+30 Base Attack, +10% Splash", "curseDesc": "-20% Attack Speed", "icon": "🗿" },
-    { "id": "blood", "name": "Blood Pact", "desc": "+10% Lifesteal", "curseDesc": "-15% Damage Reduction", "icon": "💉" },
-    { "id": "midas", "name": "Midas Curse", "desc": "+50% Gold Earned", "curseDesc": "Enemies have +20% HP", "icon": "👑" },
-    { "id": "reckless", "name": "Reckless Abandon", "desc": "+15% Double Strike", "curseDesc": "Evasion drops to 0%", "icon": "⚔️" },
-    { "id": "spiked", "name": "Spiked Armor", "desc": "+20% Damage Reduction", "curseDesc": "-10% Attack Speed", "icon": "🐢" }
+    {
+      "id": "glass",
+      "name": "Glass Cannon",
+      "desc": "+20% DMG, +25% Crit",
+      "curseDesc": "-30% Max HP",
+      "icon": "\ud83e\udde8"
+    },
+    {
+      "id": "berserk",
+      "name": "Berserker's Frenzy",
+      "desc": "+40% Attack Speed",
+      "curseDesc": "-15 Base Attack",
+      "icon": "\ud83e\ude78"
+    },
+    {
+      "id": "phantom",
+      "name": "Phantom Step",
+      "desc": "+15% Dodge Chance",
+      "curseDesc": "-20% Max HP",
+      "icon": "\ud83d\udc7b"
+    },
+    {
+      "id": "giant",
+      "name": "Giant's Burden",
+      "desc": "+30 Base Attack, +10% Splash",
+      "curseDesc": "-20% Attack Speed",
+      "icon": "\ud83d\uddff"
+    },
+    {
+      "id": "blood",
+      "name": "Blood Pact",
+      "desc": "+10% Lifesteal",
+      "curseDesc": "-15% Damage Reduction",
+      "icon": "\ud83d\udc89"
+    },
+    {
+      "id": "midas",
+      "name": "Midas Curse",
+      "desc": "+50% Gold Earned",
+      "curseDesc": "Enemies have +20% HP",
+      "icon": "\ud83d\udc51"
+    },
+    {
+      "id": "reckless",
+      "name": "Reckless Abandon",
+      "desc": "+15% Double Strike",
+      "curseDesc": "Evasion drops to 0%",
+      "icon": "\u2694\ufe0f"
+    },
+    {
+      "id": "spiked",
+      "name": "Spiked Armor",
+      "desc": "+20% Damage Reduction",
+      "curseDesc": "-10% Attack Speed",
+      "icon": "\ud83d\udc22"
+    }
+  ],
+  "commonUpgradesData": [
+    {
+      "id": "heal",
+      "name": "Potion",
+      "desc": "Heal 25 HP",
+      "effect": {
+        "heal": 25
+      },
+      "type": "common"
+    },
+    {
+      "id": "gold",
+      "name": "Coin Pouch",
+      "desc": "Gain 50 Gold",
+      "effect": {
+        "gold": 50
+      },
+      "type": "common"
+    },
+    {
+      "id": "temp_atk",
+      "name": "Whetstone",
+      "desc": "+5 Base Attack (One-time)",
+      "effect": {
+        "atk": 5
+      },
+      "type": "common"
+    }
   ]
 }

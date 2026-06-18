@@ -14,12 +14,15 @@ let heroData = {};
             bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0,
             lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
             dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
-            runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-            upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 }
-        };
+
+                runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
+                upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
+                hasRareUpgrade: false, hasUltimateUpgrade: false
+};
 
         // MASTER UPGRADE DATABASE
         let runUpgradeData = [];
+        let commonUpgradesData = [];
 
         let bossSkillsData = [];
 
@@ -170,9 +173,11 @@ let heroData = {};
                 bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0,
                 lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
                 dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-                upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 }
-            };
+                upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
+                hasRareUpgrade: false, hasUltimateUpgrade: false
+};
 
             // Apply innate abilities
             if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -405,6 +410,7 @@ waveManager.wave = 1;
         }
 
         // --- WAVE DEFEATED & SMART SHOP ---
+
         function packDefeated() {
             if(waveManager.isUpgrading) return;
             waveManager.isUpgrading = true;
@@ -421,52 +427,111 @@ waveManager.wave = 1;
 
             updateCombatStatsPanel();
 
-            // Calculate if the player can afford any non-maxed upgrades
-            let availableUpgrades = runUpgradeData.filter(u => runStats.upgradeLevels[u.id] < u.maxLevel);
-            let canAffordAny = availableUpgrades.some(u => {
-                let cost = 1 + (runStats.upgradeLevels[u.id] * 2);
-                return runStats.runes >= cost;
+            // Build shop pool
+            let shopPool = [];
+            window.currentShopPool = shopPool;
+
+            // Add Common
+            commonUpgradesData.forEach(u => shopPool.push({ ...u, rarity: 'common', cost: 1 }));
+
+            // Add Uncommon (if not maxed)
+            runUpgradeData.forEach(u => {
+                if (runStats.upgradeLevels[u.id] < u.maxLevel) {
+                    let cost = 1 + (runStats.upgradeLevels[u.id] * 2);
+                    shopPool.push({ ...u, rarity: 'uncommon', cost: cost, currentLvl: runStats.upgradeLevels[u.id] });
+                }
             });
 
+            // Add Rare and Ultimate if affordable/applicable (for simplicity, they are one-time and cost more)
+            let hero = heroData[player.currentHero];
+            if (!runStats.hasRareUpgrade && runStats.runes >= 5) {
+                shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'rare' });
+            }
+            if (!runStats.hasUltimateUpgrade && runStats.runes >= 10) {
+                shopPool.push({ ...hero.ultimateUpgrade, id: 'ult_upg', rarity: 'ultimate', cost: 10, type: 'ultimate' });
+            }
+
+            let canAffordAny = shopPool.some(u => runStats.runes >= u.cost);
             if(isBoss) {
                 showBossClearUI();
-            } else if (availableUpgrades.length === 0 || !canAffordAny) {
-                // Instantly skip the shop if maxed out or too poor!
+            } else if (shopPool.length === 0 || !canAffordAny) {
                 setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed);
             } else {
-                showUpgradeShop(availableUpgrades);
+                showUpgradeShop(shopPool);
             }
         }
 
-        function showUpgradeShop(availableUpgrades) {
+        function showUpgradeShop(shopPool) {
             document.getElementById('wave-upgrade-ui').style.display = 'flex';
             document.getElementById('shop-runes-display').innerText = runStats.runes;
 
             let list = document.getElementById('upgrade-list'); list.innerHTML = '';
 
-            for (let i = availableUpgrades.length - 1; i > 0; i--) {
+            // Shuffle pool
+            for (let i = shopPool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [availableUpgrades[i], availableUpgrades[j]] = [availableUpgrades[j], availableUpgrades[i]];
+                [shopPool[i], shopPool[j]] = [shopPool[j], shopPool[i]];
             }
 
-            availableUpgrades.slice(0, 3).forEach(u => {
-                let currentLvl = runStats.upgradeLevels[u.id];
-                let cost = 1 + (currentLvl * 2); // Level 0 costs 1, Lv 1 costs 3, Lv 2 costs 5...
-
-                let canAfford = runStats.runes >= cost;
+            shopPool.slice(0, 3).forEach(u => {
+                let canAfford = runStats.runes >= u.cost;
+                let lvlText = u.rarity === 'uncommon' ? ` <span class="lvl-badge">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : '';
 
                 list.innerHTML += `
-                    <button class="upgrade-btn ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade('${u.id}', ${cost})">
+                    <button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
                         <div class="info">
-                            <h4>${u.name} <span class="lvl-badge">(Lv ${currentLvl + 1}/${u.maxLevel})</span></h4>
+                            <h4>${u.name}${lvlText}</h4>
                             <p>${u.desc}</p>
                         </div>
-                        <div class="cost">${cost} 🌀</div>
+                        <div class="cost">${u.cost} 🌀</div>
                     </button>`;
             });
         }
 
-        function showBossClearUI() {
+        function buyRunUpgrade(upgrade) {
+            if (runStats.runes < upgrade.cost) return;
+
+            runStats.runes -= upgrade.cost;
+
+            if (upgrade.rarity === 'uncommon') {
+                runStats.upgradeLevels[upgrade.id]++;
+                if(upgrade.id === 'atk') runStats.bonusAtk += 20;
+                if(upgrade.id === 'spd') { runStats.atkSpeedBonus += 0.10; startPlayerAutoAttack(); }
+                if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
+                if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
+                if(upgrade.id === 'crit') runStats.critChance += 0.10;
+                if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.05;
+                if(upgrade.id === 'evasion') runStats.evasion += 0.05;
+                if(upgrade.id === 'armor') runStats.damageReduction += 0.05;
+            } else if (upgrade.rarity === 'common') {
+                if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
+                if (upgrade.effect.gold) runStats.goldGained += upgrade.effect.gold;
+                if (upgrade.effect.atk) runStats.bonusAtk += upgrade.effect.atk;
+            } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
+                if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
+                if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
+
+                for (let key in upgrade.effect) {
+                    if (runStats.hasOwnProperty(key)) {
+                        runStats[key] += upgrade.effect[key];
+                    }
+                    if (key === 'maxHealth') {
+                        player.maxHealth += upgrade.effect[key];
+                        player.currentHealth += upgrade.effect[key];
+                        updatePlayerHealthBar();
+                    }
+                    if (key === 'heal') {
+                        player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect[key]);
+                        updatePlayerHealthBar();
+                    }
+                }
+                startPlayerAutoAttack(); // Re-trigger just in case atk speed changed
+            }
+
+            updateCombatStatsPanel();
+            continueToNextWave();
+        }
+function showBossClearUI() {
             document.getElementById('boss-clear-ui').style.display = 'flex';
             document.getElementById('boss-ui-gold').innerText = runStats.goldGained;
             document.getElementById('boss-ui-gems').innerText = runStats.gemsGained;
@@ -486,24 +551,7 @@ waveManager.wave = 1;
             document.getElementById('btn-descend').disabled = true;
         }
 
-        function buyRunUpgrade(type, cost) {
-            if (runStats.runes < cost) return;
 
-            runStats.runes -= cost;
-            runStats.upgradeLevels[type]++;
-
-            if(type === 'atk') runStats.bonusAtk += 20;
-            if(type === 'spd') { runStats.atkSpeedBonus += 0.10; startPlayerAutoAttack(); }
-            if(type === 'splash') runStats.splashDmg += 0.10;
-            if(type === 'double') runStats.doubleHitChance += 0.10;
-            if(type === 'crit') runStats.critChance += 0.10;
-            if(type === 'lifesteal') runStats.lifesteal += 0.05;
-            if(type === 'evasion') runStats.evasion += 0.05;
-            if(type === 'armor') runStats.damageReduction += 0.05;
-
-            updateCombatStatsPanel();
-            continueToNextWave();
-        }
 
         function selectCursedRelic(id) {
             if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
@@ -606,6 +654,7 @@ async function initGame() {
         const itemsData = await itemsResponse.json();
 
         runUpgradeData = itemsData.runUpgradeData;
+        commonUpgradesData = itemsData.commonUpgradesData;
         bossSkillsData = itemsData.bossSkillsData;
         cursedRelicsData = itemsData.cursedRelicsData;
 

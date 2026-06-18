@@ -211,3 +211,12 @@
         .loot-item { display: flex; flex-direction: column; align-items: center; font-size: 1.2rem; font-weight: bold; }
 
         .lvl-badge { font-size: 0.8rem; color: #3498db; font-weight: bold; margin-left: 5px; }
+        /* --- UPGRADE RARITIES --- */
+        .upgrade-btn.rarity-common { border-left: 5px solid #bdc3c7; }
+        .upgrade-btn.rarity-uncommon { border-left: 5px solid #3498db; }
+        .upgrade-btn.rarity-rare { border-left: 5px solid #2ecc71; }
+        .upgrade-btn.rarity-ultimate { border-left: 5px solid #e74c3c; }
+        .upgrade-btn.rarity-common .info h4 { color: #bdc3c7; }
+        .upgrade-btn.rarity-uncommon .info h4 { color: #3498db; }
+        .upgrade-btn.rarity-rare .info h4 { color: #2ecc71; }
+        .upgrade-btn.rarity-ultimate .info h4 { color: #e74c3c; }
