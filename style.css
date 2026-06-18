@@ -146,7 +146,7 @@
         /* --- FLOATING COMBAT TEXT & LOOT ANIMATIONS --- */
         .floating-text {
             position: absolute; font-family: 'Fredoka One', cursive; pointer-events: none; z-index: 100;
-            animation: floatUpAndFade 0.8s ease-out forwards;
+            animation: floatUpAndFade 1.5s ease-out forwards;
         }
         .float-dmg { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; }
         .float-enemy-dmg { color: #ff4d4d; text-shadow: 0 2px 4px #000; font-size: 1.8rem; font-weight: bold; }
@@ -227,3 +227,6 @@
 /* --- FLOATING CURRENCY --- */
 .float-gold { color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
 .float-gem { color: #3498db; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
+
+.float-heal { color: #2ecc71; text-shadow: 0 2px 4px #27ae60; font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
+.float-rune { color: #00e5ff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}

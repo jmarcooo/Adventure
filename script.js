@@ -190,7 +190,7 @@ let heroData = {};
             ft.style.top = '10px';
 
             targetDiv.appendChild(ft);
-            setTimeout(() => { if(ft.parentElement) ft.remove(); }, 800);
+            setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
         }
 
         function spawnLootDrop(targetId, type) {
@@ -209,7 +209,7 @@ let heroData = {};
             ft.style.top = '30%';
 
             targetDiv.appendChild(ft);
-            setTimeout(() => { if(ft.parentElement) ft.remove(); }, 800);
+            setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
         }
 
 
@@ -322,7 +322,7 @@ waveManager.wave = 1;
             runStats.enemiesKilled++;
 
             if (target.isBoss) {
-                runStats.runes += (5 + waveManager.wave);
+                let rGained = (5 + waveManager.wave); runStats.runes += rGained; spawnFloatingText('in-run-currency', `+${rGained}`, 'float-rune');
                 for(let i=0; i<5; i++) {
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'rune'), i * 150);
                 }
@@ -333,7 +333,7 @@ waveManager.wave = 1;
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100);
                 }
             } else if (target.isElite) {
-                if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); }
+                if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
 
                 let goldEarned = 3;
                 addCurrency('gold', goldEarned);
@@ -341,7 +341,7 @@ waveManager.wave = 1;
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150);
                 }
             } else {
-                if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); }
+                if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
 
                 if (Math.random() < 0.25) {
                     let goldEarned = 1;
@@ -436,7 +436,9 @@ waveManager.wave = 1;
                         } else if (hero.innateSkill.type === 'mage_arcane') {
                             activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
                         } else if (hero.innateSkill.type === 'paladin_heal') {
-                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + Math.floor(player.maxHealth * 0.20));
+                            let hAmt = Math.floor(player.maxHealth * 0.20);
+                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + hAmt);
+                            spawnFloatingText('player-combat-area', `+${hAmt}`, 'float-heal');
                             updatePlayerHealthBar();
                         } else if (hero.innateSkill.type === 'rogue_steal') {
                             addCurrency('gold', 5);
@@ -446,6 +448,7 @@ waveManager.wave = 1;
                             activeEnemies.forEach(e => { if (e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
                             player.currentHealth = Math.min(player.maxHealth, player.currentHealth + d);
                             updatePlayerHealthBar();
+                            if (d > 0) spawnFloatingText('player-combat-area', `+${d}`, 'float-heal');
                         } else if (hero.innateSkill.type === 'beast_bite') {
                             let biteDmg = Math.floor(dmg * 1.5);
                             target.hp -= biteDmg;
@@ -457,6 +460,7 @@ waveManager.wave = 1;
                         } else if (hero.innateSkill.type === 'bard_song') {
                             runStats.runes += 1;
                             spawnLootDrop('player-combat-area', 'rune');
+                            spawnFloatingText('in-run-currency', '+1', 'float-rune');
                         } else if (hero.innateSkill.type === 'druid_roots') {
                             let d = Math.floor(dmg * 0.5);
                             activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
@@ -465,7 +469,11 @@ waveManager.wave = 1;
 
                     if (runStats.lifesteal > 0) {
                         let healAmount = Math.floor(dmg * runStats.lifesteal);
-                        if (healAmount > 0) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount); updatePlayerHealthBar(); }
+                        if (healAmount > 0) {
+                            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
+                            updatePlayerHealthBar();
+                            spawnFloatingText('player-combat-area', `+${healAmount}`, 'float-heal');
+                        }
                     }
 
                     if (runStats.splashDmg > 0) {
