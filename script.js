@@ -18,7 +18,8 @@ let heroData = {};
 
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
                 upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
-                hasRareUpgrade: false, hasUltimateUpgrade: false
+                hasRareUpgrade: false, hasUltimateUpgrade: false,
+                commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
 };
 
         // MASTER UPGRADE DATABASE
@@ -279,7 +280,8 @@ let heroData = {};
 
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
                 upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
-                hasRareUpgrade: false, hasUltimateUpgrade: false
+                hasRareUpgrade: false, hasUltimateUpgrade: false,
+                commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
 };
 
             // Apply innate abilities
@@ -467,7 +469,7 @@ waveManager.wave = 1;
 
                     // Pre-damage Innate Logic
                     if (innateTrigger) {
-                        spawnFloatingText('player-combat-area', "SKILL!", "float-crit");
+                        spawnFloatingText('player-combat-area', hero.innateSkill.name + "!", "float-crit");
                         if (hero.innateSkill.type === 'hunter_instakill' && !target.isBoss) {
                             dmg = target.hp; // Instakill normal/elite
                         } else if (hero.innateSkill.type === 'berserker_rage') {
@@ -618,8 +620,24 @@ waveManager.wave = 1;
             let shopPool = [];
             window.currentShopPool = shopPool;
 
-            // Add Common
-            commonUpgradesData.forEach(u => shopPool.push({ ...u, rarity: 'common', cost: 1 }));
+            // Add Common (Free, scaling)
+            commonUpgradesData.forEach(u => {
+                let count = runStats.commonUpgradeCounts[u.id] || 0;
+                let scaleMult = count + 1; // Level 1 is 1x, Level 2 is 2x, etc.
+                let newEffect = {};
+                let newDesc = "";
+                if (u.id === 'heal') {
+                    newEffect.heal = 25 * scaleMult;
+                    newDesc = `Heal ${newEffect.heal} HP`;
+                } else if (u.id === 'gold') {
+                    newEffect.gold = 50 * scaleMult;
+                    newDesc = `Gain ${newEffect.gold} Gold`;
+                } else if (u.id === 'temp_atk') {
+                    newEffect.atk = 5 * scaleMult;
+                    newDesc = `+${newEffect.atk} Base Attack`;
+                }
+                shopPool.push({ ...u, rarity: 'common', cost: 0, effect: newEffect, desc: newDesc });
+            });
 
             // Add Uncommon (if not maxed)
             runUpgradeData.forEach(u => {
@@ -691,6 +709,7 @@ waveManager.wave = 1;
                 if(upgrade.id === 'evasion') runStats.evasion += 0.05;
                 if(upgrade.id === 'armor') runStats.damageReduction += 0.05;
             } else if (upgrade.rarity === 'common') {
+                runStats.commonUpgradeCounts[upgrade.id]++;
                 if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
                 if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
                 if (upgrade.effect.atk) runStats.bonusAtk += upgrade.effect.atk;

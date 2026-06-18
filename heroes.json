@@ -31,7 +31,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to splash 100% damage"
+      "desc": "Chance to splash 100% damage",
+      "name": "Splash"
     }
   },
   "mage": {
@@ -66,7 +67,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to cast arcane blast (100% magic damage to all)"
+      "desc": "Chance to cast arcane blast (100% magic damage to all)",
+      "name": "Arcane Blast"
     }
   },
   "paladin": {
@@ -101,7 +103,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to heal 20% max HP on attack"
+      "desc": "Chance to heal 20% max HP on attack",
+      "name": "Holy Light"
     }
   },
   "rogue": {
@@ -137,7 +140,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to steal 5 gold on attack"
+      "desc": "Chance to steal 5 gold on attack",
+      "name": "Pickpocket"
     }
   },
   "berserker": {
@@ -173,7 +177,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to deal 200% damage"
+      "desc": "Chance to deal 200% damage",
+      "name": "Rage"
     }
   },
   "necromancer": {
@@ -209,7 +214,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to deal 50% dmg to all & heal"
+      "desc": "Chance to deal 50% dmg to all & heal",
+      "name": "Death Siphon"
     }
   },
   "beast_tamer": {
@@ -245,7 +251,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance for beast to bite (150% dmg)"
+      "desc": "Chance for beast to bite (150% dmg)",
+      "name": "Beast Bite"
     }
   },
   "cleric": {
@@ -281,7 +288,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to smite (100% true damage)"
+      "desc": "Chance to smite (100% true damage)",
+      "name": "Smite"
     }
   },
   "monk": {
@@ -316,7 +324,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to strike 3 times instantly"
+      "desc": "Chance to strike 3 times instantly",
+      "name": "Flurry"
     }
   },
   "bard": {
@@ -352,7 +361,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to gain 1 Rune on attack"
+      "desc": "Chance to gain 1 Rune on attack",
+      "name": "Inspire"
     }
   },
   "druid": {
@@ -388,7 +398,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to entangle (50% dmg to all)"
+      "desc": "Chance to entangle (50% dmg to all)",
+      "name": "Entangle"
     }
   },
   "warlock": {
@@ -424,7 +435,8 @@
         0.15,
         0.2
       ],
-      "desc": "Chance to deal 300% dmg but take 5% max HP dmg"
+      "desc": "Chance to deal 300% dmg but take 5% max HP dmg",
+      "name": "Dark Curse"
     }
   },
   "hunter": {
@@ -458,7 +470,8 @@
         0.05,
         0.07
       ],
-      "desc": "Chance to instantly kill enemy"
+      "desc": "Chance to instantly kill enemy",
+      "name": "Instakill"
     }
   }
 }
