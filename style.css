@@ -230,3 +230,36 @@
 
 .float-heal { color: #2ecc71; text-shadow: 0 2px 4px #27ae60; font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
 .float-rune { color: #00e5ff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
+
+/* --- IN-APP NOTIFICATION --- */
+.notification-popup {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(44, 62, 80, 0.95);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+    border: 2px solid #3498db;
+    text-align: center;
+    width: 80%;
+}
+
+.notification-popup.show {
+    animation: popupAnim 2.5s ease-in-out forwards;
+}
+
+@keyframes popupAnim {
+    0% { top: -50px; opacity: 0; }
+    10% { top: 20px; opacity: 1; }
+    80% { top: 20px; opacity: 1; }
+    100% { top: -50px; opacity: 0; }
+}

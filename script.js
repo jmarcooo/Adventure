@@ -38,6 +38,18 @@ let heroData = {};
         // --- NAVIGATION & GENERAL LOGIC ---
         const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
 
+
+        let notificationTimer;
+        function showNotification(msg) {
+            let el = document.getElementById('in-app-notification');
+            if(!el) return;
+            el.innerText = msg;
+            el.classList.remove('show');
+            // Trigger reflow to restart animation
+            void el.offsetWidth;
+            el.classList.add('show');
+        }
+
         function openMenu(targetScreen) {
             if(targetScreen !== 'game') { clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer); }
             if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
@@ -131,7 +143,7 @@ let heroData = {};
         function upgradeHeroSkill(heroId) {
             let currentLvl = player.heroSkillLevels[heroId];
             if (currentLvl >= 2) {
-                alert("Skill is already Max Level!");
+                showNotification("Skill is already Max Level!");
                 return;
             }
             let cost = (currentLvl + 1) * 500;
@@ -140,9 +152,9 @@ let heroData = {};
                 player.heroSkillLevels[heroId]++;
                 updateUI();
                 renderHeroSelection();
-                alert(`Skill Upgraded to Level ${player.heroSkillLevels[heroId] + 1}!`);
+                showNotification(`Skill Upgraded to Level ${player.heroSkillLevels[heroId] + 1}!`);
             } else {
-                alert(`Not enough Gold! Need ${cost} 🪙`);
+                showNotification(`Not enough Gold! Need ${cost} 🪙`);
             }
         }
 
@@ -151,23 +163,23 @@ let heroData = {};
             document.getElementById('home-hero').innerText = heroData[heroId].emoji;
             document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
             renderHeroSelection(); // refresh to show it's active
-            alert(`${heroData[heroId].name} is now your active hero!`);
+            showNotification(`${heroData[heroId].name} is now your active hero!`);
         }
 
         function upgradeTalent(type) {
             if (player.talentPoints > 0) { player.talentPoints--; player.talents[type]++; updateUI(); }
-            else { alert("You need Talent Points!"); }
+            else { showNotification("You need Talent Points!"); }
         }
 
         function buyPermanentUpgrade() {
             if(player.gold >= 100) { player.gold -= 100; player.bonusDamage += 15; updateUI(); }
-            else { alert("Not enough Gold!"); }
+            else { showNotification("Not enough Gold!"); }
         }
 
         function buyPremium(item) {
-            if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); alert("Purchased 1,000 Gold!"); }
-            else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); alert("Purchased +50 Permanent DMG!"); }
-            else { alert("Not enough Gems!"); }
+            if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
+            else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
+            else { showNotification("Not enough Gems!"); }
         }
 
         // --- GAME SPEED TOGGLE ---
@@ -796,7 +808,7 @@ function showBossClearUI() {
                 player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth;
                 leveledUp = true;
             }
-            if(leveledUp) alert("🎉 You Leveled Up from that run!");
+            if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
 
             document.getElementById('run-summary-ui').style.display = 'none';
             openMenu('home');
