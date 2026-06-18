@@ -743,11 +743,10 @@ waveManager.wave = 1;
 
                 list.innerHTML += `
                     <button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
-                        <div class="info">
-                            <h4>${u.name}${lvlText}</h4>
-                            <p>${u.desc}</p>
-                        </div>
-                        <div class="cost">${u.cost} 🌀</div>
+                        <div style="font-size: 3rem; margin-bottom: 10px;">${u.icon || '✨'}</div>
+                        <h4 style="font-size: 0.8rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff;">${u.name}${lvlText}</h4>
+                        <p style="font-size: 0.9rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>
+                        ${u.cost > 0 ? `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #00e5ff;">${u.cost} 🌀</div>` : `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #2ecc71;">FREE</div>`}
                     </button>`;
             });
         }

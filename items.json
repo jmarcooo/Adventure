@@ -4,49 +4,57 @@
       "id": "atk",
       "name": "Sharpen Blade",
       "desc": "+10 P.Atk / +10 M.Atk",
-      "maxLevel": 5
+      "maxLevel": 5,
+      "icon": "\u2694\ufe0f"
     },
     {
       "id": "spd",
       "name": "Swift Strikes",
       "desc": "+0.1 Atk Speed",
-      "maxLevel": 5
+      "maxLevel": 5,
+      "icon": "\ud83d\udc5f"
     },
     {
       "id": "splash",
       "name": "Explosive Hits",
       "desc": "+10% Splash Damage",
-      "maxLevel": 3
+      "maxLevel": 3,
+      "icon": "\ud83d\udca5"
     },
     {
       "id": "double",
       "name": "Lightning Reflex",
       "desc": "+10% Double Strike",
-      "maxLevel": 5
+      "maxLevel": 5,
+      "icon": "\u26a1"
     },
     {
       "id": "crit",
       "name": "Deadly Aim",
       "desc": "+10% Critical Chance",
-      "maxLevel": 5
+      "maxLevel": 5,
+      "icon": "\ud83c\udfaf"
     },
     {
       "id": "lifesteal",
       "name": "Vampiric Touch",
       "desc": "+5% Lifesteal",
-      "maxLevel": 3
+      "maxLevel": 3,
+      "icon": "\ud83e\udd87"
     },
     {
       "id": "evasion",
       "name": "Shadow Step",
       "desc": "+5% Dodge Chance",
-      "maxLevel": 5
+      "maxLevel": 5,
+      "icon": "\ud83d\udca8"
     },
     {
       "id": "armor",
       "name": "Iron Skin",
       "desc": "+10 P.Def / +10 M.Def",
-      "maxLevel": 5
+      "maxLevel": 5,
+      "icon": "\ud83d\udee1\ufe0f"
     }
   ],
   "bossSkillsData": [
@@ -141,7 +149,8 @@
       "effect": {
         "heal": 25
       },
-      "type": "common"
+      "type": "common",
+      "icon": "\ud83d\udc96"
     },
     {
       "id": "gold",
@@ -150,7 +159,8 @@
       "effect": {
         "gold": 50
       },
-      "type": "common"
+      "type": "common",
+      "icon": "\ud83d\udcb0"
     },
     {
       "id": "temp_atk",
@@ -159,7 +169,8 @@
       "effect": {
         "atk": 5
       },
-      "type": "common"
+      "type": "common",
+      "icon": "\ud83d\udd25"
     }
   ]
 }
