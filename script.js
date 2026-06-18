@@ -142,6 +142,21 @@ let heroData = {};
             return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)) * runStats.dmgMultiplier);
         }
 
+
+        function addCurrency(type, amount) {
+            if (amount <= 0) return;
+            if (type === 'gold') {
+                player.gold += amount;
+                runStats.goldGained += amount;
+                spawnFloatingText('gold-container', `+${amount}`, 'float-gold');
+            } else if (type === 'gem') {
+                player.gems += amount;
+                runStats.gemsGained += amount;
+                spawnFloatingText('gem-container', `+${amount}`, 'float-gem');
+            }
+            updateUI();
+        }
+
         function updateCombatStatsPanel() {
             let panel = document.getElementById('combat-stats-panel');
             let aps = (1 + runStats.atkSpeedBonus).toFixed(2);
@@ -313,7 +328,7 @@ waveManager.wave = 1;
                 }
 
                 let goldEarned = 10;
-                runStats.goldGained += goldEarned;
+                addCurrency('gold', goldEarned);
                 for(let i=0; i<10; i++) {
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100);
                 }
@@ -321,7 +336,7 @@ waveManager.wave = 1;
                 if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); }
 
                 let goldEarned = 3;
-                runStats.goldGained += goldEarned;
+                addCurrency('gold', goldEarned);
                 for(let i=0; i<3; i++) {
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150);
                 }
@@ -330,7 +345,7 @@ waveManager.wave = 1;
 
                 if (Math.random() < 0.25) {
                     let goldEarned = 1;
-                    runStats.goldGained += goldEarned;
+                    addCurrency('gold', goldEarned);
                     spawnLootDrop(`enemy-${unitId}`, 'gold');
                 }
             }
@@ -424,7 +439,7 @@ waveManager.wave = 1;
                             player.currentHealth = Math.min(player.maxHealth, player.currentHealth + Math.floor(player.maxHealth * 0.20));
                             updatePlayerHealthBar();
                         } else if (hero.innateSkill.type === 'rogue_steal') {
-                            runStats.goldGained += 5;
+                            addCurrency('gold', 5);
                             spawnLootDrop(`enemy-${target.id}`, 'gold');
                         } else if (hero.innateSkill.type === 'necro_summon') {
                             let d = Math.floor(dmg * 0.5);
@@ -526,7 +541,7 @@ waveManager.wave = 1;
 
             let gemsEarned = 0;
             if (isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1;
-            runStats.gemsGained += gemsEarned;
+            if (gemsEarned > 0) addCurrency('gem', gemsEarned);
 
             let expGainedThisWave = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
             runStats.expGained += expGainedThisWave;
@@ -611,7 +626,7 @@ waveManager.wave = 1;
                 if(upgrade.id === 'armor') runStats.damageReduction += 0.05;
             } else if (upgrade.rarity === 'common') {
                 if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
-                if (upgrade.effect.gold) runStats.goldGained += upgrade.effect.gold;
+                if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
                 if (upgrade.effect.atk) runStats.bonusAtk += upgrade.effect.atk;
             } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
                 if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
@@ -719,8 +734,6 @@ function showBossClearUI() {
         }
 
         function collectRunRewards() {
-            player.gold += runStats.goldGained;
-            player.gems += runStats.gemsGained;
             player.exp += runStats.expGained;
 
             let leveledUp = false;

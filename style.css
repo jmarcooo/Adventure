@@ -223,3 +223,7 @@
 
         /* --- ELITE ENEMIES --- */
         .enemy-unit.elite .emoji { filter: drop-shadow(0 0 10px #f39c12); transform: scale(1.2); }
+
+/* --- FLOATING CURRENCY --- */
+.float-gold { color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
+.float-gem { color: #3498db; text-shadow: 0 2px 4px rgba(0,0,0,0.8); font-size: 1.4rem; z-index: 200; font-family: 'Fredoka One', cursive;}
