@@ -255,12 +255,17 @@ waveManager.wave = 1;
                 textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
                 for(let i = 0; i < enemyCount; i++) {
-                    activeEnemies.push({ id: i, maxHp: normHp, hp: normHp, damage: normDmg, skill: null, isDead: false, isBoss: false });
+                    let isElite = Math.random() < 0.20;
+                    let finalHp = isElite ? normHp * 2 : normHp;
+                    let finalDmg = isElite ? normDmg * 2 : normDmg;
+                    let eliteClass = isElite ? 'elite' : '';
+
+                    activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: null, isDead: false, isBoss: false, isElite: isElite });
                     container.innerHTML += `
-                        <div class="enemy-unit" id="enemy-${i}">
+                        <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
                             <div class="emoji">${packEmoji}</div>
                             <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
-                            <div class="mini-hp-text" id="enemy-hp-text-${i}">${normHp}/${normHp}</div>
+                            <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
                         </div>`;
                 }
             }
@@ -273,19 +278,31 @@ waveManager.wave = 1;
 
             if (target.isBoss) {
                 runStats.runes += (5 + waveManager.wave);
-                let goldEarned = Math.floor((150 * waveManager.wave) * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
-                runStats.goldGained += goldEarned;
-
                 for(let i=0; i<5; i++) {
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'rune'), i * 150);
-                    setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), (i * 150) + 75);
+                }
+
+                let goldEarned = 10;
+                runStats.goldGained += goldEarned;
+                for(let i=0; i<10; i++) {
+                    setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100);
+                }
+            } else if (target.isElite) {
+                if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); }
+
+                let goldEarned = 3;
+                runStats.goldGained += goldEarned;
+                for(let i=0; i<3; i++) {
+                    setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150);
                 }
             } else {
                 if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); }
 
-                let goldEarned = Math.floor((20 * waveManager.wave) * (1 + (player.talents.gold * 0.20)) * runStats.goldMultiplier);
-                runStats.goldGained += goldEarned;
-                spawnLootDrop(`enemy-${unitId}`, 'gold');
+                if (Math.random() < 0.25) {
+                    let goldEarned = 1;
+                    runStats.goldGained += goldEarned;
+                    spawnLootDrop(`enemy-${unitId}`, 'gold');
+                }
             }
 
             document.getElementById('run-runes-text').innerText = runStats.runes;

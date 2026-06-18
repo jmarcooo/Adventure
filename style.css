@@ -220,3 +220,6 @@
         .upgrade-btn.rarity-uncommon .info h4 { color: #3498db; }
         .upgrade-btn.rarity-rare .info h4 { color: #2ecc71; }
         .upgrade-btn.rarity-ultimate .info h4 { color: #e74c3c; }
+
+        /* --- ELITE ENEMIES --- */
+        .enemy-unit.elite .emoji { filter: drop-shadow(0 0 10px #f39c12); transform: scale(1.2); }
