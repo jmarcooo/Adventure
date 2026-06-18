@@ -202,6 +202,9 @@ let heroData = {};
                 }
             });
 
+            // Render Hero Stats Panel
+            updateGearStatsPanel();
+
             // Render Inventory
             let grid = document.getElementById('inventory-grid');
             if (grid) {
@@ -211,7 +214,9 @@ let heroData = {};
                 for(let i=0; i < totalSlots; i++) {
                     let item = player.inventory[i];
                     if (item) {
-                        grid.innerHTML += `<div class="inv-slot" style="cursor:pointer;" onclick="showGearModal(player.inventory[${i}], 'inventory', ${i})">${item.icon}</div>`;
+                        grid.innerHTML += `<div class="inv-slot" style="cursor:pointer; position: relative;" onclick="showGearModal(player.inventory[${i}], 'inventory', ${i})">${item.icon}
+                        <div style="position: absolute; bottom: 2px; right: 2px; font-size: 0.5rem; background: rgba(0,0,0,0.6); padding: 1px 3px; border-radius: 3px; color: #ccc;">${item.type}</div>
+                        </div>`;
                     } else {
                         grid.innerHTML += `<div class="inv-slot"></div>`;
                     }
@@ -294,6 +299,29 @@ let heroData = {};
             renderGearMenu();
         }
 
+        function updateGearStatsPanel() {
+            let panel = document.getElementById('gear-hero-stats');
+            if (!panel) return;
+
+            if (!player.currentHero || !heroData[player.currentHero]) {
+                panel.innerHTML = '<div style="text-align:center; padding: 20px;">No Hero Active</div>';
+                return;
+            }
+
+            let stats = getPlayerStats();
+            let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${heroData[player.currentHero].name}</h4>`;
+            html += `<div class="equip-stat-row"><span>P.Atk</span> <span>${stats.pAtk}</span></div>`;
+            html += `<div class="equip-stat-row"><span>M.Atk</span> <span>${stats.mAtk}</span></div>`;
+            html += `<div class="equip-stat-row"><span>P.Def</span> <span>${stats.pDef}</span></div>`;
+            html += `<div class="equip-stat-row"><span>M.Def</span> <span>${stats.mDef}</span></div>`;
+            html += `<div class="equip-stat-row"><span>Atk Spd</span> <span>${stats.atkSpd.toFixed(2)}</span></div>`;
+            html += `<div class="equip-stat-row"><span>Speed</span> <span>${stats.spd}</span></div>`;
+            html += `<div class="equip-stat-row"><span>Crit %</span> <span>${(stats.crit * 100).toFixed(1)}%</span></div>`;
+            html += `<div class="equip-stat-row"><span>Evasion %</span> <span>${(stats.evasion * 100).toFixed(1)}%</span></div>`;
+            html += `<div class="equip-stat-row"><span>Luck</span> <span>${stats.luck}</span></div>`;
+
+            panel.innerHTML = html;
+        }
 
         function buyPremium(item) {
             if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
