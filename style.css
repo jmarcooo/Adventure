@@ -273,3 +273,7 @@
 .equip-bottom { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 15px; flex-grow: 1; overflow-y: auto; }
 .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .inv-slot { width: 100%; aspect-ratio: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
+
+.stat-positive { color: #2ecc71; font-weight: bold; }
+.stat-negative { color: #e74c3c; font-weight: bold; }
+.stat-neutral { color: #bdc3c7; }

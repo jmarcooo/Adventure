@@ -195,9 +195,9 @@ let heroData = {};
                 let el = document.getElementById(`slot-${slot}`);
                 if (el) {
                     if (player.equipment[slot]) {
-                        el.innerText = player.equipment[slot].icon;
+                        el.innerHTML = `<span style="cursor:pointer;" onclick="showGearModal(player.equipment['${slot}'], 'equipped', '${slot}')">${player.equipment[slot].icon}</span>`;
                     } else {
-                        el.innerText = '';
+                        el.innerHTML = '';
                     }
                 }
             });
@@ -210,10 +210,90 @@ let heroData = {};
                 let totalSlots = Math.max(12, player.inventory.length);
                 for(let i=0; i < totalSlots; i++) {
                     let item = player.inventory[i];
-                    grid.innerHTML += `<div class="inv-slot">${item ? item.icon : ''}</div>`;
+                    if (item) {
+                        grid.innerHTML += `<div class="inv-slot" style="cursor:pointer;" onclick="showGearModal(player.inventory[${i}], 'inventory', ${i})">${item.icon}</div>`;
+                    } else {
+                        grid.innerHTML += `<div class="inv-slot"></div>`;
+                    }
                 }
             }
         }
+
+        function showGearModal(item, source, key) {
+            if (!item) return;
+
+            document.getElementById('gear-modal-icon').innerText = item.icon;
+            document.getElementById('gear-modal-name').innerText = item.name;
+            document.getElementById('gear-modal-type').innerText = item.slot;
+
+            let statsDiv = document.getElementById('gear-modal-stats');
+            statsDiv.innerHTML = '';
+
+            let statNames = { pAtk: 'P.Atk', mAtk: 'M.Atk', pDef: 'P.Def', mDef: 'M.Def', atkSpd: 'Atk.Spd', spd: 'Speed', evasion: 'Dodge', crit: 'Crit', luck: 'Luck' };
+
+            let currentEquipped = source === 'inventory' ? player.equipment[item.slot] : null;
+
+            for (let stat in statNames) {
+                let itemVal = item.stats[stat] || 0;
+                let equippedVal = currentEquipped && currentEquipped.stats[stat] ? currentEquipped.stats[stat] : 0;
+
+                if (itemVal > 0 || equippedVal > 0) {
+                    let diff = itemVal - equippedVal;
+                    let diffHtml = '';
+                    if (source === 'inventory') {
+                        if (diff > 0) diffHtml = `<span class="stat-positive">(+${diff})</span>`;
+                        else if (diff < 0) diffHtml = `<span class="stat-negative">(${diff})</span>`;
+                        else diffHtml = `<span class="stat-neutral">(-)</span>`;
+                    }
+
+                    statsDiv.innerHTML += `<div style="display: flex; justify-content: space-between;">
+                        <span>${statNames[stat]}:</span>
+                        <span><b>${itemVal}</b> ${diffHtml}</span>
+                    </div>`;
+                }
+            }
+
+            let actionBtn = document.getElementById('gear-modal-action-btn');
+            if (source === 'inventory') {
+                actionBtn.innerText = 'EQUIP';
+                actionBtn.onclick = () => {
+                    equipItem(key, item.slot);
+                    document.getElementById('gear-details-modal').style.display = 'none';
+                };
+            } else {
+                actionBtn.innerText = 'UNEQUIP';
+                actionBtn.onclick = () => {
+                    unequipItem(key);
+                    document.getElementById('gear-details-modal').style.display = 'none';
+                };
+            }
+
+            document.getElementById('gear-details-modal').style.display = 'flex';
+        }
+
+        function equipItem(invIndex, slot) {
+            let itemToEquip = player.inventory[invIndex];
+            let currentEquipped = player.equipment[slot];
+
+            player.equipment[slot] = itemToEquip;
+            player.inventory.splice(invIndex, 1);
+
+            if (currentEquipped) {
+                player.inventory.push(currentEquipped);
+            }
+
+            renderGearMenu();
+        }
+
+        function unequipItem(slot) {
+            let item = player.equipment[slot];
+            if (item) {
+                player.inventory.push(item);
+                player.equipment[slot] = null;
+            }
+            renderGearMenu();
+        }
+
 
         function buyPremium(item) {
             if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
@@ -235,18 +315,32 @@ let heroData = {};
 
         // --- COMBAT CORE ---
 
+        function getEquipmentStats() {
+            let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
+            for (let slot in player.equipment) {
+                let item = player.equipment[slot];
+                if (item && item.stats) {
+                    for (let key in eqStats) {
+                        if (item.stats[key]) eqStats[key] += item.stats[key];
+                    }
+                }
+            }
+            return eqStats;
+        }
+
         function getPlayerStats() {
             let hero = heroData[player.currentHero];
+            let eq = getEquipmentStats();
             return {
-                pAtk: Math.floor((hero.pAtk + runStats.pAtk) * runStats.pAtkMulti),
-                mAtk: Math.floor((hero.mAtk + runStats.mAtk) * runStats.mAtkMulti),
-                pDef: Math.floor((hero.pDef + runStats.pDef) * runStats.pDefMulti),
-                mDef: Math.floor((hero.mDef + runStats.mDef) * runStats.mDefMulti),
-                atkSpd: (hero.atkSpd + runStats.atkSpd) * runStats.atkSpdMulti,
-                spd: hero.spd + runStats.spd,
-                evasion: hero.evasion + runStats.evasion,
-                crit: hero.crit + runStats.crit,
-                luck: hero.luck + runStats.luck
+                pAtk: Math.floor((hero.pAtk + runStats.pAtk + eq.pAtk) * runStats.pAtkMulti),
+                mAtk: Math.floor((hero.mAtk + runStats.mAtk + eq.mAtk) * runStats.mAtkMulti),
+                pDef: Math.floor((hero.pDef + runStats.pDef + eq.pDef) * runStats.pDefMulti),
+                mDef: Math.floor((hero.mDef + runStats.mDef + eq.mDef) * runStats.mDefMulti),
+                atkSpd: (hero.atkSpd + runStats.atkSpd + eq.atkSpd) * runStats.atkSpdMulti,
+                spd: hero.spd + runStats.spd + eq.spd,
+                evasion: hero.evasion + runStats.evasion + eq.evasion,
+                crit: hero.crit + runStats.crit + eq.crit,
+                luck: hero.luck + runStats.luck + eq.luck
             };
         }
 
