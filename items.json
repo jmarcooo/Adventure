@@ -3,13 +3,13 @@
     {
       "id": "atk",
       "name": "Sharpen Blade",
-      "desc": "+20 Base Attack",
+      "desc": "+10 P.Atk / +10 M.Atk",
       "maxLevel": 5
     },
     {
       "id": "spd",
       "name": "Swift Strikes",
-      "desc": "+10% Attack Speed",
+      "desc": "+0.1 Atk Speed",
       "maxLevel": 5
     },
     {
@@ -45,7 +45,7 @@
     {
       "id": "armor",
       "name": "Iron Skin",
-      "desc": "+5% Damage Reduction",
+      "desc": "+10 P.Def / +10 M.Def",
       "maxLevel": 5
     }
   ],
@@ -79,7 +79,7 @@
     {
       "id": "glass",
       "name": "Glass Cannon",
-      "desc": "+20% DMG, +25% Crit",
+      "desc": "+20% P.Atk/M.Atk, +25% Crit",
       "curseDesc": "-30% Max HP",
       "icon": "\ud83e\udde8"
     },
@@ -87,7 +87,7 @@
       "id": "berserk",
       "name": "Berserker's Frenzy",
       "desc": "+40% Attack Speed",
-      "curseDesc": "-15 Base Attack",
+      "curseDesc": "-15 P.Atk",
       "icon": "\ud83e\ude78"
     },
     {
@@ -100,7 +100,7 @@
     {
       "id": "giant",
       "name": "Giant's Burden",
-      "desc": "+30 Base Attack, +10% Splash",
+      "desc": "+30 P.Atk, +10% Splash",
       "curseDesc": "-20% Attack Speed",
       "icon": "\ud83d\uddff"
     },
@@ -108,7 +108,7 @@
       "id": "blood",
       "name": "Blood Pact",
       "desc": "+10% Lifesteal",
-      "curseDesc": "-15% Damage Reduction",
+      "curseDesc": "-15 P.Def/M.Def",
       "icon": "\ud83d\udc89"
     },
     {
@@ -128,7 +128,7 @@
     {
       "id": "spiked",
       "name": "Spiked Armor",
-      "desc": "+20% Damage Reduction",
+      "desc": "+20 P.Def",
       "curseDesc": "-10% Attack Speed",
       "icon": "\ud83d\udc22"
     }

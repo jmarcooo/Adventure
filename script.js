@@ -12,9 +12,10 @@ let heroData = {};
 
         // Run Stats & Upgrade Tracking
         let runStats = {
-            bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0,
-            lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
-            dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+            pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
+            splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
+            pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+            goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
 
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
                 upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
@@ -116,7 +117,19 @@ let heroData = {};
                     </div>
                 </div>
                 <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
-                <p><b>Base Damage:</b> <span style="color: #e74c3c;">${hero.baseDamage}</span></p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem;">
+                    <p><b>P.Atk:</b> <span style="color: #e74c3c;">${hero.pAtk}</span></p>
+                    <p><b>M.Atk:</b> <span style="color: #9b59b6;">${hero.mAtk}</span></p>
+                    <p><b>P.Def:</b> <span style="color: #f39c12;">${hero.pDef}</span></p>
+                    <p><b>M.Def:</b> <span style="color: #3498db;">${hero.mDef}</span></p>
+                    <p><b>Speed:</b> <span style="color: #2ecc71;">${hero.spd}</span></p>
+                    <p><b>Atk.Spd:</b> <span style="color: #e67e22;">${hero.atkSpd}</span></p>
+                    <p><b>Crit:</b> <span style="color: #f1c40f;">${hero.crit * 100}%</span></p>
+                    <p><b>Dodge:</b> <span style="color: #1abc9c;">${hero.evasion * 100}%</span></p>
+                    <p><b>Luck:</b> <span style="color: #f39c12;">${hero.luck * 100}%</span></p>
+                </div>
+
                 <p style="margin-top: 5px;"><b>Innate Passive:</b> <span style="color: #f1c40f;">${hero.innateDesc || 'None'}</span></p>
                 <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
 
@@ -196,10 +209,37 @@ let heroData = {};
         }
 
         // --- COMBAT CORE ---
-        function getTotalDamage() {
-            let rawDamage = heroData[player.currentHero].baseDamage + player.bonusDamage + runStats.bonusAtk;
-            return Math.floor(rawDamage * (1 + (player.talents.damage * 0.10)) * runStats.dmgMultiplier);
+
+        function getPlayerStats() {
+            let hero = heroData[player.currentHero];
+            return {
+                pAtk: Math.floor((hero.pAtk + runStats.pAtk) * runStats.pAtkMulti),
+                mAtk: Math.floor((hero.mAtk + runStats.mAtk) * runStats.mAtkMulti),
+                pDef: Math.floor((hero.pDef + runStats.pDef) * runStats.pDefMulti),
+                mDef: Math.floor((hero.mDef + runStats.mDef) * runStats.mDefMulti),
+                atkSpd: (hero.atkSpd + runStats.atkSpd) * runStats.atkSpdMulti,
+                spd: hero.spd + runStats.spd,
+                evasion: hero.evasion + runStats.evasion,
+                crit: hero.crit + runStats.crit,
+                luck: hero.luck + runStats.luck
+            };
         }
+
+        function getTotalDamage() {
+            let stats = getPlayerStats();
+            let baseP = stats.pAtk;
+            let baseM = stats.mAtk;
+
+            // Apply talents
+            baseP = Math.floor(baseP * (1 + (player.talents.damage * 0.10)));
+            baseM = Math.floor(baseM * (1 + (player.talents.damage * 0.10)));
+
+            // Permanent gear logic uses bonusDamage, lets apply to pAtk
+            baseP += player.bonusDamage;
+
+            return { pDmg: baseP, mDmg: baseM };
+        }
+
 
 
         function addCurrency(type, amount) {
@@ -216,21 +256,22 @@ let heroData = {};
             updateUI();
         }
 
-        function updateCombatStatsPanel() {
+                function updateCombatStatsPanel() {
             let panel = document.getElementById('combat-stats-panel');
-            let aps = (1 + runStats.atkSpeedBonus).toFixed(2);
+            let stats = getPlayerStats();
+            let d = getTotalDamage();
 
             panel.innerHTML = `
                 <div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero].emoji}</div>
                 <div>
-                    <p>⚔️ ${getTotalDamage()} DMG</p>
-                    <p>⏱️ ${aps}/s Atk Spd</p>
-                    <p>🎯 ${Math.round(runStats.critChance * 100)}% Crit</p>
+                    <p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p>
+                    <p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p>
+                    <p>🎯 ${Math.round(stats.crit * 100)}% Crit</p>
                 </div>
                 <div>
-                    <p>🛡️ ${Math.round(runStats.damageReduction * 100)}% Arm</p>
-                    <p>💨 ${Math.round(runStats.evasion * 100)}% Ddg</p>
-                    <p>🩸 ${Math.round(runStats.lifesteal * 100)}% L.S.</p>
+                    <p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p>
+                    <p>💨 ${Math.round(stats.evasion * 100)}% Ddg</p>
+                    <p>🍀 ${Math.round(stats.luck * 100)}% Lck</p>
                 </div>
             `;
             document.getElementById('run-runes-text').innerText = runStats.runes;
@@ -274,9 +315,10 @@ let heroData = {};
 
         function startGame() {
             runStats = {
-                bonusAtk: 0, splashDmg: 0.0, doubleHitChance: 0.0, critChance: 0.0,
-                lifesteal: 0.0, evasion: 0.0, damageReduction: 0.0, atkSpeedBonus: 0.0,
-                dmgMultiplier: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+                pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
+                splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
+                pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+                goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
 
                 runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
                 upgradeLevels: { atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, armor: 0 },
@@ -317,8 +359,8 @@ waveManager.wave = 1;
 
         function startPlayerAutoAttack() {
             clearInterval(playerAttackTimer);
-            // Default speed (1) = 2 seconds. Fast speed (2) = 1 second. (Modified by Atk Speed Bonus)
-            let interval = 2000 / (gameSpeed * Math.max(0.1, (1 + runStats.atkSpeedBonus)));
+            let stats = getPlayerStats();
+            let interval = 2000 / (gameSpeed * Math.max(0.1, stats.atkSpd));
             playerAttackTimer = setInterval(autoAttackEnemy, interval);
         }
 
@@ -387,7 +429,8 @@ waveManager.wave = 1;
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'rune'), i * 150);
                 }
 
-                let goldEarned = 10;
+                let stats = getPlayerStats();
+                let goldEarned = Math.floor(10 * (1 + stats.luck));
                 addCurrency('gold', goldEarned);
                 for(let i=0; i<10; i++) {
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100);
@@ -395,7 +438,8 @@ waveManager.wave = 1;
             } else if (target.isElite) {
                 if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
 
-                let goldEarned = 3;
+                let stats = getPlayerStats();
+                let goldEarned = Math.floor(3 * (1 + stats.luck));
                 addCurrency('gold', goldEarned);
                 for(let i=0; i<3; i++) {
                     setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150);
@@ -403,8 +447,10 @@ waveManager.wave = 1;
             } else {
                 if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
 
+                let stats = getPlayerStats();
                 if (Math.random() < 0.25) {
-                    let goldEarned = 1;
+                    let goldEarned = Math.floor(1 * (1 + stats.luck));
+                    if (goldEarned < 1) goldEarned = 1;
                     addCurrency('gold', goldEarned);
                     spawnLootDrop(`enemy-${unitId}`, 'gold');
                 }
@@ -455,8 +501,16 @@ waveManager.wave = 1;
                     let target = activeEnemies.find(e => e.hp > 0);
                     if (!target) return;
 
-                    let dmg = getTotalDamage();
-                    let isCrit = Math.random() < runStats.critChance;
+                    let damages = getTotalDamage();
+                    let stats = getPlayerStats();
+                    let isCrit = Math.random() < stats.crit;
+
+                    // Simple defense math: DMG = Atk - Def (min 1)
+                    // If target has armor skill, reduce DMG further
+                    let pDmg = Math.max(1, damages.pDmg); // enemies don't have pDef defined right now, so we just use base.
+                    let mDmg = Math.max(1, damages.mDmg);
+
+                    let dmg = pDmg + mDmg;
                     if (isCrit) dmg = Math.floor(dmg * 2.5);
 
                     let hero = heroData[player.currentHero];
@@ -559,11 +613,16 @@ waveManager.wave = 1;
                     let unitDiv = document.getElementById(`enemy-${e.id}`);
                     if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
 
+                    let stats = getPlayerStats();
                     let incomingDmg = e.damage;
 
                     if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg"); }
-                    if (e.skill !== 'magic' && Math.random() < runStats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
-                    if (e.skill !== 'magic') { incomingDmg = Math.floor(incomingDmg * (1 - runStats.damageReduction)); }
+                    if (e.skill !== 'magic' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
+
+                    if (e.skill !== 'magic') {
+                        // Enemy deals physical damage, subtract player P.Def
+                        incomingDmg = Math.max(1, incomingDmg - stats.pDef);
+                    }
                     if(incomingDmg < 1) incomingDmg = 1;
 
                     player.currentHealth -= incomingDmg;
@@ -700,19 +759,19 @@ waveManager.wave = 1;
 
             if (upgrade.rarity === 'uncommon') {
                 runStats.upgradeLevels[upgrade.id]++;
-                if(upgrade.id === 'atk') runStats.bonusAtk += 20;
-                if(upgrade.id === 'spd') { runStats.atkSpeedBonus += 0.10; startPlayerAutoAttack(); }
+                if(upgrade.id === 'atk') { runStats.pAtk += 10; runStats.mAtk += 10; }
+                if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; startPlayerAutoAttack(); }
                 if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
                 if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
-                if(upgrade.id === 'crit') runStats.critChance += 0.10;
+                if(upgrade.id === 'crit') runStats.crit += 0.10;
                 if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.05;
                 if(upgrade.id === 'evasion') runStats.evasion += 0.05;
-                if(upgrade.id === 'armor') runStats.damageReduction += 0.05;
+                if(upgrade.id === 'armor') { runStats.pDef += 10; runStats.mDef += 10; }
             } else if (upgrade.rarity === 'common') {
                 runStats.commonUpgradeCounts[upgrade.id]++;
                 if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
                 if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
-                if (upgrade.effect.atk) runStats.bonusAtk += upgrade.effect.atk;
+                if (upgrade.effect.atk) { runStats.pAtk += upgrade.effect.atk; runStats.mAtk += upgrade.effect.atk; }
             } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
                 if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
                 if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
