@@ -1,8 +1,8 @@
 // --- GAME DATA ---
-let gameSpeed = 1; // 1 = Slow (Default), 2 = Fast
+let gameSpeed = 1; 
 
 let heroData = {};
-let enemiesData = {}; // Holds the data from enemies.json
+let enemiesData = {}; 
 
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
@@ -11,23 +11,20 @@ let player = {
     heroSkillLevels: {},
     equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
     inventory: [],
-    attackProgress: 0 // Player ATB tracking
+    attackProgress: 0 
 };
 
-// Run Stats & Upgrade Tracking
 let runStats = {
     pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
     splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
     pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
-
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
     upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
     hasRareUpgrade: false, hasUltimateUpgrade: false,
     commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
 };
 
-// MASTER UPGRADE DATABASE
 let runUpgradeData = [];
 let commonUpgradesData = [];
 let bossSkillsData = [];
@@ -37,8 +34,11 @@ let viewingHero = null;
 let activeEnemies = [];
 let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 
-// Unified Combat Loop Timer
 let combatTickInterval;
+
+// TEST MODE VARIABLES
+let isTestMode = false;
+let debugIntimidate = false;
 
 // --- NAVIGATION & GENERAL LOGIC ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
@@ -65,6 +65,24 @@ function openMenu(targetScreen) {
         document.getElementById('btn-' + targetScreen).classList.add('active');
     } else {
         document.getElementById('bottom-nav-bar').style.display = 'none';
+    }
+}
+
+// --- HIDDEN DEVELOPER CHEAT MODE ---
+let secretGemClickCount = 0;
+let secretGemClickTimer = null;
+
+function checkSecretCheat() {
+    secretGemClickCount++;
+    clearTimeout(secretGemClickTimer);
+
+    if (secretGemClickCount >= 10) {
+        player.gems += 10000;
+        updateUI();
+        showNotification("🛠️ DEV MODE: +10,000 Gems Added!");
+        secretGemClickCount = 0; 
+    } else {
+        secretGemClickTimer = setTimeout(() => { secretGemClickCount = 0; }, 1000);
     }
 }
 
@@ -352,7 +370,7 @@ function getPlayerStats() {
         luck: hero.luck + runStats.luck + eq.luck
     };
 
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive') || debugIntimidate) {
         stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
     }
     return stats;
@@ -400,7 +418,7 @@ function renderStatusEffects() {
     if (!container) return;
     container.innerHTML = '';
 
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive') || debugIntimidate) {
         container.innerHTML += `<div class="status-icon debuff" title="Intimidated: -25% Damage & Attack Speed">💀 Intimidated</div>`;
     }
     if (player.isStunned) {
@@ -408,14 +426,42 @@ function renderStatusEffects() {
     }
 }
 
-// --- NEW FUNCTION: Crossed Swords Animation ---
+// --- NEW DEBUG FUNCTIONS ---
+function debugApply(type) {
+    if (!isTestMode) return;
+    
+    if (type === 'stun') {
+        player.isStunned = true;
+        spawnFloatingText('player-combat-area', "STUNNED!", "float-enemy-dmg");
+    } else if (type === 'poison') {
+        let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05));
+        player.currentHealth -= poisonDmg;
+        spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
+        if (player.currentHealth <= 0) triggerGameOver();
+    } else if (type === 'intimidate') {
+        debugIntimidate = !debugIntimidate;
+        spawnFloatingText('player-combat-area', debugIntimidate ? "INTIMIDATED!" : "CLEARED!", "float-miss");
+    } else if (type === 'buff_atk') {
+        runStats.pAtk += 100;
+        runStats.mAtk += 100;
+        spawnFloatingText('player-combat-area', "+100 ATK", "float-heal");
+    } else if (type === 'buff_spd') {
+        runStats.atkSpdMulti += 0.5;
+        spawnFloatingText('player-combat-area', "+50% SPD", "float-heal");
+    }
+    
+    updateCombatStatsPanel();
+    renderStatusEffects();
+    updatePlayerHealthBar();
+}
+
 function playBattleStartAnimation() {
     let overlay = document.getElementById('battle-start-overlay');
     let swords = document.getElementById('crossed-swords');
     if(overlay && swords) {
         overlay.style.display = 'flex';
         swords.classList.remove('animate-swords');
-        void swords.offsetWidth; // trigger reflow
+        void swords.offsetWidth; 
         swords.classList.add('animate-swords');
         setTimeout(() => {
             overlay.style.display = 'none';
@@ -448,10 +494,9 @@ function spawnLootDrop(targetId, type) {
     setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
-// --- NEW ATB LOOP ENGINE ---
+// --- ATB LOOP ENGINE ---
 function startCombatLoop() {
     clearInterval(combatTickInterval);
-    // Ticks 20 times a second to fill ATB bars smoothly
     combatTickInterval = setInterval(combatTick, 50); 
 }
 
@@ -461,7 +506,6 @@ function combatTick() {
     let stats = getPlayerStats();
     let actionQueue = []; 
 
-    // 1. Player ATB Fill
     if (!player.isStunned) {
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
@@ -478,10 +522,8 @@ function combatTick() {
         }
     }
     let pAtb = document.getElementById('player-atb');
-    // Ensure visually it never dips below 0 even if mathematically negative
     if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
 
-    // 2. Enemy ATB Fill
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => {
         let eAtkSpd = e.atkSpd || 1.0;
@@ -494,7 +536,6 @@ function combatTick() {
         if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, e.attackProgress)) + '%';
     });
 
-    // 3. Execute Actions (Fastest acts FIRST)
     if (actionQueue.length > 0) {
         actionQueue.sort((a, b) => b.spd - a.spd); 
         
@@ -513,11 +554,93 @@ function combatTick() {
     }
 }
 
+// --- NEW TEST BATTLE MODE ---
+function startTestBattle() {
+    if (!heroData || Object.keys(heroData).length === 0) {
+        alert("ERROR: Game data failed to load.");
+        return;
+    }
+
+    isTestMode = true;
+    debugIntimidate = false;
+
+    runStats = {
+        pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
+        splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
+        pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+        goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+        runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
+        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
+        hasRareUpgrade: false, hasUltimateUpgrade: false,
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+    };
+
+    if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
+        let innate = heroData[player.currentHero].innate;
+        for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
+    }
+    
+    waveManager.wave = 1;
+    player.currentHealth = player.maxHealth;
+    player.isStunned = false;
+
+    document.getElementById('run-summary-ui').style.display = 'none';
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
+    
+    // Show Debug Panel
+    document.getElementById('debug-panel').style.display = 'flex'; 
+    waveManager.isUpgrading = true; 
+
+    updateCombatStatsPanel();
+    openMenu('game');
+
+    // Spawn ONLY the Dummy
+    let container = document.getElementById('enemy-container');
+    let textEl = document.getElementById('level-wave-text');
+    container.innerHTML = ''; activeEnemies = [];
+
+    textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
+
+    let dummyHp = 9999;
+    let dummy = {
+        id: 0, maxHp: dummyHp, hp: dummyHp, damage: 0, pDef: 9999, mDef: 9999,
+        skill: 'dummy', attackProgress: 0, isDead: false, isBoss: true, spd: 1, atkSpd: 0.1
+    };
+    activeEnemies.push(dummy);
+
+    container.innerHTML = `
+        <div class="enemy-unit boss" id="enemy-0">
+            <div class="emoji" style="font-size: 5rem;">🎯</div>
+            <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Training Dummy</div>
+            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
+            <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
+            <div class="mini-hp-text" id="enemy-hp-text-0">${dummyHp}/${dummyHp}</div>
+            <div class="boss-skill-badge" title="Immune to most damage">🛡️ 9999 DEF/MDEF</div>
+        </div>`;
+
+    player.attackProgress = 95;
+    dummy.attackProgress = 0;
+    
+    let pAtb = document.getElementById('player-atb');
+    if(pAtb) pAtb.style.width = '95%';
+
+    renderStatusEffects(); 
+    startCombatLoop(); 
+    playBattleStartAnimation();
+
+    setTimeout(() => { waveManager.isUpgrading = false; }, 1000);
+}
+
 function startGame() {
     if (!heroData || Object.keys(heroData).length === 0) {
         alert("ERROR: Game data failed to load.\n\nPlease start a Local Web Server (like 'Live Server' in VS Code) to play!");
         return;
     }
+
+    isTestMode = false;
+    debugIntimidate = false;
+    document.getElementById('debug-panel').style.display = 'none';
 
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
@@ -542,20 +665,16 @@ function startGame() {
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
     
-    // Set to true so combat doesn't immediately tick
     waveManager.isUpgrading = true; 
 
     updateCombatStatsPanel();
     openMenu('game');
     
-    // Spawn triggers the staggered ATB Initiative Calculation
     spawnEnemyPack();
     startCombatLoop(); 
 
-    // TRIGGER VISUAL SWORDS CUE FOR 1-SECOND DELAY
     playBattleStartAnimation();
 
-    // Unfreeze combat loop after 1 second
     setTimeout(() => {
         waveManager.isUpgrading = false; 
     }, 1000);
@@ -593,7 +712,6 @@ function getLevelAndWave() {
     return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
 }
 
-// --- Spawns enemies with Layout: Sprite -> Name -> HP Bar -> ATB Bar -> HP Text ---
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
@@ -695,25 +813,20 @@ function spawnEnemyPack() {
     let pStats = getPlayerStats();
     let combatants = [];
 
-    // Add Player to sort pool
     combatants.push({ type: 'player', spd: pStats.spd, atkSpd: Math.max(0.1, pStats.atkSpd), ref: player });
 
-    // Add Enemies to sort pool
     activeEnemies.forEach(e => {
         e.spd = e.spd || (e.isBoss ? 15 : (e.isElite ? 12 : 10)); 
         e.atkSpd = e.atkSpd || (e.isBoss ? 1.2 : 1.0); 
         combatants.push({ type: 'enemy', spd: e.spd, atkSpd: e.atkSpd, ref: e });
     });
 
-    // Sort by Speed descending (Fastest goes first!)
     combatants.sort((a, b) => b.spd - a.spd);
 
-    // Give exactly a 0.5s stagger (10 ticks) between each combatant's opening attack
     combatants.forEach((c, index) => {
         let progressPerTick = c.atkSpd * gameSpeed * 2.5;
-        let staggerTicks = index * 10; // 10 ticks = 500ms delay per rank
+        let staggerTicks = index * 10; 
         
-        // Start them at a calculated deficit so they reach 100 exactly 0.5s after the previous unit
         let initialProgress = 100 - (staggerTicks * progressPerTick);
 
         if (c.type === 'player') {
@@ -809,8 +922,12 @@ function executePlayerAttack() {
             let stats = getPlayerStats();
             let isCrit = Math.random() < stats.crit;
 
-            let pDmg = Math.max(1, damages.pDmg);
-            let mDmg = Math.max(0, damages.mDmg);
+            // UPDATED: Factors in Enemy specific pDef and mDef
+            let eDefP = target.pDef || 0;
+            let eDefM = target.mDef || 0;
+
+            let pDmg = Math.max(1, damages.pDmg - eDefP);
+            let mDmg = Math.max(0, damages.mDmg - eDefM);
 
             if (target.skill === 'high_armor' || target.skill === 'armor') {
                 pDmg = Math.floor(pDmg * 0.1); 
@@ -953,6 +1070,11 @@ function updatePlayerHealthBar() {
 function packDefeated() {
     if(waveManager.isUpgrading) return;
     waveManager.isUpgrading = true;
+
+    if (isTestMode) {
+        endRun('TEST CLEARED', '#2ecc71');
+        return;
+    }
 
     let isBoss = getLevelAndWave().isBoss;
     let packSize = activeEnemies.length;
@@ -1102,21 +1224,22 @@ function continueToNextWave() {
     document.getElementById('boss-clear-ui').style.display = 'none';
     waveManager.wave++; 
     
-    // Set to true so combat doesn't immediately tick
     waveManager.isUpgrading = true; 
     
     spawnEnemyPack();
 
-    // TRIGGER VISUAL SWORDS CUE FOR 1-SECOND DELAY
     playBattleStartAnimation();
 
-    // Unfreeze combat loop after 1 second
     setTimeout(() => {
         waveManager.isUpgrading = false; 
     }, 1000);
 }
 
 function endRun(titleText, titleColor) {
+    isTestMode = false;
+    debugIntimidate = false;
+    document.getElementById('debug-panel').style.display = 'none';
+
     clearInterval(combatTickInterval); 
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
@@ -1183,32 +1306,6 @@ async function initGame() {
         renderHeroSelection();
     } catch (error) {
         console.error("Failed to load game data:", error);
-    }
-}
-
-// --- HIDDEN DEVELOPER CHEAT MODE ---
-let secretGemClickCount = 0;
-let secretGemClickTimer = null;
-
-function checkSecretCheat() {
-    secretGemClickCount++;
-    
-    // Clear the reset timer every time they click
-    clearTimeout(secretGemClickTimer);
-
-    if (secretGemClickCount >= 10) {
-        // Grant 10,000 gems!
-        player.gems += 10000;
-        updateUI();
-        showNotification("🛠️ DEV MODE: +10,000 Gems Added!");
-        
-        // Reset the counter so it can be done again if needed
-        secretGemClickCount = 0; 
-    } else {
-        // If they stop clicking for 1 second, reset the counter back to 0
-        secretGemClickTimer = setTimeout(() => {
-            secretGemClickCount = 0;
-        }, 1000);
     }
 }
 
