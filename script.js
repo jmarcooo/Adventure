@@ -526,16 +526,24 @@ function startGame() {
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
-    waveManager.isUpgrading = false;
+    
+    // Set to true so combat doesn't immediately tick
+    waveManager.isUpgrading = true; 
 
     updateCombatStatsPanel();
     openMenu('game');
     
     // Spawn triggers the staggered ATB Initiative Calculation
     spawnEnemyPack();
-
-    // Start the unified engine
     startCombatLoop(); 
+
+    // Visual cue for 1-second delay
+    spawnFloatingText('player-combat-area', "BATTLE START!", "float-crit");
+
+    // Unfreeze combat loop after 1 second
+    setTimeout(() => {
+        waveManager.isUpgrading = false; 
+    }, 1000);
 }
 
 const BIOMES = [
@@ -574,7 +582,7 @@ function getLevelAndWave() {
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
-    container.innerHTML = ''; activeEnemies = []; waveManager.isUpgrading = false;
+    container.innerHTML = ''; activeEnemies = [];
 
     let stageInfo = getLevelAndWave();
 
@@ -1077,7 +1085,20 @@ function adjustMaxHp(percentChange) {
 function continueToNextWave() {
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
-    waveManager.wave++; spawnEnemyPack();
+    waveManager.wave++; 
+    
+    // Set to true so combat doesn't immediately tick
+    waveManager.isUpgrading = true; 
+    
+    spawnEnemyPack();
+
+    // Visual cue for 1-second delay
+    spawnFloatingText('player-combat-area', "NEXT WAVE!", "float-crit");
+
+    // Unfreeze combat loop after 1 second
+    setTimeout(() => {
+        waveManager.isUpgrading = false; 
+    }, 1000);
 }
 
 function endRun(titleText, titleColor) {
