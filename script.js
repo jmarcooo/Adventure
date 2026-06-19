@@ -408,6 +408,21 @@ function renderStatusEffects() {
     }
 }
 
+// --- NEW FUNCTION: Crossed Swords Animation ---
+function playBattleStartAnimation() {
+    let overlay = document.getElementById('battle-start-overlay');
+    let swords = document.getElementById('crossed-swords');
+    if(overlay && swords) {
+        overlay.style.display = 'flex';
+        swords.classList.remove('animate-swords');
+        void swords.offsetWidth; // trigger reflow
+        swords.classList.add('animate-swords');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 1000);
+    }
+}
+
 function spawnFloatingText(targetId, text, className) {
     let targetDiv = document.getElementById(targetId);
     if(!targetDiv) return;
@@ -537,8 +552,8 @@ function startGame() {
     spawnEnemyPack();
     startCombatLoop(); 
 
-    // Visual cue for 1-second delay
-    spawnFloatingText('player-combat-area', "BATTLE START!", "float-crit");
+    // TRIGGER VISUAL SWORDS CUE FOR 1-SECOND DELAY
+    playBattleStartAnimation();
 
     // Unfreeze combat loop after 1 second
     setTimeout(() => {
@@ -1092,8 +1107,8 @@ function continueToNextWave() {
     
     spawnEnemyPack();
 
-    // Visual cue for 1-second delay
-    spawnFloatingText('player-combat-area', "NEXT WAVE!", "float-crit");
+    // TRIGGER VISUAL SWORDS CUE FOR 1-SECOND DELAY
+    playBattleStartAnimation();
 
     // Unfreeze combat loop after 1 second
     setTimeout(() => {
