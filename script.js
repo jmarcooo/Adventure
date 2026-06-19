@@ -396,6 +396,23 @@ function updateCombatStatsPanel() {
     document.getElementById('run-runes-text').innerText = runStats.runes;
 }
 
+// --- NEW FUNCTION: Renders active Buffs/Debuffs ---
+function renderStatusEffects() {
+    let container = document.getElementById('player-status-effects');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Check for Intimidate Aura Debuff
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+        container.innerHTML += `<div class="status-icon debuff" title="Intimidated: -25% Damage & Attack Speed">💀 Intimidated</div>`;
+    }
+
+    // Check for Stun Debuff
+    if (player.isStunned) {
+        container.innerHTML += `<div class="status-icon debuff" title="Stunned: Skipping next attack">💫 Stunned</div>`;
+    }
+}
+
 function spawnFloatingText(targetId, text, className) {
     let targetDiv = document.getElementById(targetId);
     if(!targetDiv) return;
@@ -444,6 +461,7 @@ function startGame() {
     }
     waveManager.wave = 1;
     player.currentHealth = player.maxHealth;
+    player.isStunned = false;
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
@@ -502,6 +520,7 @@ function getLevelAndWave() {
     return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
 }
 
+// --- UPDATED: Now includes Enemy Names and triggers Status Bar ---
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
@@ -523,10 +542,11 @@ function spawnEnemyPack() {
             }
         }
 
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS: ${stageInfo.biome.bossName} ⚠️</span>`;
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS ⚠️</span>`;
         let html = `
             <div class="enemy-unit boss" id="enemy-0">
                 <div class="emoji" style="font-size: 4rem;">${stageInfo.biome.bossEmoji}</div>
+                <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${stageInfo.biome.bossName}</div>
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
@@ -537,6 +557,7 @@ function spawnEnemyPack() {
                 html += `
                 <div class="enemy-unit elite" id="enemy-${i}">
                     <div class="emoji">🦑</div>
+                    <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">Leviathan Spawn</div>
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
                 </div>`;
@@ -555,6 +576,7 @@ function spawnEnemyPack() {
         container.innerHTML = `
             <div class="enemy-unit boss" id="enemy-0">
                 <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
+                <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Level Boss</div>
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
@@ -585,11 +607,15 @@ function spawnEnemyPack() {
             container.innerHTML += `
                 <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
                     <div class="emoji">${enemyTemplate.emoji}</div>
+                    <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${isElite ? 'Elite ' : ''}${enemyTemplate.name}</div>
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
                 </div>`;
         }
     }
+    
+    // Refresh status effects immediately when spawning new wave
+    renderStatusEffects(); 
 }
 
 function handleEnemyDeath(target, unitId, unitDiv) {
@@ -640,7 +666,8 @@ function animateHit(unitId, damageDealt, isCrit) {
     if (unitDiv) {
         unitDiv.classList.add('hit-anim');
         if(isCrit) {
-            unitDiv.style.filter = "drop-shadow(0 0 10px red)"; spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit");
+            unitDiv.style.filter = "drop-shadow(0 0 10px red)";
+            spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit");
         } else { spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg"); }
         setTimeout(() => { unitDiv.classList.remove('hit-anim'); unitDiv.style.filter = ""; }, 200);
     }
@@ -652,11 +679,15 @@ function animateHit(unitId, damageDealt, isCrit) {
     if (target.hp <= 0 && !target.isDead) { handleEnemyDeath(target, unitId, unitDiv); }
 }
 
+// --- UPDATED: Clears Stun Debuff ---
 function autoAttackEnemy() {
     if(waveManager.isUpgrading || player.currentHealth <= 0 || !document.getElementById('screen-game').classList.contains('active')) return;
 
     if (player.isStunned) {
-        spawnFloatingText('player-combat-area', "STUNNED!", "float-miss"); player.isStunned = false; return;
+        spawnFloatingText('player-combat-area', "STUNNED!", "float-miss"); 
+        player.isStunned = false; 
+        renderStatusEffects(); // Update UI to remove Stun debuff
+        return;
     }
 
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
@@ -680,7 +711,7 @@ function autoAttackEnemy() {
             let mDmg = Math.max(0, damages.mDmg);
 
             if (target.skill === 'high_armor' || target.skill === 'armor') {
-                pDmg = Math.floor(pDmg * 0.1); // Reduces physical damage by 90%
+                pDmg = Math.floor(pDmg * 0.1); 
             }
 
             let dmg = pDmg + mDmg;
@@ -754,6 +785,7 @@ function autoAttackEnemy() {
     setTimeout(() => { if (activeEnemies.every(e => e.hp <= 0)) packDefeated(); }, 400);
 }
 
+// --- UPDATED: Applies Stun Debuff ---
 function enemyStrikesBack() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
@@ -772,7 +804,10 @@ function enemyStrikesBack() {
             if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
 
             if (e.skill === 'bash' && Math.random() < 0.25) {
-                incomingDmg = Math.floor(incomingDmg * 2); player.isStunned = true; spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
+                incomingDmg = Math.floor(incomingDmg * 2); 
+                player.isStunned = true; 
+                spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
+                renderStatusEffects(); // Update UI to show Stun debuff
             }
 
             if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
