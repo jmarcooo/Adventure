@@ -1,0 +1,82 @@
+{
+  "forest": [
+    { "id": "slime", "name": "Slime", "emoji": "👾", "baseHp": 20, "baseDmg": 2, "skill": null },
+    { "id": "wolf", "name": "Dire Wolf", "emoji": "🐺", "baseHp": 15, "baseDmg": 4, "skill": "crit" },
+    { "id": "spider", "name": "Giant Spider", "emoji": "🕷️", "baseHp": 18, "baseDmg": 3, "skill": "magic" },
+    { "id": "treant", "name": "Angry Treant", "emoji": "🌳", "baseHp": 40, "baseDmg": 2, "skill": "armor" },
+    { "id": "goblin", "name": "Forest Goblin", "emoji": "👺", "baseHp": 15, "baseDmg": 5, "skill": "crit" },
+    { "id": "bear", "name": "Grizzly Bear", "emoji": "🐻", "baseHp": 35, "baseDmg": 6, "skill": "crit" }
+  ],
+  "cave": [
+    { "id": "bat", "name": "Vampire Bat", "emoji": "🦇", "baseHp": 25, "baseDmg": 4, "skill": "vampire" },
+    { "id": "rock", "name": "Living Rock", "emoji": "🪨", "baseHp": 50, "baseDmg": 2, "skill": "armor" },
+    { "id": "scorpion", "name": "Cave Scorpion", "emoji": "🦂", "baseHp": 30, "baseDmg": 5, "skill": "crit" },
+    { "id": "rat", "name": "Giant Rat", "emoji": "🐀", "baseHp": 20, "baseDmg": 3, "skill": null },
+    { "id": "crystal", "name": "Crystal Golem", "emoji": "💎", "baseHp": 45, "baseDmg": 4, "skill": "magic" },
+    { "id": "viper", "name": "Venomous Viper", "emoji": "🐍", "baseHp": 22, "baseDmg": 6, "skill": "magic" }
+  ],
+  "graveyard": [
+    { "id": "skeleton", "name": "Skeleton", "emoji": "💀", "baseHp": 40, "baseDmg": 8, "skill": null },
+    { "id": "ghost", "name": "Poltergeist", "emoji": "👻", "baseHp": 30, "baseDmg": 10, "skill": "magic" },
+    { "id": "zombie", "name": "Zombie", "emoji": "🧟", "baseHp": 60, "baseDmg": 5, "skill": null },
+    { "id": "ghoul", "name": "Ravenous Ghoul", "emoji": "👹", "baseHp": 45, "baseDmg": 7, "skill": "vampire" },
+    { "id": "cultist", "name": "Dark Cultist", "emoji": "🧙‍♂️", "baseHp": 35, "baseDmg": 12, "skill": "magic" },
+    { "id": "hellhound", "name": "Hellhound", "emoji": "🐕‍🦺", "baseHp": 30, "baseDmg": 9, "skill": "crit" }
+  ],
+  "ruins": [
+    { "id": "gargoyle", "name": "Gargoyle", "emoji": "🦅", "baseHp": 80, "baseDmg": 12, "skill": "armor" },
+    { "id": "djinn", "name": "Cursed Djinn", "emoji": "🧞", "baseHp": 60, "baseDmg": 18, "skill": "magic" },
+    { "id": "urn", "name": "Mimic Urn", "emoji": "🏺", "baseHp": 100, "baseDmg": 15, "skill": null },
+    { "id": "mummy", "name": "Ancient Mummy", "emoji": "🤕", "baseHp": 70, "baseDmg": 10, "skill": "vampire" },
+    { "id": "sphinx", "name": "Stone Sphinx", "emoji": "🦁", "baseHp": 90, "baseDmg": 14, "skill": "magic" },
+    { "id": "scarab", "name": "Jeweled Scarab", "emoji": "🪲", "baseHp": 40, "baseDmg": 8, "skill": "crit" }
+  ],
+  "coast": [
+    { "id": "crab", "name": "Giant Crab", "emoji": "🦀", "baseHp": 120, "baseDmg": 20, "skill": "armor" },
+    { "id": "shark", "name": "Land Shark", "emoji": "🦈", "baseHp": 100, "baseDmg": 30, "skill": "crit" },
+    { "id": "siren", "name": "Siren", "emoji": "🧜‍♀️", "baseHp": 80, "baseDmg": 25, "skill": "magic" },
+    { "id": "jellyfish", "name": "Toxic Jelly", "emoji": "🪼", "baseHp": 60, "baseDmg": 15, "skill": "magic" },
+    { "id": "pirate", "name": "Drowned Pirate", "emoji": "🏴‍☠️", "baseHp": 90, "baseDmg": 22, "skill": "vampire" },
+    { "id": "seaserpent", "name": "Tide Serpent", "emoji": "🐉", "baseHp": 110, "baseDmg": 25, "skill": "crit" }
+  ],
+  "volcano": [
+    { "id": "fireslime", "name": "Lava Slime", "emoji": "🌋", "baseHp": 130, "baseDmg": 30, "skill": "magic" },
+    { "id": "hellbat", "name": "Hellbat", "emoji": "🦇", "baseHp": 90, "baseDmg": 25, "skill": "vampire" },
+    { "id": "lavagolem", "name": "Magma Golem", "emoji": "🔥", "baseHp": 180, "baseDmg": 20, "skill": "armor" },
+    { "id": "magmahound", "name": "Ember Hound", "emoji": "🐺", "baseHp": 110, "baseDmg": 35, "skill": "crit" },
+    { "id": "firesprite", "name": "Fire Sprite", "emoji": "☄️", "baseHp": 80, "baseDmg": 40, "skill": "magic" },
+    { "id": "ashzombie", "name": "Charred Corpse", "emoji": "👺", "baseHp": 150, "baseDmg": 25, "skill": null }
+  ],
+  "tundra": [
+    { "id": "iceslime", "name": "Ice Slime", "emoji": "🧊", "baseHp": 160, "baseDmg": 35, "skill": "armor" },
+    { "id": "snowwolf", "name": "Winter Wolf", "emoji": "🐺", "baseHp": 120, "baseDmg": 40, "skill": "crit" },
+    { "id": "frostbear", "name": "Frostbear", "emoji": "🐻‍❄️", "baseHp": 200, "baseDmg": 30, "skill": "armor" },
+    { "id": "icewraith", "name": "Ice Wraith", "emoji": "👻", "baseHp": 100, "baseDmg": 50, "skill": "magic" },
+    { "id": "frozencorpse", "name": "Frozen Corpse", "emoji": "🧟‍♂️", "baseHp": 180, "baseDmg": 35, "skill": null },
+    { "id": "yeti", "name": "Abominable Yeti", "emoji": "❄️", "baseHp": 250, "baseDmg": 45, "skill": "crit" }
+  ],
+  "desert": [
+    { "id": "sandslime", "name": "Sand Slime", "emoji": "🐪", "baseHp": 200, "baseDmg": 45, "skill": null },
+    { "id": "desertscorpion", "name": "Deathstalker", "emoji": "🦂", "baseHp": 150, "baseDmg": 55, "skill": "crit" },
+    { "id": "cobra", "name": "King Cobra", "emoji": "🐍", "baseHp": 140, "baseDmg": 60, "skill": "magic" },
+    { "id": "desertmummy", "name": "Cursed Mummy", "emoji": "🤕", "baseHp": 220, "baseDmg": 40, "skill": "vampire" },
+    { "id": "sandgolem", "name": "Dune Golem", "emoji": "🌵", "baseHp": 300, "baseDmg": 35, "skill": "armor" },
+    { "id": "vulture", "name": "Carrion Vulture", "emoji": "🦅", "baseHp": 130, "baseDmg": 50, "skill": "crit" }
+  ],
+  "void": [
+    { "id": "shadowslime", "name": "Void Slime", "emoji": "🌑", "baseHp": 250, "baseDmg": 60, "skill": "magic" },
+    { "id": "voidbat", "name": "Shadow Bat", "emoji": "🦇", "baseHp": 180, "baseDmg": 55, "skill": "vampire" },
+    { "id": "eyestalker", "name": "Eye Stalker", "emoji": "👁️", "baseHp": 200, "baseDmg": 80, "skill": "magic" },
+    { "id": "darkweaver", "name": "Void Weaver", "emoji": "🕷️", "baseHp": 220, "baseDmg": 70, "skill": "crit" },
+    { "id": "nightmare", "name": "Nightmare", "emoji": "🌌", "baseHp": 280, "baseDmg": 65, "skill": "vampire" },
+    { "id": "obsidiangolem", "name": "Obsidian Golem", "emoji": "🪨", "baseHp": 400, "baseDmg": 50, "skill": "armor" }
+  ],
+  "celestial": [
+    { "id": "lightsprite", "name": "Light Sprite", "emoji": "✨", "baseHp": 300, "baseDmg": 90, "skill": "magic" },
+    { "id": "cloudelemental", "name": "Cloud Elemental", "emoji": "☁️", "baseHp": 450, "baseDmg": 70, "skill": "armor" },
+    { "id": "valkyrie", "name": "Valkyrie", "emoji": "🕊️", "baseHp": 350, "baseDmg": 100, "skill": "crit" },
+    { "id": "seraphim", "name": "Seraphim", "emoji": "👁️", "baseHp": 400, "baseDmg": 110, "skill": "magic" },
+    { "id": "goldgolem", "name": "Golden Guardian", "emoji": "🗿", "baseHp": 600, "baseDmg": 85, "skill": "armor" },
+    { "id": "sunbird", "name": "Solar Phoenix", "emoji": "🦅", "baseHp": 380, "baseDmg": 95, "skill": "vampire" }
+  ]
+}

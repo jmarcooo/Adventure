@@ -1,0 +1,190 @@
+{
+  "runUpgradeData": [
+    {
+      "id": "p_atk",
+      "name": "Sharpen Blade",
+      "desc": "+10 P.Atk",
+      "maxLevel": 5,
+      "icon": "\u2694\ufe0f"
+    },
+    {
+      "id": "m_atk",
+      "name": "Magic Wand",
+      "desc": "+10 M.Atk",
+      "maxLevel": 5,
+      "icon": "\ud83e\ude84"
+    },
+    {
+      "id": "spd",
+      "name": "Swift Strikes",
+      "desc": "+0.1 Atk Speed",
+      "maxLevel": 5,
+      "icon": "\ud83d\udc5f"
+    },
+    {
+      "id": "splash",
+      "name": "Explosive Hits",
+      "desc": "+10% Splash Damage",
+      "maxLevel": 3,
+      "icon": "\ud83d\udca5"
+    },
+    {
+      "id": "double",
+      "name": "Lightning Reflex",
+      "desc": "+10% Double Strike",
+      "maxLevel": 5,
+      "icon": "\u26a1"
+    },
+    {
+      "id": "crit",
+      "name": "Deadly Aim",
+      "desc": "+10% Critical Chance",
+      "maxLevel": 5,
+      "icon": "\ud83c\udfaf"
+    },
+    {
+      "id": "lifesteal",
+      "name": "Vampiric Touch",
+      "desc": "+5% Lifesteal",
+      "maxLevel": 3,
+      "icon": "\ud83e\udd87"
+    },
+    {
+      "id": "evasion",
+      "name": "Shadow Step",
+      "desc": "+5% Dodge Chance",
+      "maxLevel": 5,
+      "icon": "\ud83d\udca8"
+    },
+    {
+      "id": "p_def",
+      "name": "Iron Skin",
+      "desc": "+10 P.Def",
+      "maxLevel": 5,
+      "icon": "\ud83d\udee1\ufe0f"
+    },
+    {
+      "id": "m_def",
+      "name": "Magic Cloak",
+      "desc": "+10 M.Def",
+      "maxLevel": 5,
+      "icon": "\ud83e\udde5"
+    }
+  ],
+  "bossSkillsData": [
+    {
+      "id": "crit",
+      "name": "Critical Strike",
+      "icon": "\ud83c\udfaf",
+      "desc": "25% chance for 2x DMG"
+    },
+    {
+      "id": "armor",
+      "name": "Thick Hide",
+      "icon": "\ud83d\udee1\ufe0f",
+      "desc": "Takes 30% less DMG"
+    },
+    {
+      "id": "magic",
+      "name": "Magic Aura",
+      "icon": "\u2728",
+      "desc": "Ignores Player Armor/Dodge"
+    },
+    {
+      "id": "vampire",
+      "name": "Vampiric",
+      "icon": "\ud83e\udd87",
+      "desc": "Heals 50% of DMG dealt"
+    }
+  ],
+  "cursedRelicsData": [
+    {
+      "id": "glass",
+      "name": "Glass Cannon",
+      "desc": "+20% P.Atk/M.Atk, +25% Crit",
+      "curseDesc": "-30% Max HP",
+      "icon": "\ud83e\udde8"
+    },
+    {
+      "id": "berserk",
+      "name": "Berserker's Frenzy",
+      "desc": "+40% Attack Speed",
+      "curseDesc": "-15 P.Atk",
+      "icon": "\ud83e\ude78"
+    },
+    {
+      "id": "phantom",
+      "name": "Phantom Step",
+      "desc": "+15% Dodge Chance",
+      "curseDesc": "-20% Max HP",
+      "icon": "\ud83d\udc7b"
+    },
+    {
+      "id": "giant",
+      "name": "Giant's Burden",
+      "desc": "+30 P.Atk, +10% Splash",
+      "curseDesc": "-20% Attack Speed",
+      "icon": "\ud83d\uddff"
+    },
+    {
+      "id": "blood",
+      "name": "Blood Pact",
+      "desc": "+10% Lifesteal",
+      "curseDesc": "-15 P.Def/M.Def",
+      "icon": "\ud83d\udc89"
+    },
+    {
+      "id": "midas",
+      "name": "Midas Curse",
+      "desc": "+50% Gold Earned",
+      "curseDesc": "Enemies have +20% HP",
+      "icon": "\ud83d\udc51"
+    },
+    {
+      "id": "reckless",
+      "name": "Reckless Abandon",
+      "desc": "+15% Double Strike",
+      "curseDesc": "Evasion drops to 0%",
+      "icon": "\u2694\ufe0f"
+    },
+    {
+      "id": "spiked",
+      "name": "Spiked Armor",
+      "desc": "+20 P.Def",
+      "curseDesc": "-10% Attack Speed",
+      "icon": "\ud83d\udc22"
+    }
+  ],
+  "commonUpgradesData": [
+    {
+      "id": "heal",
+      "name": "Potion",
+      "desc": "Heal 25 HP",
+      "effect": {
+        "heal": 25
+      },
+      "type": "common",
+      "icon": "\ud83d\udc96"
+    },
+    {
+      "id": "gold",
+      "name": "Coin Pouch",
+      "desc": "Gain 50 Gold",
+      "effect": {
+        "gold": 50
+      },
+      "type": "common",
+      "icon": "\ud83d\udcb0"
+    },
+    {
+      "id": "temp_atk",
+      "name": "Whetstone",
+      "desc": "+5 Base Attack (One-time)",
+      "effect": {
+        "atk": 5
+      },
+      "type": "common",
+      "icon": "\ud83d\udd25"
+    }
+  ]
+}

@@ -1,0 +1,585 @@
+{
+  "warrior": {
+    "id": "warrior",
+    "name": "Warrior",
+    "emoji": "\ud83e\uddd1\u200d\ud83c\udfa4",
+    "weapon": "\u2694\ufe0f",
+    "innate": {
+      "splashDmg": 0.2
+    },
+    "innateDesc": "+20% Splash Damage",
+    "rareUpgrade": {
+      "name": "Cleaving Strike",
+      "desc": "+30% Splash Damage",
+      "effect": {
+        "splashDmg": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Juggernaut",
+      "desc": "+50% Damage, +20% Damage Reduction",
+      "effect": {
+        "pAtkMulti": 0.5,
+        "pDefMulti": 0.2,
+        "mDefMulti": 0.2
+      }
+    },
+    "innateSkill": {
+      "type": "warrior_splash",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to splash 100% damage",
+      "name": "Splash"
+    },
+    "pAtk": 25,
+    "atkSpd": 1.0,
+    "pDef": 10,
+    "mAtk": 0,
+    "mDef": 5,
+    "spd": 10,
+    "evasion": 0.05,
+    "crit": 0.1,
+    "luck": 0.1
+  },
+  "mage": {
+    "id": "mage",
+    "name": "Mage",
+    "emoji": "\ud83e\uddd9\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udd2e",
+    "innate": {
+      "lifesteal": 0.1
+    },
+    "innateDesc": "+10% Lifesteal",
+    "rareUpgrade": {
+      "name": "Mana Shield",
+      "desc": "+25% Damage Reduction",
+      "effect": {
+        "pDefMulti": 0.25,
+        "mDefMulti": 0.25
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Archmage",
+      "desc": "+60% Damage, +15% Lifesteal",
+      "effect": {
+        "mAtkMulti": 0.6,
+        "lifesteal": 0.15
+      }
+    },
+    "innateSkill": {
+      "type": "mage_arcane",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to cast arcane blast (100% magic damage to all)",
+      "name": "Arcane Blast"
+    },
+    "pAtk": 5,
+    "atkSpd": 0.8,
+    "pDef": 3,
+    "mAtk": 35,
+    "mDef": 15,
+    "spd": 8,
+    "evasion": 0.05,
+    "crit": 0.05,
+    "luck": 0.1
+  },
+  "paladin": {
+    "id": "paladin",
+    "name": "Paladin",
+    "emoji": "\ud83d\udee1\ufe0f",
+    "weapon": "\ud83d\udd28",
+    "innate": {
+      "damageReduction": 0.15
+    },
+    "innateDesc": "+15% Damage Reduction",
+    "rareUpgrade": {
+      "name": "Holy Light",
+      "desc": "Heal 50 HP",
+      "effect": {
+        "heal": 50
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Divine Intervention",
+      "desc": "+50% Damage Reduction, +20% Lifesteal",
+      "effect": {
+        "pDefMulti": 0.5,
+        "mDefMulti": 0.5,
+        "lifesteal": 0.2
+      }
+    },
+    "innateSkill": {
+      "type": "paladin_heal",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to heal 20% max HP on attack",
+      "name": "Holy Light"
+    },
+    "pAtk": 15,
+    "atkSpd": 0.9,
+    "pDef": 20,
+    "mAtk": 10,
+    "mDef": 15,
+    "spd": 8,
+    "evasion": 0.05,
+    "crit": 0.05,
+    "luck": 0.1
+  },
+  "rogue": {
+    "id": "rogue",
+    "name": "Rogue",
+    "emoji": "\ud83e\udd77",
+    "weapon": "\ud83d\udde1\ufe0f",
+    "innate": {
+      "evasion": 0.15,
+      "doubleHitChance": 0.1
+    },
+    "innateDesc": "+15% Dodge, +10% Double Strike",
+    "rareUpgrade": {
+      "name": "Shadow Strike",
+      "desc": "+30% Double Strike",
+      "effect": {
+        "doubleHitChance": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Assassin",
+      "desc": "+40% Dodge, +40% Crit Chance",
+      "effect": {
+        "evasion": 0.4,
+        "crit": 0.4
+      }
+    },
+    "innateSkill": {
+      "type": "rogue_steal",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to steal 5 gold on attack",
+      "name": "Pickpocket"
+    },
+    "pAtk": 20,
+    "atkSpd": 1.5,
+    "pDef": 5,
+    "mAtk": 0,
+    "mDef": 5,
+    "spd": 20,
+    "evasion": 0.25,
+    "crit": 0.25,
+    "luck": 0.2
+  },
+  "berserker": {
+    "id": "berserker",
+    "name": "Berserker",
+    "emoji": "\ud83d\udc79",
+    "weapon": "\ud83e\ude93",
+    "innate": {
+      "atkSpeedBonus": 0.2,
+      "damageReduction": -0.1
+    },
+    "innateDesc": "+20% Attack Speed, -10% Damage Reduction",
+    "rareUpgrade": {
+      "name": "Bloodthirst",
+      "desc": "+20% Lifesteal",
+      "effect": {
+        "lifesteal": 0.2
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Rage",
+      "desc": "+100% Attack Speed, +50% Damage",
+      "effect": {
+        "atkSpdMulti": 1.0,
+        "pAtkMulti": 0.5
+      }
+    },
+    "innateSkill": {
+      "type": "berserker_rage",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to deal 200% damage",
+      "name": "Rage"
+    },
+    "pAtk": 35,
+    "atkSpd": 1.3,
+    "pDef": 0,
+    "mAtk": 0,
+    "mDef": 0,
+    "spd": 12,
+    "evasion": 0.0,
+    "crit": 0.15,
+    "luck": 0.05
+  },
+  "necromancer": {
+    "id": "necromancer",
+    "name": "Necromancer",
+    "emoji": "\ud83e\uddb9\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udc80",
+    "innate": {
+      "lifesteal": 0.15,
+      "critChance": 0.1
+    },
+    "innateDesc": "+15% Lifesteal, +10% Crit Chance",
+    "rareUpgrade": {
+      "name": "Soul Harvest",
+      "desc": "+30% Lifesteal",
+      "effect": {
+        "lifesteal": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Lich King",
+      "desc": "+50% Splash Damage, +50% Crit Chance",
+      "effect": {
+        "splashDmg": 0.5,
+        "crit": 0.5
+      }
+    },
+    "innateSkill": {
+      "type": "necro_summon",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to deal 50% dmg to all & heal",
+      "name": "Death Siphon"
+    },
+    "pAtk": 10,
+    "atkSpd": 0.9,
+    "pDef": 5,
+    "mAtk": 25,
+    "mDef": 10,
+    "spd": 9,
+    "evasion": 0.05,
+    "crit": 0.1,
+    "luck": 0.1
+  },
+  "beast_tamer": {
+    "id": "beast_tamer",
+    "name": "Beast Tamer",
+    "emoji": "\ud83e\udd20",
+    "weapon": "\ud83e\udd85",
+    "innate": {
+      "atkSpeedBonus": 0.15,
+      "doubleHitChance": 0.15
+    },
+    "innateDesc": "+15% Attack Speed, +15% Double Strike",
+    "rareUpgrade": {
+      "name": "Feral Instinct",
+      "desc": "+30% Attack Speed",
+      "effect": {
+        "atkSpdMulti": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Alpha",
+      "desc": "+50% Double Strike, +30% Dodge",
+      "effect": {
+        "doubleHitChance": 0.5,
+        "evasion": 0.3
+      }
+    },
+    "innateSkill": {
+      "type": "beast_bite",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance for beast to bite (150% dmg)",
+      "name": "Beast Bite"
+    },
+    "pAtk": 20,
+    "atkSpd": 1.1,
+    "pDef": 8,
+    "mAtk": 5,
+    "mDef": 5,
+    "spd": 14,
+    "evasion": 0.1,
+    "crit": 0.15,
+    "luck": 0.15
+  },
+  "cleric": {
+    "id": "cleric",
+    "name": "Cleric",
+    "emoji": "\ud83e\uddd1\u200d\u2695\ufe0f",
+    "weapon": "\u271d\ufe0f",
+    "innate": {
+      "damageReduction": 0.2,
+      "lifesteal": 0.05
+    },
+    "innateDesc": "+20% Damage Reduction, +5% Lifesteal",
+    "rareUpgrade": {
+      "name": "Divine Grace",
+      "desc": "+30% Damage Reduction",
+      "effect": {
+        "pDefMulti": 0.3,
+        "mDefMulti": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "High Priest",
+      "desc": "+50% Lifesteal, +100 Max HP",
+      "effect": {
+        "lifesteal": 0.5,
+        "maxHealth": 100
+      }
+    },
+    "innateSkill": {
+      "type": "cleric_smite",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to smite (100% true damage)",
+      "name": "Smite"
+    },
+    "pAtk": 5,
+    "atkSpd": 0.8,
+    "pDef": 10,
+    "mAtk": 15,
+    "mDef": 20,
+    "spd": 7,
+    "evasion": 0.05,
+    "crit": 0.05,
+    "luck": 0.2
+  },
+  "monk": {
+    "id": "monk",
+    "name": "Monk",
+    "emoji": "\ud83e\uddd8\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udc4a",
+    "innate": {
+      "evasion": 0.25
+    },
+    "innateDesc": "+25% Dodge Chance",
+    "rareUpgrade": {
+      "name": "Zen State",
+      "desc": "+30% Dodge",
+      "effect": {
+        "evasion": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Grandmaster",
+      "desc": "+60% Dodge, +50% Attack Speed",
+      "effect": {
+        "evasion": 0.6,
+        "atkSpdMulti": 0.5
+      }
+    },
+    "innateSkill": {
+      "type": "monk_combo",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to strike 3 times instantly",
+      "name": "Flurry"
+    },
+    "pAtk": 15,
+    "atkSpd": 1.4,
+    "pDef": 12,
+    "mAtk": 10,
+    "mDef": 10,
+    "spd": 18,
+    "evasion": 0.3,
+    "crit": 0.1,
+    "luck": 0.1
+  },
+  "bard": {
+    "id": "bard",
+    "name": "Bard",
+    "emoji": "\ud83e\uddd1\u200d\ud83c\udfa4",
+    "weapon": "\ud83e\ude95",
+    "innate": {
+      "goldMultiplier": 0.5,
+      "evasion": 0.1
+    },
+    "innateDesc": "+50% Gold Earned, +10% Dodge Chance",
+    "rareUpgrade": {
+      "name": "Inspiring Tune",
+      "desc": "+50% Gold Earned",
+      "effect": {
+        "goldMultiplier": 0.5
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Maestro",
+      "desc": "+100% Gold Earned, +40% Dodge",
+      "effect": {
+        "goldMultiplier": 1.0,
+        "evasion": 0.4
+      }
+    },
+    "innateSkill": {
+      "type": "bard_song",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to gain 1 Rune on attack",
+      "name": "Inspire"
+    },
+    "pAtk": 10,
+    "atkSpd": 1.0,
+    "pDef": 5,
+    "mAtk": 15,
+    "mDef": 10,
+    "spd": 12,
+    "evasion": 0.15,
+    "crit": 0.05,
+    "luck": 0.5
+  },
+  "druid": {
+    "id": "druid",
+    "name": "Druid",
+    "emoji": "\ud83e\udd8c",
+    "weapon": "\ud83c\udf3f",
+    "innate": {
+      "splashDmg": 0.15,
+      "lifesteal": 0.1
+    },
+    "innateDesc": "+15% Splash Damage, +10% Lifesteal",
+    "rareUpgrade": {
+      "name": "Nature's Wrath",
+      "desc": "+30% Splash Damage",
+      "effect": {
+        "splashDmg": 0.3
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Archdruid",
+      "desc": "+50% Lifesteal, +50% Splash Damage",
+      "effect": {
+        "lifesteal": 0.5,
+        "splashDmg": 0.5
+      }
+    },
+    "innateSkill": {
+      "type": "druid_roots",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to entangle (50% dmg to all)",
+      "name": "Entangle"
+    },
+    "pAtk": 12,
+    "atkSpd": 1.0,
+    "pDef": 8,
+    "mAtk": 20,
+    "mDef": 10,
+    "spd": 10,
+    "evasion": 0.05,
+    "crit": 0.1,
+    "luck": 0.15
+  },
+  "warlock": {
+    "id": "warlock",
+    "name": "Warlock",
+    "emoji": "\ud83e\uddd9\u200d\u2642\ufe0f",
+    "weapon": "\ud83d\udd25",
+    "innate": {
+      "dmgMultiplier": 0.3,
+      "damageReduction": -0.2
+    },
+    "innateDesc": "+30% Damage, -20% Damage Reduction",
+    "rareUpgrade": {
+      "name": "Dark Pact",
+      "desc": "+40% Damage",
+      "effect": {
+        "mAtkMulti": 0.4
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Demon Lord",
+      "desc": "+100% Damage, +20% Lifesteal",
+      "effect": {
+        "mAtkMulti": 1.0,
+        "lifesteal": 0.2
+      }
+    },
+    "innateSkill": {
+      "type": "warlock_curse",
+      "chances": [
+        0.1,
+        0.15,
+        0.2
+      ],
+      "desc": "Chance to deal 300% dmg but take 5% max HP dmg",
+      "name": "Dark Curse"
+    },
+    "pAtk": 5,
+    "atkSpd": 0.9,
+    "pDef": 5,
+    "mAtk": 40,
+    "mDef": 10,
+    "spd": 9,
+    "evasion": 0.0,
+    "crit": 0.15,
+    "luck": 0.05
+  },
+  "hunter": {
+    "id": "hunter",
+    "name": "Hunter",
+    "emoji": "\ud83e\udddd\u200d\u2642\ufe0f",
+    "weapon": "\ud83c\udff9",
+    "innate": {
+      "critChance": 0.15
+    },
+    "innateDesc": "+15% Critical Chance",
+    "rareUpgrade": {
+      "name": "Piercing Arrow",
+      "desc": "+20% Double Strike",
+      "effect": {
+        "doubleHitChance": 0.2
+      }
+    },
+    "ultimateUpgrade": {
+      "name": "Sniper",
+      "desc": "+50% Crit Chance",
+      "effect": {
+        "crit": 0.5
+      }
+    },
+    "innateSkill": {
+      "type": "hunter_instakill",
+      "chances": [
+        0.03,
+        0.05,
+        0.07
+      ],
+      "desc": "Chance to instantly kill enemy",
+      "name": "Instakill"
+    },
+    "pAtk": 25,
+    "atkSpd": 1.2,
+    "pDef": 5,
+    "mAtk": 5,
+    "mDef": 5,
+    "spd": 15,
+    "evasion": 0.1,
+    "crit": 0.2,
+    "luck": 0.15
+  }
+}
