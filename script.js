@@ -446,15 +446,14 @@ function combatTick() {
     let stats = getPlayerStats();
     let actionQueue = []; 
 
-    // 1. Player ATB Fill (Based on Attack Speed)
+    // 1. Player ATB Fill
     if (!player.isStunned) {
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
             player.attackProgress = 100;
-            actionQueue.push({ type: 'player', spd: stats.spd }); // Spd used to resolve tie-breakers
+            actionQueue.push({ type: 'player', spd: stats.spd }); 
         }
     } else {
-        // If Stunned, bar fills but just clears the stun at 100%
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
             player.attackProgress = 0;
@@ -464,22 +463,23 @@ function combatTick() {
         }
     }
     let pAtb = document.getElementById('player-atb');
-    if(pAtb) pAtb.style.width = Math.min(100, player.attackProgress) + '%';
+    // Ensure visually it never dips below 0 even if mathematically negative
+    if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
 
-    // 2. Enemy ATB Fill (Based on Attack Speed)
+    // 2. Enemy ATB Fill
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => {
         let eAtkSpd = e.atkSpd || 1.0;
         e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
         if (e.attackProgress >= 100) {
             e.attackProgress = 100;
-            actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); // Spd used to resolve tie-breakers
+            actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
         }
         let atbBar = document.getElementById(`enemy-atb-bar-${e.id}`);
-        if (atbBar) atbBar.style.width = Math.min(100, e.attackProgress) + '%';
+        if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, e.attackProgress)) + '%';
     });
 
-    // 3. Execute Actions (Fastest acts FIRST if multiple units reach 100% simultaneously)
+    // 3. Execute Actions (Fastest acts FIRST)
     if (actionQueue.length > 0) {
         actionQueue.sort((a, b) => b.spd - a.spd); 
         
@@ -531,7 +531,7 @@ function startGame() {
     updateCombatStatsPanel();
     openMenu('game');
     
-    // Spawn triggers the ATB Initiative Calculation
+    // Spawn triggers the staggered ATB Initiative Calculation
     spawnEnemyPack();
 
     // Start the unified engine
@@ -570,7 +570,7 @@ function getLevelAndWave() {
     return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
 }
 
-// --- UPDATED: Spawns enemies with ATB Bars and calculates INITIATIVE (Speed) ---
+// --- Spawns enemies with Layout: Sprite -> Name -> HP Bar -> ATB Bar -> HP Text ---
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
@@ -668,24 +668,40 @@ function spawnEnemyPack() {
         }
     }
     
-    // --- CALCULATE INITIATIVE (SPEED HEAD START) ---
+    // --- STAGGERED ATB INITIATIVE CALCULATION ---
     let pStats = getPlayerStats();
-    let maxSpd = pStats.spd;
-    
+    let combatants = [];
+
+    // Add Player to sort pool
+    combatants.push({ type: 'player', spd: pStats.spd, atkSpd: Math.max(0.1, pStats.atkSpd), ref: player });
+
+    // Add Enemies to sort pool
     activeEnemies.forEach(e => {
         e.spd = e.spd || (e.isBoss ? 15 : (e.isElite ? 12 : 10)); 
         e.atkSpd = e.atkSpd || (e.isBoss ? 1.2 : 1.0); 
-        if (e.spd > maxSpd) maxSpd = e.spd;
+        combatants.push({ type: 'enemy', spd: e.spd, atkSpd: e.atkSpd, ref: e });
     });
 
-    player.attackProgress = (pStats.spd / maxSpd) * 95;
-    let pAtb = document.getElementById('player-atb');
-    if(pAtb) pAtb.style.width = player.attackProgress + '%';
+    // Sort by Speed descending (Fastest goes first!)
+    combatants.sort((a, b) => b.spd - a.spd);
 
-    activeEnemies.forEach(e => {
-        e.attackProgress = (e.spd / maxSpd) * 95;
-        let atbBar = document.getElementById(`enemy-atb-bar-${e.id}`);
-        if (atbBar) atbBar.style.width = e.attackProgress + '%';
+    // Give exactly a 0.5s stagger (10 ticks) between each combatant's opening attack
+    combatants.forEach((c, index) => {
+        let progressPerTick = c.atkSpd * gameSpeed * 2.5;
+        let staggerTicks = index * 10; // 10 ticks = 500ms delay per rank
+        
+        // Start them at a calculated deficit so they reach 100 exactly 0.5s after the previous unit
+        let initialProgress = 100 - (staggerTicks * progressPerTick);
+
+        if (c.type === 'player') {
+            player.attackProgress = initialProgress;
+            let pAtb = document.getElementById('player-atb');
+            if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
+        } else {
+            c.ref.attackProgress = initialProgress;
+            let atbBar = document.getElementById(`enemy-atb-bar-${c.ref.id}`);
+            if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, c.ref.attackProgress)) + '%';
+        }
     });
 
     renderStatusEffects(); 
