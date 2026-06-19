@@ -10,7 +10,8 @@ let player = {
     talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
     heroSkillLevels: {},
     equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
-    inventory: []
+    inventory: [],
+    attackProgress: 0 // Player ATB tracking
 };
 
 // Run Stats & Upgrade Tracking
@@ -35,8 +36,9 @@ let cursedRelicsData = [];
 let viewingHero = null;
 let activeEnemies = [];
 let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
-let enemyAttackTimer;
-let playerAttackTimer;
+
+// Unified Combat Loop Timer
+let combatTickInterval;
 
 // --- NAVIGATION & GENERAL LOGIC ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
@@ -51,7 +53,7 @@ function showNotification(msg) {
 }
 
 function openMenu(targetScreen) {
-    if(targetScreen !== 'game') { clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer); }
+    if(targetScreen !== 'game') { clearInterval(combatTickInterval); }
     if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
     if(targetScreen === 'gear') { renderGearMenu(); }
     screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
@@ -320,12 +322,9 @@ function buyPremium(item) {
 function toggleGameSpeed() {
     gameSpeed = gameSpeed === 1 ? 2 : 1;
     document.getElementById('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
-    if (!waveManager.isUpgrading && document.getElementById('screen-game').classList.contains('active')) {
-        startPlayerAutoAttack(); startEnemyAutoAttack();
-    }
 }
 
-// --- COMBAT CORE ---
+// --- COMBAT CORE & ATB ENGINE ---
 
 function getEquipmentStats() {
     let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
@@ -396,18 +395,14 @@ function updateCombatStatsPanel() {
     document.getElementById('run-runes-text').innerText = runStats.runes;
 }
 
-// --- NEW FUNCTION: Renders active Buffs/Debuffs ---
 function renderStatusEffects() {
     let container = document.getElementById('player-status-effects');
     if (!container) return;
     container.innerHTML = '';
 
-    // Check for Intimidate Aura Debuff
     if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
         container.innerHTML += `<div class="status-icon debuff" title="Intimidated: -25% Damage & Attack Speed">💀 Intimidated</div>`;
     }
-
-    // Check for Stun Debuff
     if (player.isStunned) {
         container.innerHTML += `<div class="status-icon debuff" title="Stunned: Skipping next attack">💫 Stunned</div>`;
     }
@@ -438,9 +433,72 @@ function spawnLootDrop(targetId, type) {
     setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
+// --- ATB COMBAT ENGINE ---
+function startCombatLoop() {
+    clearInterval(combatTickInterval);
+    combatTickInterval = setInterval(combatTick, 50); 
+}
+
+function combatTick() {
+    if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
+
+    let stats = getPlayerStats();
+    let actionQueue = []; 
+
+    // 1. Player ATB Fill
+    if (!player.isStunned) {
+        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
+        if (player.attackProgress >= 100) {
+            player.attackProgress = 100;
+            actionQueue.push({ type: 'player', spd: stats.spd }); 
+        }
+    } else {
+        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
+        if (player.attackProgress >= 100) {
+            player.attackProgress = 0;
+            player.isStunned = false;
+            spawnFloatingText('player-combat-area', "RECOVERED!", "float-miss");
+            renderStatusEffects();
+        }
+    }
+    let pAtb = document.getElementById('player-atb');
+    if(pAtb) pAtb.style.width = Math.min(100, player.attackProgress) + '%';
+
+    // 2. Enemy ATB Fill
+    let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
+    aliveEnemies.forEach(e => {
+        let eAtkSpd = e.atkSpd || 1.0;
+        e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
+        if (e.attackProgress >= 100) {
+            e.attackProgress = 100;
+            actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
+        }
+        let atbBar = document.getElementById(`enemy-atb-bar-${e.id}`);
+        if (atbBar) atbBar.style.width = Math.min(100, e.attackProgress) + '%';
+    });
+
+    // 3. Execute Actions (Fastest acts FIRST)
+    if (actionQueue.length > 0) {
+        actionQueue.sort((a, b) => b.spd - a.spd); 
+        
+        actionQueue.forEach(action => {
+            if (action.type === 'player' && player.attackProgress >= 100 && player.currentHealth > 0) {
+                executePlayerAttack();
+                player.attackProgress = 0;
+                if(pAtb) pAtb.style.width = '0%';
+            } else if (action.type === 'enemy' && action.entity.hp > 0 && action.entity.attackProgress >= 100 && player.currentHealth > 0) {
+                executeEnemyAttack(action.entity);
+                action.entity.attackProgress = 0;
+                let atbBar = document.getElementById(`enemy-atb-bar-${action.entity.id}`);
+                if (atbBar) atbBar.style.width = '0%';
+            }
+        });
+    }
+}
+
 function startGame() {
     if (!heroData || Object.keys(heroData).length === 0) {
-        alert("ERROR: Game data failed to load.\n\nSince you separated your data into JSON files, you CANNOT run index.html directly in a browser (due to CORS security).\n\nPlease start a Local Web Server (like 'Live Server' in VS Code) to play!");
+        alert("ERROR: Game data failed to load.\n\nPlease start a Local Web Server (like 'Live Server' in VS Code) to play!");
         return;
     }
 
@@ -470,22 +528,9 @@ function startGame() {
 
     updateCombatStatsPanel();
     openMenu('game');
+    
     spawnEnemyPack();
-
-    startEnemyAutoAttack();
-    startPlayerAutoAttack();
-}
-
-function startEnemyAutoAttack() {
-    clearInterval(enemyAttackTimer);
-    enemyAttackTimer = setInterval(enemyStrikesBack, 3000 / gameSpeed);
-}
-
-function startPlayerAutoAttack() {
-    clearInterval(playerAttackTimer);
-    let stats = getPlayerStats();
-    let interval = 2000 / (gameSpeed * Math.max(0.1, stats.atkSpd));
-    playerAttackTimer = setInterval(autoAttackEnemy, interval);
+    startCombatLoop(); 
 }
 
 const BIOMES = [
@@ -520,7 +565,7 @@ function getLevelAndWave() {
     return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
 }
 
-// --- UPDATED: Now includes Enemy Names and triggers Status Bar ---
+// --- Spawns enemies with Layout: Sprite -> Name -> HP Bar -> ATB Bar -> HP Text ---
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
@@ -533,12 +578,12 @@ function spawnEnemyPack() {
         let bossDmg = 10 + Math.floor(waveManager.wave * 1.5);
         let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
 
-        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true, isBiomeBoss: true });
+        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, isDead: false, isBoss: true, isBiomeBoss: true });
 
         if (stageInfo.biome.skill === 'leviathan_spawns') {
             for(let i=1; i<=4; i++) {
                 let spawnHp = Math.floor(bossHp * 0.2); let spawnDmg = Math.floor(bossDmg * 0.5);
-                activeEnemies.push({ id: i, maxHp: spawnHp, hp: spawnHp, damage: spawnDmg, skill: 'magic', isDead: false, isBoss: false });
+                activeEnemies.push({ id: i, maxHp: spawnHp, hp: spawnHp, damage: spawnDmg, skill: 'magic', attackProgress: 0, isDead: false, isBoss: false });
             }
         }
 
@@ -548,6 +593,7 @@ function spawnEnemyPack() {
                 <div class="emoji" style="font-size: 4rem;">${stageInfo.biome.bossEmoji}</div>
                 <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${stageInfo.biome.bossName}</div>
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
+                <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
             </div>`;
@@ -559,6 +605,7 @@ function spawnEnemyPack() {
                     <div class="emoji">🦑</div>
                     <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">Leviathan Spawn</div>
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
+                    <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
                 </div>`;
             }
@@ -570,7 +617,7 @@ function spawnEnemyPack() {
         let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
         let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
 
-        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true });
+        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, isDead: false, isBoss: true });
 
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
         container.innerHTML = `
@@ -578,6 +625,7 @@ function spawnEnemyPack() {
                 <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
                 <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Level Boss</div>
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
+                <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
             </div>`;
@@ -602,19 +650,39 @@ function spawnEnemyPack() {
             let finalDmg = isElite ? normDmg * 2 : normDmg;
             let eliteClass = isElite ? 'elite' : '';
 
-            activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, isDead: false, isBoss: false, isElite: isElite });
+            activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, attackProgress: 0, isDead: false, isBoss: false, isElite: isElite });
             
             container.innerHTML += `
                 <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
                     <div class="emoji">${enemyTemplate.emoji}</div>
                     <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${isElite ? 'Elite ' : ''}${enemyTemplate.name}</div>
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
+                    <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
                 </div>`;
         }
     }
     
-    // Refresh status effects immediately when spawning new wave
+    // --- CALCULATE INITIATIVE (SPEED HEAD START) ---
+    let pStats = getPlayerStats();
+    let maxSpd = pStats.spd;
+    
+    activeEnemies.forEach(e => {
+        e.spd = e.spd || (e.isBoss ? 15 : (e.isElite ? 12 : 10)); 
+        e.atkSpd = e.atkSpd || (e.isBoss ? 1.2 : 1.0); 
+        if (e.spd > maxSpd) maxSpd = e.spd;
+    });
+
+    player.attackProgress = (pStats.spd / maxSpd) * 95;
+    let pAtb = document.getElementById('player-atb');
+    if(pAtb) pAtb.style.width = player.attackProgress + '%';
+
+    activeEnemies.forEach(e => {
+        e.attackProgress = (e.spd / maxSpd) * 95;
+        let atbBar = document.getElementById(`enemy-atb-bar-${e.id}`);
+        if (atbBar) atbBar.style.width = e.attackProgress + '%';
+    });
+
     renderStatusEffects(); 
 }
 
@@ -679,17 +747,7 @@ function animateHit(unitId, damageDealt, isCrit) {
     if (target.hp <= 0 && !target.isDead) { handleEnemyDeath(target, unitId, unitDiv); }
 }
 
-// --- UPDATED: Clears Stun Debuff ---
-function autoAttackEnemy() {
-    if(waveManager.isUpgrading || player.currentHealth <= 0 || !document.getElementById('screen-game').classList.contains('active')) return;
-
-    if (player.isStunned) {
-        spawnFloatingText('player-combat-area', "STUNNED!", "float-miss"); 
-        player.isStunned = false; 
-        renderStatusEffects(); // Update UI to remove Stun debuff
-        return;
-    }
-
+function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
     if(aliveEnemies.length === 0) return;
 
@@ -785,73 +843,51 @@ function autoAttackEnemy() {
     setTimeout(() => { if (activeEnemies.every(e => e.hp <= 0)) packDefeated(); }, 400);
 }
 
-// --- UPDATED: Applies Stun Debuff ---
-function enemyStrikesBack() {
-    if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
+function executeEnemyAttack(e) {
+    let unitDiv = document.getElementById(`enemy-${e.id}`);
+    if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
 
-    let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
-    aliveEnemies.forEach((e, index) => {
-        setTimeout(() => {
-            if(player.currentHealth <= 0 || waveManager.isUpgrading) return;
+    let stats = getPlayerStats();
+    let incomingDmg = e.damage;
 
-            let unitDiv = document.getElementById(`enemy-${e.id}`);
-            if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
+    if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg"); }
+    if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
 
-            let stats = getPlayerStats();
-            let incomingDmg = e.damage;
+    if (e.skill === 'bash' && Math.random() < 0.25) {
+        incomingDmg = Math.floor(incomingDmg * 2); 
+        player.isStunned = true; 
+        spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
+        renderStatusEffects(); 
+    }
 
-            if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg"); }
-            if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
+    if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
+        let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05)); 
+        player.currentHealth -= poisonDmg;
+        spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
+    }
 
-            if (e.skill === 'bash' && Math.random() < 0.25) {
-                incomingDmg = Math.floor(incomingDmg * 2); 
-                player.isStunned = true; 
-                spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
-                renderStatusEffects(); // Update UI to show Stun debuff
-            }
+    if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
+        incomingDmg = Math.max(1, incomingDmg - stats.mDef);
+    } else {
+        incomingDmg = Math.max(1, incomingDmg - stats.pDef);
+    }
 
-            if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
-                let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05)); 
-                player.currentHealth -= poisonDmg;
-                spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
-            }
+    player.currentHealth -= incomingDmg;
+    updatePlayerHealthBar();
+    spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
-            if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
-                incomingDmg = Math.max(1, incomingDmg - stats.mDef);
-            } else {
-                incomingDmg = Math.max(1, incomingDmg - stats.pDef);
-            }
+    if (e.skill === 'vampire') {
+        e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
+        let hpBarDiv = document.getElementById(`enemy-hp-bar-${e.id}`); let hpTextDiv = document.getElementById(`enemy-hp-text-${e.id}`);
+        if (hpBarDiv) hpBarDiv.style.width = (e.hp / e.maxHp) * 100 + '%';
+        if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(e.hp)}/${e.maxHp}`;
+    }
 
-            player.currentHealth -= incomingDmg;
-            updatePlayerHealthBar();
-            spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
+    let container = document.getElementById('game-container');
+    container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
+    setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
-            if (e.skill === 'vampire') {
-                e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
-                let hpBarDiv = document.getElementById(`enemy-hp-bar-${e.id}`); let hpTextDiv = document.getElementById(`enemy-hp-text-${e.id}`);
-                if (hpBarDiv) hpBarDiv.style.width = (e.hp / e.maxHp) * 100 + '%';
-                if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(e.hp)}/${e.maxHp}`;
-            }
-
-            let container = document.getElementById('game-container');
-            container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
-            setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
-
-            if (player.currentHealth <= 0) { triggerGameOver(); }
-        }, index * 150);
-    });
-}
-
-function updatePlayerHealthBar() {
-    let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
-    let pBar = document.getElementById('player-health');
-    pBar.style.width = pPercent + '%';
-    document.getElementById('player-hp-text').innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
-
-    if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
-    else if (pPercent <= 50) pBar.style.backgroundColor = '#e67e22';
-    else if (pPercent <= 70) pBar.style.backgroundColor = '#f1c40f';
-    else pBar.style.backgroundColor = '#2ecc71';
+    if (player.currentHealth <= 0) { triggerGameOver(); }
 }
 
 function packDefeated() {
@@ -931,7 +967,7 @@ function buyRunUpgrade(upgrade) {
         runStats.upgradeLevels[upgrade.id]++;
         if(upgrade.id === 'p_atk') runStats.pAtk += 10;
         if(upgrade.id === 'm_atk') runStats.mAtk += 10;
-        if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; startPlayerAutoAttack(); }
+        if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; }
         if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
         if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
         if(upgrade.id === 'crit') runStats.crit += 0.10;
@@ -952,7 +988,6 @@ function buyRunUpgrade(upgrade) {
             if (key === 'maxHealth') { player.maxHealth += upgrade.effect[key]; player.currentHealth += upgrade.effect[key]; updatePlayerHealthBar(); }
             if (key === 'heal') { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect[key]); updatePlayerHealthBar(); }
         }
-        startPlayerAutoAttack(); 
     }
 
     updateCombatStatsPanel();
@@ -982,13 +1017,13 @@ function showBossClearUI() {
 
 function selectCursedRelic(id) {
     if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
-    if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; startPlayerAutoAttack(); }
+    if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; }
     if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
-    if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; startPlayerAutoAttack(); }
+    if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; }
     if(id === 'blood') { runStats.lifesteal += 0.10; runStats.damageReduction -= 0.15; }
     if(id === 'midas') { runStats.goldMultiplier += 0.50; runStats.enemyHpMultiplier += 0.20; }
     if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; }
-    if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; startPlayerAutoAttack(); }
+    if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; }
 
     updateCombatStatsPanel();
     document.getElementById(`btn-curse-${id}`).style.borderColor = '#2ecc71';
@@ -1009,7 +1044,7 @@ function continueToNextWave() {
 }
 
 function endRun(titleText, titleColor) {
-    clearInterval(enemyAttackTimer); clearInterval(playerAttackTimer);
+    clearInterval(combatTickInterval); 
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
 
