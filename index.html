@@ -57,19 +57,16 @@
                         <div class="equip-slot" id="slot-amulet"></div>
                     </div>
                     <div class="equip-stats" id="gear-hero-stats">
-                        <!-- Populated dynamically -->
-                    </div>
+                        </div>
                 </div>
 
                 <div class="equip-bottom">
                     <h3 style="margin-top: 0; margin-bottom: 10px; text-align: left; font-size: 1rem; color: #f1c40f;">INVENTORY</h3>
                     <div class="inventory-grid" id="inventory-grid">
-                        <!-- Populated dynamically -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
-            <!-- Gear Details Modal -->
             <div id="gear-details-modal" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 350px; background: rgba(30, 40, 50, 0.95); border: 2px solid #3498db; border-radius: 15px; padding: 20px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); flex-direction: column; align-items: center; text-align: center;">
                 <button class="hud-btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; background: #e74c3c;" onclick="document.getElementById('gear-details-modal').style.display='none'">X</button>
                 <div id="gear-modal-icon" style="font-size: 4rem; margin-bottom: 10px;"></div>
@@ -77,8 +74,7 @@
                 <p id="gear-modal-type" style="margin: 5px 0 15px 0; color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase;"></p>
 
                 <div id="gear-modal-stats" style="width: 100%; text-align: left; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 5px;">
-                    <!-- Stats populated dynamically -->
-                </div>
+                    </div>
 
                 <button id="gear-modal-action-btn" class="action-btn" style="font-size: 1.2rem; padding: 15px; width: 100%;"></button>
             </div>
@@ -140,6 +136,8 @@
 
             <div style="width: 100%; position: relative;" id="player-combat-area">
                 
+                <div id="player-status-effects" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; min-height: 25px; margin-bottom: 10px;"></div>
+
                 <div class="combat-stats-panel" id="combat-stats-panel">
                     </div>
 
