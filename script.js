@@ -412,7 +412,8 @@ let heroData = {};
         function getPlayerStats() {
             let hero = heroData[player.currentHero];
             let eq = getEquipmentStats();
-            return {
+
+            let stats = {
                 pAtk: Math.floor((hero.pAtk + runStats.pAtk + eq.pAtk) * runStats.pAtkMulti),
                 mAtk: Math.floor((hero.mAtk + runStats.mAtk + eq.mAtk) * runStats.mAtkMulti),
                 pDef: Math.floor((hero.pDef + runStats.pDef + eq.pDef) * runStats.pDefMulti),
@@ -423,6 +424,14 @@ let heroData = {};
                 crit: hero.crit + runStats.crit + eq.crit,
                 luck: hero.luck + runStats.luck + eq.luck
             };
+
+            if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+                stats.pAtk = Math.floor(stats.pAtk * 0.75);
+                stats.mAtk = Math.floor(stats.mAtk * 0.75);
+                stats.atkSpd = stats.atkSpd * 0.75;
+            }
+
+            return stats;
         }
 
         function getTotalDamage() {
@@ -564,10 +573,45 @@ waveManager.wave = 1;
             playerAttackTimer = setInterval(autoAttackEnemy, interval);
         }
 
+        const BIOMES = [
+            { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash' },
+            { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura' },
+            { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive' },
+            { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor' },
+            { id: 'coast', name: 'Forbidden Coast', levels: 5, bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns' }
+        ];
+
         function getLevelAndWave() {
-            let stageLvl = Math.floor((waveManager.wave - 1) / 15) + 1;
+            let totalLevel = Math.floor((waveManager.wave - 1) / 15) + 1;
             let stageWave = ((waveManager.wave - 1) % 15) + 1;
-            return { level: stageLvl, wave: stageWave, isBoss: stageWave === 15 };
+
+            let biomeIndex = 0;
+            let levelsAccumulated = 0;
+
+            for (let i = 0; i < BIOMES.length; i++) {
+                if (totalLevel <= levelsAccumulated + BIOMES[i].levels) {
+                    biomeIndex = i;
+                    break;
+                }
+                levelsAccumulated += BIOMES[i].levels;
+            }
+
+            // Fallback to last biome if wave exceeds total content
+            if (biomeIndex >= BIOMES.length) biomeIndex = BIOMES.length - 1;
+
+            let biome = BIOMES[biomeIndex];
+            let levelInBiome = totalLevel - levelsAccumulated;
+            let isGenericBoss = stageWave === 15;
+            let isBiomeBoss = isGenericBoss && (totalLevel === levelsAccumulated + biome.levels);
+
+            return {
+                totalLevel: totalLevel,
+                level: levelInBiome,
+                wave: stageWave,
+                isBoss: isGenericBoss,
+                isBiomeBoss: isBiomeBoss,
+                biome: biome
+            };
         }
 
         function spawnEnemyPack() {
@@ -578,14 +622,50 @@ waveManager.wave = 1;
 
             let stageInfo = getLevelAndWave();
 
-            if (stageInfo.isBoss) {
+            if (stageInfo.isBiomeBoss) {
+                let bossHp = Math.floor((300 + (waveManager.wave * 35)) * runStats.enemyHpMultiplier);
+                let bossDmg = 10 + Math.floor(waveManager.wave * 1.5);
+                let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
+
+                activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true, isBiomeBoss: true });
+
+                if (stageInfo.biome.skill === 'leviathan_spawns') {
+                    for(let i=1; i<=4; i++) {
+                        let spawnHp = Math.floor(bossHp * 0.2);
+                        let spawnDmg = Math.floor(bossDmg * 0.5);
+                        activeEnemies.push({ id: i, maxHp: spawnHp, hp: spawnHp, damage: spawnDmg, skill: 'magic', isDead: false, isBoss: false });
+                    }
+                }
+
+                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS: ${stageInfo.biome.name} ⚠️</span>`;
+                let html = `
+                    <div class="enemy-unit boss" id="enemy-0">
+                        <div class="emoji" style="font-size: 4rem;">${stageInfo.biome.bossEmoji}</div>
+                        <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
+                        <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
+                        <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
+                    </div>`;
+
+                if (stageInfo.biome.skill === 'leviathan_spawns') {
+                    for(let i=1; i<=4; i++) {
+                        html += `
+                        <div class="enemy-unit elite" id="enemy-${i}">
+                            <div class="emoji">🦑</div>
+                            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
+                            <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
+                        </div>`;
+                    }
+                }
+                container.innerHTML = html;
+
+            } else if (stageInfo.isBoss) {
                 let bossHp = Math.floor((150 + (waveManager.wave * 25)) * runStats.enemyHpMultiplier);
                 let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
                 let bSkill = bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)];
 
                 activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true });
 
-                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
+                textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.totalLevel} - Wave ${stageInfo.wave} ⚠️</span>`;
                 container.innerHTML = `
                     <div class="enemy-unit boss" id="enemy-0">
                         <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
@@ -619,6 +699,17 @@ waveManager.wave = 1;
         }
 
         function handleEnemyDeath(target, unitId, unitDiv) {
+            if (target.skill === 'intimidate_revive' && !target.hasRevived) {
+                target.hasRevived = true;
+                target.hp = target.maxHp;
+                let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
+                let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
+                if (hpBarDiv) hpBarDiv.style.width = '100%';
+                if (hpTextDiv) hpTextDiv.innerText = `${target.hp}/${target.maxHp}`;
+                spawnFloatingText(`enemy-${unitId}`, "REVIVED!", "float-heal");
+                return;
+            }
+
             if (target.isDead) return;
             target.isDead = true;
             runStats.enemiesKilled++;
@@ -688,8 +779,23 @@ waveManager.wave = 1;
         function autoAttackEnemy() {
             if(waveManager.isUpgrading || player.currentHealth <= 0 || !document.getElementById('screen-game').classList.contains('active')) return;
 
+            if (player.isStunned) {
+                spawnFloatingText('player-combat-area', "STUNNED!", "float-miss");
+                player.isStunned = false;
+                return;
+            }
+
             let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
             if(aliveEnemies.length === 0) return;
+
+            let poisonSource = aliveEnemies.find(e => e.skill === 'poison_aura');
+            if (poisonSource) {
+                let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05));
+                player.currentHealth -= poisonDmg;
+                updatePlayerHealthBar();
+                spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
+                if (player.currentHealth <= 0) { triggerGameOver(); return; }
+            }
 
             let pIcon = document.getElementById('player-combat-icon');
             if(pIcon) { pIcon.classList.add('player-attack-anim'); setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); }
@@ -709,6 +815,11 @@ waveManager.wave = 1;
                     // If target has armor skill, reduce DMG further
                     let pDmg = Math.max(1, damages.pDmg); // enemies don't have pDef defined right now, so we just use base.
                     let mDmg = Math.max(1, damages.mDmg);
+
+                    if (target.skill === 'high_armor') {
+                        pDmg = Math.floor(pDmg * 0.1); // 90% physical reduction
+                        mDmg = Math.floor(mDmg * 1.5); // 50% magical weakness
+                    }
 
                     let dmg = pDmg + mDmg;
                     if (isCrit) dmg = Math.floor(dmg * 2.5);
@@ -817,9 +928,9 @@ waveManager.wave = 1;
                     let incomingDmg = e.damage;
 
                     if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg"); }
-                    if (e.skill !== 'magic' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
+                    if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
 
-                    if (e.skill !== 'magic') {
+                    if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns') {
                         // Enemy deals physical damage, subtract player P.Def
                         incomingDmg = Math.max(1, incomingDmg - stats.pDef);
                     }
@@ -828,6 +939,11 @@ waveManager.wave = 1;
                     player.currentHealth -= incomingDmg;
                     updatePlayerHealthBar();
                     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
+
+                    if (e.skill === 'bash' && Math.random() < 0.25) {
+                        player.isStunned = true;
+                        spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
+                    }
 
                     if (e.skill === 'vampire') {
                         e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
@@ -1006,13 +1122,15 @@ function showBossClearUI() {
             let list = document.getElementById('cursed-list'); list.innerHTML = '';
 
             let shuffledCurses = cursedRelicsData.sort(() => 0.5 - Math.random());
-            let c = shuffledCurses[0];
+            let choices = shuffledCurses.slice(0, 3);
 
-            list.innerHTML = `
-                <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
-                    <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
-                    <div class="cost">${c.icon}</div>
-                </button>`;
+            choices.forEach(c => {
+                list.innerHTML += `
+                    <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
+                        <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
+                        <div class="cost">${c.icon}</div>
+                    </button>`;
+            });
 
             document.getElementById('btn-descend').disabled = true;
         }
