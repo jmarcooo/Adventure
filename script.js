@@ -575,11 +575,11 @@ function startPlayerAutoAttack() {
 }
 
 const BIOMES = [
-    { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash' },
-    { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura' },
-    { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive' },
-    { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor' },
-    { id: 'coast', name: 'Forbidden Coast', levels: 5, bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns' }
+    { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', normalEmojis: ['👾', '🐺', '🦇', '🕷️', '🐗'] },
+    { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', normalEmojis: ['🦂', '🦇', '🪨', '🐍', '🧟'] },
+    { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive', normalEmojis: ['💀', '👻', '🧟', '🧛', '🦇'] },
+    { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor', normalEmojis: ['🗿', '🏺', '🦅', '🦂', '🧞'] },
+    { id: 'coast', name: 'Forbidden Coast', levels: 5, bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns', normalEmojis: ['🦑', '🦀', '🦈', '🧜‍♀️', '🌊'] }
 ];
 
 function getLevelAndWave() {
@@ -638,7 +638,8 @@ function spawnEnemyPack() {
             }
         }
 
-        textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS: ${stageInfo.biome.name} ⚠️</span>`;
+        // UPDATED: Biome Text
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS: ${stageInfo.biome.bossName} ⚠️</span>`;
         let html = `
             <div class="enemy-unit boss" id="enemy-0">
                 <div class="emoji" style="font-size: 4rem;">${stageInfo.biome.bossEmoji}</div>
@@ -666,7 +667,8 @@ function spawnEnemyPack() {
 
         activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true });
 
-        textEl.innerHTML = `<span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.totalLevel} - Wave ${stageInfo.wave} ⚠️</span>`;
+        // UPDATED: Biome Text
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
         container.innerHTML = `
             <div class="enemy-unit boss" id="enemy-0">
                 <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
@@ -678,9 +680,13 @@ function spawnEnemyPack() {
         let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
         let normHp = Math.floor((20 + (waveManager.wave * 10)) * runStats.enemyHpMultiplier);
         let normDmg = Math.max(1, Math.floor(waveManager.wave * 0.6));
-        let packEmoji = waveManager.normalEmojis[Math.floor(Math.random() * waveManager.normalEmojis.length)];
+        
+        // UPDATED: Use specific Biome Emojis instead of global random emojis
+        let biomeEmojis = stageInfo.biome.normalEmojis || waveManager.normalEmojis;
+        let packEmoji = biomeEmojis[Math.floor(Math.random() * biomeEmojis.length)];
 
-        textEl.innerHTML = `Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
+        // UPDATED: Biome Text
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
         for(let i = 0; i < enemyCount; i++) {
             let isElite = Math.random() < 0.20;
