@@ -2,6 +2,7 @@
 let gameSpeed = 1; // 1 = Slow (Default), 2 = Fast
 
 let heroData = {};
+let enemiesData = {}; // Holds the data from enemies.json
 
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
@@ -28,9 +29,7 @@ let runStats = {
 // MASTER UPGRADE DATABASE
 let runUpgradeData = [];
 let commonUpgradesData = [];
-
 let bossSkillsData = [];
-
 let cursedRelicsData = [];
 
 let viewingHero = null;
@@ -575,11 +574,16 @@ function startPlayerAutoAttack() {
 }
 
 const BIOMES = [
-    { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', normalEmojis: ['👾', '🐺', '🦇', '🕷️', '🐗'] },
-    { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', normalEmojis: ['🦂', '🦇', '🪨', '🐍', '🧟'] },
-    { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive', normalEmojis: ['💀', '👻', '🧟', '🧛', '🦇'] },
-    { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor', normalEmojis: ['🗿', '🏺', '🦅', '🦂', '🧞'] },
-    { id: 'coast', name: 'Forbidden Coast', levels: 5, bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns', normalEmojis: ['🦑', '🦀', '🦈', '🧜‍♀️', '🌊'] }
+    { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash' },
+    { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura' },
+    { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive' },
+    { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor' },
+    { id: 'coast', name: 'Forbidden Coast', levels: 5, bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns' },
+    { id: 'volcano', name: 'Volcanic Crag', levels: 5, bossName: 'Infernal Dragon', bossEmoji: '🐉', skill: 'high_armor' },
+    { id: 'tundra', name: 'Frozen Tundra', levels: 5, bossName: 'Frost Lich', bossEmoji: '🥶', skill: 'intimidate_revive' },
+    { id: 'desert', name: 'Scorched Desert', levels: 5, bossName: 'Giant Sandworm', bossEmoji: '🐛', skill: 'poison_aura' },
+    { id: 'void', name: 'Shadow Realm', levels: 5, bossName: 'Void Lord', bossEmoji: '👁️‍🗨️', skill: 'leviathan_spawns' },
+    { id: 'celestial', name: "Celestial Palace", levels: 5, bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash' }
 ];
 
 function getLevelAndWave() {
@@ -638,7 +642,6 @@ function spawnEnemyPack() {
             }
         }
 
-        // UPDATED: Biome Text
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS: ${stageInfo.biome.bossName} ⚠️</span>`;
         let html = `
             <div class="enemy-unit boss" id="enemy-0">
@@ -667,7 +670,6 @@ function spawnEnemyPack() {
 
         activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, isDead: false, isBoss: true });
 
-        // UPDATED: Biome Text
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
         container.innerHTML = `
             <div class="enemy-unit boss" id="enemy-0">
@@ -678,26 +680,34 @@ function spawnEnemyPack() {
             </div>`;
     } else {
         let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
-        let normHp = Math.floor((20 + (waveManager.wave * 10)) * runStats.enemyHpMultiplier);
-        let normDmg = Math.max(1, Math.floor(waveManager.wave * 0.6));
         
-        // UPDATED: Use specific Biome Emojis instead of global random emojis
-        let biomeEmojis = stageInfo.biome.normalEmojis || waveManager.normalEmojis;
-        let packEmoji = biomeEmojis[Math.floor(Math.random() * biomeEmojis.length)];
+        let biomeEnemies = enemiesData[stageInfo.biome.id];
+        if (!biomeEnemies || biomeEnemies.length === 0) {
+            // Fallback just in case JSON hasn't loaded properly
+            biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
+        }
 
-        // UPDATED: Biome Text
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
 
         for(let i = 0; i < enemyCount; i++) {
             let isElite = Math.random() < 0.20;
+            
+            // Randomly select an enemy from this biome's JSON list
+            let enemyTemplate = biomeEnemies[Math.floor(Math.random() * biomeEnemies.length)];
+            
+            // Apply scale based on base stats and wave number
+            let normHp = Math.floor((enemyTemplate.baseHp + (waveManager.wave * 15)) * runStats.enemyHpMultiplier);
+            let normDmg = Math.max(1, Math.floor(enemyTemplate.baseDmg + (waveManager.wave * 0.8)));
+            
             let finalHp = isElite ? normHp * 2 : normHp;
             let finalDmg = isElite ? normDmg * 2 : normDmg;
             let eliteClass = isElite ? 'elite' : '';
 
-            activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: null, isDead: false, isBoss: false, isElite: isElite });
+            activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, isDead: false, isBoss: false, isElite: isElite });
+            
             container.innerHTML += `
                 <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
-                    <div class="emoji">${packEmoji}</div>
+                    <div class="emoji">${enemyTemplate.emoji}</div>
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
                 </div>`;
@@ -809,7 +819,7 @@ function autoAttackEnemy() {
             let mDmg = Math.max(0, damages.mDmg);
 
             // --- STAGE 4 BOSS: Ancient Golem Armor ---
-            if (target.skill === 'high_armor') {
+            if (target.skill === 'high_armor' || target.skill === 'armor') {
                 pDmg = Math.floor(pDmg * 0.1); // Reduces physical damage by 90%
                 // Magic damage passes through unmitigated
             }
@@ -837,10 +847,6 @@ function autoAttackEnemy() {
                     updatePlayerHealthBar();
                     if (player.currentHealth <= 0) { triggerGameOver(); return; }
                 }
-            }
-
-            if (target.skill === 'armor' && !(innateTrigger && (hero.innateSkill.type === 'mage_arcane' || hero.innateSkill.type === 'cleric_smite'))) {
-                dmg = Math.floor(dmg * 0.70);
             }
 
             target.hp -= dmg;
@@ -917,29 +923,25 @@ function enemyStrikesBack() {
             let stats = getPlayerStats();
             let incomingDmg = e.damage;
 
-            if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "BOSS CRIT!", "float-enemy-dmg"); }
+            if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg"); }
             if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
 
-            // --- STAGE 1 BOSS: Troll Bash ---
+            // --- BOSS & NORMAL SKILLS ---
             if (e.skill === 'bash' && Math.random() < 0.25) {
-                incomingDmg = Math.floor(incomingDmg * 2); // 2x Damage
-                player.isStunned = true; // Stuns the player for 1 turn
+                incomingDmg = Math.floor(incomingDmg * 2); 
+                player.isStunned = true; 
                 spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
             }
 
-            // --- STAGE 2 BOSS: Serpent Poison ---
-            if (e.skill === 'poison_aura') {
-                let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05)); // 5% Max HP
+            if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
+                let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05)); 
                 player.currentHealth -= poisonDmg;
                 spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
             }
 
-            // --- STAGE 5 BOSS: Leviathan Magic Damage ---
             if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
-                // Leviathan & Spawns deal Magic Damage (Uses player M.Def instead of P.Def)
                 incomingDmg = Math.max(1, incomingDmg - stats.mDef);
             } else {
-                // Normal physical attacks use P.Def
                 incomingDmg = Math.max(1, incomingDmg - stats.pDef);
             }
 
@@ -1024,7 +1026,7 @@ function packDefeated() {
         }
     });
 
-    // Add Rare and Ultimate if affordable/applicable (for simplicity, they are one-time and cost more)
+    // Add Rare and Ultimate if affordable/applicable
     let hero = heroData[player.currentHero];
     if (!runStats.hasRareUpgrade && runStats.runes >= 5) {
         shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'rare' });
@@ -1115,6 +1117,7 @@ function buyRunUpgrade(upgrade) {
     updateCombatStatsPanel();
     continueToNextWave();
 }
+
 function showBossClearUI() {
     document.getElementById('boss-clear-ui').style.display = 'flex';
     document.getElementById('boss-ui-gold').innerText = runStats.goldGained;
@@ -1183,84 +1186,4 @@ function endRun(titleText, titleColor) {
 
     document.getElementById('summary-kills').innerText = runStats.enemiesKilled;
     document.getElementById('summary-gold').innerText = runStats.goldGained;
-    document.getElementById('summary-exp').innerText = runStats.expGained;
-
-    summaryUi.style.display = 'flex';
-}
-
-function triggerGameOver() {
-    player.currentHealth = 0;
-    updatePlayerHealthBar();
-    endRun('DEFEATED', '#e74c3c');
-}
-
-function fleeCombat() {
-    endRun('RETREATED', '#f39c12');
-}
-
-function collectRunRewards() {
-    player.exp += runStats.expGained;
-
-    let leveledUp = false;
-    while(player.exp >= player.expNeeded) {
-        player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
-        player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth;
-        leveledUp = true;
-    }
-    if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
-
-    document.getElementById('run-summary-ui').style.display = 'none';
-    openMenu('home');
-    updateUI();
-}
-
-// --- UI REFRESH ---
-function updateUI() {
-    document.getElementById('gold-amount').innerText = player.gold;
-    document.getElementById('gem-amount').innerText = player.gems;
-
-    document.getElementById('player-level-text').innerText = player.level;
-    document.getElementById('player-exp-fill').style.width = ((player.exp / player.expNeeded) * 100) + '%';
-    document.getElementById('player-exp-text').innerText = player.exp + '/' + player.expNeeded;
-
-    document.getElementById('tp-amount').innerText = player.talentPoints;
-    document.getElementById('talent-lvl-damage').innerText = player.talents.damage;
-    document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
-}
-
-
-async function initGame() {
-try {
-const heroesResponse = await fetch('heroes.json');
-heroData = await heroesResponse.json();
-
-const itemsResponse = await fetch('items.json');
-const itemsData = await itemsResponse.json();
-
-runUpgradeData = itemsData.runUpgradeData;
-commonUpgradesData = itemsData.commonUpgradesData;
-bossSkillsData = itemsData.bossSkillsData;
-cursedRelicsData = itemsData.cursedRelicsData;
-
-renderHeroSelection();
-updateUI();
-
-// Select warrior by default if available
-if (heroData.warrior) {
-     setActiveHero('warrior');
-}
-
-// Initialize heroSkillLevels
-for (let h in heroData) {
-    if (player.heroSkillLevels[h] === undefined) {
-        player.heroSkillLevels[h] = 0;
-    }
-}
-renderHeroSelection();
-} catch (error) {
-console.error("Failed to load game data:", error);
-}
-}
-
-// Ensure initGame is called
-initGame();
+    document.getElementById('summary-exp').innerText = runStats.expG
