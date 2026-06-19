@@ -433,9 +433,10 @@ function spawnLootDrop(targetId, type) {
     setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
-// --- ATB COMBAT ENGINE ---
+// --- NEW ATB LOOP ENGINE ---
 function startCombatLoop() {
     clearInterval(combatTickInterval);
+    // Ticks 20 times a second to fill ATB bars smoothly
     combatTickInterval = setInterval(combatTick, 50); 
 }
 
@@ -445,14 +446,15 @@ function combatTick() {
     let stats = getPlayerStats();
     let actionQueue = []; 
 
-    // 1. Player ATB Fill
+    // 1. Player ATB Fill (Based on Attack Speed)
     if (!player.isStunned) {
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
             player.attackProgress = 100;
-            actionQueue.push({ type: 'player', spd: stats.spd }); 
+            actionQueue.push({ type: 'player', spd: stats.spd }); // Spd used to resolve tie-breakers
         }
     } else {
+        // If Stunned, bar fills but just clears the stun at 100%
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
             player.attackProgress = 0;
@@ -464,20 +466,20 @@ function combatTick() {
     let pAtb = document.getElementById('player-atb');
     if(pAtb) pAtb.style.width = Math.min(100, player.attackProgress) + '%';
 
-    // 2. Enemy ATB Fill
+    // 2. Enemy ATB Fill (Based on Attack Speed)
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => {
         let eAtkSpd = e.atkSpd || 1.0;
         e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
         if (e.attackProgress >= 100) {
             e.attackProgress = 100;
-            actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
+            actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); // Spd used to resolve tie-breakers
         }
         let atbBar = document.getElementById(`enemy-atb-bar-${e.id}`);
         if (atbBar) atbBar.style.width = Math.min(100, e.attackProgress) + '%';
     });
 
-    // 3. Execute Actions (Fastest acts FIRST)
+    // 3. Execute Actions (Fastest acts FIRST if multiple units reach 100% simultaneously)
     if (actionQueue.length > 0) {
         actionQueue.sort((a, b) => b.spd - a.spd); 
         
@@ -529,7 +531,10 @@ function startGame() {
     updateCombatStatsPanel();
     openMenu('game');
     
+    // Spawn triggers the ATB Initiative Calculation
     spawnEnemyPack();
+
+    // Start the unified engine
     startCombatLoop(); 
 }
 
@@ -565,7 +570,7 @@ function getLevelAndWave() {
     return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
 }
 
-// --- Spawns enemies with Layout: Sprite -> Name -> HP Bar -> ATB Bar -> HP Text ---
+// --- UPDATED: Spawns enemies with ATB Bars and calculates INITIATIVE (Speed) ---
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
@@ -888,6 +893,22 @@ function executeEnemyAttack(e) {
     setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
     if (player.currentHealth <= 0) { triggerGameOver(); }
+}
+
+function updatePlayerHealthBar() {
+    let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
+    let pBar = document.getElementById('player-health');
+    let pText = document.getElementById('player-hp-text');
+
+    if (pBar) pBar.style.width = pPercent + '%';
+    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
+
+    if (pBar) {
+        if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
+        else if (pPercent <= 50) pBar.style.backgroundColor = '#e67e22';
+        else if (pPercent <= 70) pBar.style.backgroundColor = '#f1c40f';
+        else pBar.style.backgroundColor = '#2ecc71';
+    }
 }
 
 function packDefeated() {
