@@ -1186,4 +1186,30 @@ async function initGame() {
     }
 }
 
+// --- HIDDEN DEVELOPER CHEAT MODE ---
+let secretGemClickCount = 0;
+let secretGemClickTimer = null;
+
+function checkSecretCheat() {
+    secretGemClickCount++;
+    
+    // Clear the reset timer every time they click
+    clearTimeout(secretGemClickTimer);
+
+    if (secretGemClickCount >= 10) {
+        // Grant 10,000 gems!
+        player.gems += 10000;
+        updateUI();
+        showNotification("🛠️ DEV MODE: +10,000 Gems Added!");
+        
+        // Reset the counter so it can be done again if needed
+        secretGemClickCount = 0; 
+    } else {
+        // If they stop clicking for 1 second, reset the counter back to 0
+        secretGemClickTimer = setTimeout(() => {
+            secretGemClickCount = 0;
+        }, 1000);
+    }
+}
+
 initGame();
