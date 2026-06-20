@@ -340,7 +340,7 @@ function toggleGameSpeed() {
     document.getElementById('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
 }
 
-// --- NEW: HYBRID STATUS ENGINE ---
+// --- HYBRID STATUS ENGINE ---
 
 function applyStatus(unit, type, value, isCharge = false) {
     if (!unit.activeEffects) unit.activeEffects = [];
@@ -375,7 +375,37 @@ function consumeCharge(unit, type) {
     return false;
 }
 
-// THIS FUNCTION HANDLES BOTH DURATION COUNTDOWN AND VISUAL TICKING
+// --- UNIVERSAL HEALING HELPER ---
+function applyHeal(unit, amount) {
+    if (hasStatus(unit, 'decay')) {
+        // Healing deals damage instead!
+        if (unit === player) {
+            player.currentHealth -= amount;
+            updatePlayerHealthBar();
+            spawnFloatingText('player-combat-area', "DECAY -" + amount, "float-enemy-dmg");
+            if (player.currentHealth <= 0) triggerGameOver();
+        } else {
+            unit.hp -= amount;
+            animateHit(unit.id, amount, false);
+            spawnFloatingText(`enemy-${unit.id}`, "DECAY!", "float-enemy-dmg");
+        }
+    } else {
+        // Normal Heal
+        if (unit === player) {
+            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + amount);
+            updatePlayerHealthBar();
+            spawnFloatingText('player-combat-area', "+" + amount, "float-heal");
+        } else {
+            unit.hp = Math.min(unit.maxHp, unit.hp + amount);
+            let hpBarDiv = document.getElementById(`enemy-hp-bar-${unit.id}`);
+            let hpTextDiv = document.getElementById(`enemy-hp-text-${unit.id}`);
+            if (hpBarDiv) hpBarDiv.style.width = (unit.hp / unit.maxHp) * 100 + '%';
+            if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(unit.hp)}/${unit.maxHp}`;
+            spawnFloatingText(`enemy-${unit.id}`, "+" + amount, "float-heal");
+        }
+    }
+}
+
 function processTimeEffects(unit) {
     if (!unit || !unit.activeEffects) return;
     let uiChanged = false;
@@ -384,13 +414,13 @@ function processTimeEffects(unit) {
         let eff = unit.activeEffects[i];
         
         if (eff.duration !== undefined) {
-            let oldSec = Math.ceil(eff.duration / 1000); // What the UI currently says
+            let oldSec = Math.ceil(eff.duration / 1000); 
 
             eff.duration -= (50 * gameSpeed);
 
-            let newSec = Math.ceil(eff.duration / 1000); // What the UI should say now
+            let newSec = Math.ceil(eff.duration / 1000); 
 
-            // DoTs tick every 1000ms
+            // Time-based DoTs: Tick every 1000ms
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
@@ -404,29 +434,36 @@ function processTimeEffects(unit) {
                         spawnFloatingText('player-combat-area', "POISON -" + dmg, "float-enemy-dmg");
                         if (player.currentHealth <= 0) triggerGameOver();
                     } else {
-                        unit.hp -= dmg;
-                        animateHit(unit.id, dmg, false);
+                        unit.hp -= dmg; animateHit(unit.id, dmg, false);
                     }
                 } 
-                else if (eff.type === 'regen') {
-                    let heal = Math.max(1, Math.floor(maxH * 0.05));
+                else if (eff.type === 'burn') {
+                    let dmg = Math.max(1, Math.floor(maxH * 0.08));
                     if (unit === player) {
-                        player.currentHealth = Math.min(player.maxHealth, player.currentHealth + heal);
+                        player.currentHealth -= dmg;
                         updatePlayerHealthBar();
-                        spawnFloatingText('player-combat-area', "+" + heal, "float-heal");
+                        spawnFloatingText('player-combat-area', "BURN -" + dmg, "float-enemy-dmg");
+                        if (player.currentHealth <= 0) triggerGameOver();
                     } else {
-                        unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-                        let hpBarDiv = document.getElementById(`enemy-hp-bar-${unit.id}`);
-                        let hpTextDiv = document.getElementById(`enemy-hp-text-${unit.id}`);
-                        if (hpBarDiv) hpBarDiv.style.width = (unit.hp / unit.maxHp) * 100 + '%';
-                        if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(unit.hp)}/${unit.maxHp}`;
-                        spawnFloatingText(`enemy-${unit.id}`, "+" + heal, "float-heal");
+                        unit.hp -= dmg; animateHit(unit.id, dmg, false);
                     }
+                }
+                else if (eff.type === 'regen') {
+                    applyHeal(unit, Math.max(1, Math.floor(maxH * 0.05)));
                 }
             }
 
-            // If it hits 0, it vanishes. If the round second changes, redraw to show the countdown!
             if (eff.duration <= 0) {
+                if (eff.type === 'doom') {
+                    if (unit === player) {
+                        player.currentHealth = 0; updatePlayerHealthBar();
+                        spawnFloatingText('player-combat-area', "DOOMED!", "float-enemy-dmg");
+                        triggerGameOver();
+                    } else {
+                        unit.hp = 0; animateHit(unit.id, 9999, false);
+                        spawnFloatingText(`enemy-${unit.id}`, "DOOMED!", "float-crit");
+                    }
+                }
                 unit.activeEffects.splice(i, 1);
                 uiChanged = true;
             } else if (oldSec !== newSec) {
@@ -442,6 +479,9 @@ function createStatusHtml(eff, mini = false) {
     let text = ""; let iconClass = "buff"; let emoji = "✨";
     if (eff.type === 'stun') { text = "Stun"; iconClass = "debuff"; emoji = "💫"; }
     else if (eff.type === 'poison') { text = "Poison"; iconClass = "debuff"; emoji = "☠️"; }
+    else if (eff.type === 'burn') { text = "Burn"; iconClass = "debuff"; emoji = "🔥"; }
+    else if (eff.type === 'bleed') { text = "Bleed"; iconClass = "debuff"; emoji = "🩸"; }
+    else if (eff.type === 'decay') { text = "Decay"; iconClass = "debuff"; emoji = "🧟"; }
     else if (eff.type === 'slow') { text = "Slow"; iconClass = "debuff"; emoji = "🐢"; }
     else if (eff.type === 'haste') { text = "Haste"; iconClass = "buff"; emoji = "⚡"; }
     else if (eff.type === 'blind') { text = "Blind"; iconClass = "debuff"; emoji = "👁️‍🗨️"; }
@@ -449,6 +489,12 @@ function createStatusHtml(eff, mini = false) {
     else if (eff.type === 'vulnerable') { text = "Vuln"; iconClass = "debuff"; emoji = "💔"; }
     else if (eff.type === 'barrier') { text = "Barrier"; iconClass = "buff"; emoji = "🛡️"; }
     else if (eff.type === 'regen') { text = "Regen"; iconClass = "buff"; emoji = "💖"; }
+    else if (eff.type === 'thorns') { text = "Thorns"; iconClass = "buff"; emoji = "🌵"; }
+    else if (eff.type === 'berserk') { text = "Berserk"; iconClass = "buff"; emoji = "😡"; } // Red icon but buff logic
+    else if (eff.type === 'block') { text = "Block"; iconClass = "buff"; emoji = "🛡️"; }
+    else if (eff.type === 'focused') { text = "Focus"; iconClass = "buff"; emoji = "👁️"; }
+    else if (eff.type === 'marked') { text = "Marked"; iconClass = "debuff"; emoji = "🎯"; }
+    else if (eff.type === 'doom') { text = "Doom"; iconClass = "debuff"; emoji = "⏳"; }
 
     let durText = eff.duration !== undefined ? Math.ceil(eff.duration/1000) + "s" : eff.charges + "x";
     if (mini) return `<div title="${text} (${durText})" style="font-size:0.9rem;">${emoji} ${durText}</div>`;
@@ -487,13 +533,23 @@ function debugApply(type, targetStr) {
 
     if (type === 'stun') applyStatus(target, 'stun', 3000); 
     else if (type === 'poison') applyStatus(target, 'poison', 5000); 
+    else if (type === 'burn') applyStatus(target, 'burn', 5000); 
+    else if (type === 'bleed') applyStatus(target, 'bleed', 5000); 
+    else if (type === 'decay') applyStatus(target, 'decay', 5000); 
     else if (type === 'regen') applyStatus(target, 'regen', 5000);
     else if (type === 'haste') applyStatus(target, 'haste', 5000); 
     else if (type === 'slow') applyStatus(target, 'slow', 5000); 
     else if (type === 'vulnerable') applyStatus(target, 'vulnerable', 5000); 
     else if (type === 'barrier') applyStatus(target, 'barrier', 5000); 
+    else if (type === 'thorns') applyStatus(target, 'thorns', 5000); 
+    else if (type === 'berserk') applyStatus(target, 'berserk', 5000); 
+    else if (type === 'doom') applyStatus(target, 'doom', 10000); 
+    
     else if (type === 'blind') applyStatus(target, 'blind', 1, true); 
     else if (type === 'empower') applyStatus(target, 'empower', 1, true); 
+    else if (type === 'block') applyStatus(target, 'block', 1, true); 
+    else if (type === 'focused') applyStatus(target, 'focused', 1, true); 
+    else if (type === 'marked') applyStatus(target, 'marked', 1, true); 
     
     updateCombatStatsPanel();
 }
@@ -531,8 +587,10 @@ function getPlayerStats() {
         stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
     }
     
+    // Apply Hybrid Modifiers
     if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
     if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
+    if (hasStatus(player, 'berserk')) { stats.pDef = 0; stats.mDef = 0; }
 
     return stats;
 }
@@ -1026,6 +1084,15 @@ function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
     if(aliveEnemies.length === 0) return;
 
+    // --- Action-Based Bleed ---
+    if (hasStatus(player, 'bleed')) {
+        let bDmg = Math.floor(player.maxHealth * 0.05);
+        player.currentHealth -= bDmg;
+        updatePlayerHealthBar();
+        spawnFloatingText('player-combat-area', "BLEED -" + bDmg, "float-enemy-dmg");
+        if (player.currentHealth <= 0) { triggerGameOver(); return; }
+    }
+
     if (consumeCharge(player, 'blind')) {
         spawnFloatingText('player-combat-area', "BLIND MISS!", "float-miss");
         return;
@@ -1045,10 +1112,15 @@ function executePlayerAttack() {
 
             let damages = getTotalDamage();
             let stats = getPlayerStats();
+            
             let isCrit = Math.random() < stats.crit;
+            if (consumeCharge(player, 'focused')) isCrit = true;
+            if (consumeCharge(target, 'marked')) isCrit = true;
 
             let eDefP = target.pDef || 0;
             let eDefM = target.mDef || 0;
+            
+            if (hasStatus(target, 'berserk')) { eDefP = 0; eDefM = 0; }
 
             let pDmg = Math.max(1, damages.pDmg - eDefP);
             let mDmg = Math.max(0, damages.mDmg - eDefM);
@@ -1060,10 +1132,8 @@ function executePlayerAttack() {
             let dmg = pDmg + mDmg;
             if (isCrit) dmg = Math.floor(dmg * 2.5);
             
-            if (isEmpowered) {
-                dmg *= 2;
-                spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit");
-            }
+            if (isEmpowered) { dmg *= 2; spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit"); }
+            if (hasStatus(player, 'berserk')) dmg *= 2;
             
             if (hasStatus(target, 'vulnerable')) dmg = Math.floor(dmg * 1.5);
             if (hasStatus(target, 'barrier')) dmg = Math.floor(dmg * 0.5);
@@ -1088,8 +1158,23 @@ function executePlayerAttack() {
                 }
             }
 
-            target.hp -= dmg;
-            animateHit(target.id, dmg, isCrit);
+            // Target Block logic
+            if (consumeCharge(target, 'block')) {
+                spawnFloatingText(`enemy-${target.id}`, "BLOCKED!", "float-miss");
+                dmg = 0;
+            } else {
+                target.hp -= dmg;
+                animateHit(target.id, dmg, isCrit);
+
+                // Target Thorns logic
+                if (hasStatus(target, 'thorns') && dmg > 0) {
+                    let tDmg = Math.floor(dmg * 0.2);
+                    player.currentHealth -= tDmg;
+                    updatePlayerHealthBar();
+                    spawnFloatingText('player-combat-area', "THORNS -" + tDmg, "float-enemy-dmg");
+                    if (player.currentHealth <= 0) { triggerGameOver(); return; }
+                }
+            }
 
             if (innateTrigger) {
                 if (hero.innateSkill.type === 'warrior_splash') {
@@ -1097,16 +1182,13 @@ function executePlayerAttack() {
                 } else if (hero.innateSkill.type === 'mage_arcane') {
                     activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
                 } else if (hero.innateSkill.type === 'paladin_heal') {
-                    let hAmt = Math.floor(player.maxHealth * 0.20);
-                    player.currentHealth = Math.min(player.maxHealth, player.currentHealth + hAmt);
-                    spawnFloatingText('player-combat-area', `+${hAmt}`, 'float-heal'); updatePlayerHealthBar();
+                    applyHeal(player, Math.floor(player.maxHealth * 0.20));
                 } else if (hero.innateSkill.type === 'rogue_steal') {
                     addCurrency('gold', 5); spawnLootDrop(`enemy-${target.id}`, 'gold');
                 } else if (hero.innateSkill.type === 'necro_summon') {
                     let d = Math.floor(dmg * 0.5);
                     activeEnemies.forEach(e => { if (e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
-                    player.currentHealth = Math.min(player.maxHealth, player.currentHealth + d); updatePlayerHealthBar();
-                    if (d > 0) spawnFloatingText('player-combat-area', `+${d}`, 'float-heal');
+                    applyHeal(player, d);
                 } else if (hero.innateSkill.type === 'beast_bite') {
                     let biteDmg = Math.floor(dmg * 1.5); target.hp -= biteDmg; animateHit(target.id, biteDmg, false);
                 } else if (hero.innateSkill.type === 'monk_combo') {
@@ -1118,15 +1200,11 @@ function executePlayerAttack() {
                 }
             }
 
-            if (runStats.lifesteal > 0) {
-                let healAmount = Math.floor(dmg * runStats.lifesteal);
-                if (healAmount > 0) {
-                    player.currentHealth = Math.min(player.maxHealth, player.currentHealth + healAmount);
-                    updatePlayerHealthBar(); spawnFloatingText('player-combat-area', `+${healAmount}`, 'float-heal');
-                }
+            if (runStats.lifesteal > 0 && dmg > 0) {
+                applyHeal(player, Math.floor(dmg * runStats.lifesteal));
             }
 
-            if (runStats.splashDmg > 0) {
+            if (runStats.splashDmg > 0 && dmg > 0) {
                 let sDmg = Math.floor(dmg * runStats.splashDmg);
                 activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= sDmg; animateHit(e.id, sDmg, false); } });
             }
@@ -1137,6 +1215,13 @@ function executePlayerAttack() {
 }
 
 function executeEnemyAttack(e) {
+    if (hasStatus(e, 'bleed')) {
+        let bDmg = Math.floor(e.maxHp * 0.05);
+        e.hp -= bDmg;
+        animateHit(e.id, bDmg, false);
+        if (e.hp <= 0) return; 
+    }
+
     if (consumeCharge(e, 'blind')) {
         spawnFloatingText(`enemy-${e.id}`, "BLIND MISS!", "float-miss");
         return;
@@ -1150,8 +1235,14 @@ function executeEnemyAttack(e) {
     let stats = getPlayerStats();
     let incomingDmg = e.damage;
 
-    if (e.skill === 'crit' && Math.random() < 0.25) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg"); }
-    if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && Math.random() < stats.evasion) { spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; }
+    let isCrit = false;
+    if (e.skill === 'crit' && Math.random() < 0.25) isCrit = true;
+    if (consumeCharge(e, 'focused')) isCrit = true;
+    if (consumeCharge(player, 'marked')) isCrit = true;
+
+    if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && !isCrit && Math.random() < stats.evasion) { 
+        spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; 
+    }
 
     if (e.skill === 'bash' && Math.random() < 0.25) {
         incomingDmg = Math.floor(incomingDmg * 2); 
@@ -1164,13 +1255,25 @@ function executeEnemyAttack(e) {
         spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
     }
 
+    if (consumeCharge(player, 'block')) {
+        spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss");
+        return; 
+    }
+
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
     } else {
         incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
 
+    if (isCrit) {
+        incomingDmg = Math.floor(incomingDmg * 2);
+        spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg");
+    }
+
     if (isEmpowered) incomingDmg *= 2;
+    if (hasStatus(e, 'berserk')) incomingDmg *= 2;
+    
     if (hasStatus(player, 'vulnerable')) incomingDmg = Math.floor(incomingDmg * 1.5);
     if (hasStatus(player, 'barrier')) incomingDmg = Math.floor(incomingDmg * 0.5);
 
@@ -1178,11 +1281,14 @@ function executeEnemyAttack(e) {
     updatePlayerHealthBar();
     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
+    if (hasStatus(player, 'thorns') && incomingDmg > 0) {
+        let tDmg = Math.floor(incomingDmg * 0.2);
+        e.hp -= tDmg;
+        animateHit(e.id, tDmg, false);
+    }
+
     if (e.skill === 'vampire') {
-        e.hp = Math.min(e.maxHp, e.hp + Math.floor(incomingDmg * 0.5));
-        let hpBarDiv = document.getElementById(`enemy-hp-bar-${e.id}`); let hpTextDiv = document.getElementById(`enemy-hp-text-${e.id}`);
-        if (hpBarDiv) hpBarDiv.style.width = (e.hp / e.maxHp) * 100 + '%';
-        if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(e.hp)}/${e.maxHp}`;
+        applyHeal(e, Math.floor(incomingDmg * 0.5));
     }
 
     let container = document.getElementById('game-container');
