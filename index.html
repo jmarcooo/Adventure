@@ -76,9 +76,7 @@
                 <div id="gear-modal-icon" style="font-size: 4rem; margin-bottom: 10px;"></div>
                 <h2 id="gear-modal-name" style="margin: 0; color: #f1c40f; font-size: 1.5rem;"></h2>
                 <p id="gear-modal-type" style="margin: 5px 0 15px 0; color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase;"></p>
-
                 <div id="gear-modal-stats" style="width: 100%; text-align: left; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 5px;"></div>
-
                 <button id="gear-modal-action-btn" class="action-btn" style="font-size: 1.2rem; padding: 15px; width: 100%;"></button>
             </div>
         </div>
@@ -139,22 +137,32 @@
             <div style="width: 100%; position: relative;" id="player-combat-area">
                 
                 <div id="debug-panel" style="display: none; flex-direction: column; gap: 5px; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px dashed #f1c40f; width: 90%; margin-left: auto; margin-right: auto;">
-                    <div style="font-size: 0.8rem; font-weight: bold; color: #3498db; text-align: left;">Player Status:</div>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="hud-btn" style="background: #e74c3c; font-size: 0.75rem;" onclick="debugApply('stun', 'player')">Stun</button>
-                        <button class="hud-btn" style="background: #27ae60; font-size: 0.75rem;" onclick="debugApply('poison', 'player')">Poison</button>
-                        <button class="hud-btn" style="background: #e67e22; font-size: 0.75rem;" onclick="debugApply('vulnerable', 'player')">Vuln</button>
-                        <button class="hud-btn" style="background: #f1c40f; font-size: 0.75rem; color: #333;" onclick="debugApply('haste', 'player')">Haste</button>
-                        <button class="hud-btn" style="background: #34495e; font-size: 0.75rem;" onclick="debugApply('barrier', 'player')">Barrier</button>
-                        <button class="hud-btn" style="background: #e91e63; font-size: 0.75rem;" onclick="debugApply('regen', 'player')">Regen</button>
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #3498db; text-align: left;">Player Setup:</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button class="hud-btn" style="background: #e74c3c; font-size: 0.65rem;" onclick="debugApply('stun', 'player')">Stun</button>
+                        <button class="hud-btn" style="background: #27ae60; font-size: 0.65rem;" onclick="debugApply('poison', 'player')">Poison</button>
+                        <button class="hud-btn" style="background: #d35400; font-size: 0.65rem;" onclick="debugApply('burn', 'player')">Burn</button>
+                        <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem;" onclick="debugApply('bleed', 'player')">Bleed</button>
+                        <button class="hud-btn" style="background: #8e44ad; font-size: 0.65rem;" onclick="debugApply('decay', 'player')">Decay</button>
+                        <button class="hud-btn" style="background: #f1c40f; font-size: 0.65rem; color: #333;" onclick="debugApply('haste', 'player')">Haste</button>
+                        <button class="hud-btn" style="background: #e91e63; font-size: 0.65rem;" onclick="debugApply('regen', 'player')">Regen</button>
+                        <button class="hud-btn" style="background: #34495e; font-size: 0.65rem;" onclick="debugApply('barrier', 'player')">Barrier</button>
+                        <button class="hud-btn" style="background: #2ecc71; font-size: 0.65rem;" onclick="debugApply('thorns', 'player')">Thorns</button>
+                        <button class="hud-btn" style="background: #e67e22; font-size: 0.65rem;" onclick="debugApply('berserk', 'player')">Berserk</button>
+                        <button class="hud-btn" style="background: #1abc9c; font-size: 0.65rem;" onclick="debugApply('block', 'player')">Block</button>
+                        <button class="hud-btn" style="background: #9b59b6; font-size: 0.65rem;" onclick="debugApply('focused', 'player')">Focus</button>
+                        <button class="hud-btn" style="background: #000; font-size: 0.65rem;" onclick="debugApply('doom', 'player')">Doom(10s)</button>
                     </div>
-                    <div style="font-size: 0.8rem; font-weight: bold; color: #e74c3c; text-align: left; margin-top: 5px;">Target Dummy Status:</div>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="hud-btn" style="background: #e74c3c; font-size: 0.75rem;" onclick="debugApply('stun', 'enemy')">Stun</button>
-                        <button class="hud-btn" style="background: #27ae60; font-size: 0.75rem;" onclick="debugApply('poison', 'enemy')">Poison</button>
-                        <button class="hud-btn" style="background: #e67e22; font-size: 0.75rem;" onclick="debugApply('vulnerable', 'enemy')">Vuln</button>
-                        <button class="hud-btn" style="background: #3498db; font-size: 0.75rem;" onclick="debugApply('slow', 'enemy')">Slow</button>
-                        <button class="hud-btn" style="background: #34495e; font-size: 0.75rem;" onclick="debugApply('blind', 'enemy')">Blind</button>
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #e74c3c; text-align: left; margin-top: 5px;">Target Dummy Setup:</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button class="hud-btn" style="background: #e74c3c; font-size: 0.65rem;" onclick="debugApply('stun', 'enemy')">Stun</button>
+                        <button class="hud-btn" style="background: #27ae60; font-size: 0.65rem;" onclick="debugApply('poison', 'enemy')">Poison</button>
+                        <button class="hud-btn" style="background: #d35400; font-size: 0.65rem;" onclick="debugApply('burn', 'enemy')">Burn</button>
+                        <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem;" onclick="debugApply('bleed', 'enemy')">Bleed</button>
+                        <button class="hud-btn" style="background: #e67e22; font-size: 0.65rem;" onclick="debugApply('vulnerable', 'enemy')">Vuln</button>
+                        <button class="hud-btn" style="background: #3498db; font-size: 0.65rem;" onclick="debugApply('slow', 'enemy')">Slow</button>
+                        <button class="hud-btn" style="background: #34495e; font-size: 0.65rem;" onclick="debugApply('blind', 'enemy')">Blind</button>
+                        <button class="hud-btn" style="background: #bdc3c7; font-size: 0.65rem; color:#333;" onclick="debugApply('marked', 'enemy')">Marked</button>
                     </div>
                 </div>
 
