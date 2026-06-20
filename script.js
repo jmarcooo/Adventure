@@ -1,4 +1,4 @@
-// --- GAME DATA & CONFIGURATION ---
+// --- GAME DATA ---
 let gameSpeed = 1; 
 
 let heroData = {};
@@ -12,54 +12,22 @@ let player = {
     equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
     inventory: [],
     attackProgress: 0, 
-    attackCount: 0,
     activeEffects: [] 
 };
 
 let runStats = {
-    pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, crit: 0.0, luck: 0.0, lifesteal: 0.0,
+    pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
+    splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
     pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-    upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, crit: 0, lifesteal: 0, p_def: 0, m_def: 0, vitality: 0 },
-    ownedItems: [],
+    upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
+    hasRareUpgrade: false, hasUltimateUpgrade: false,
     commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
 };
 
-// --- NEW HARDCODED SHOP UPGRADES ---
-const SHOP_DATA = {
-    common: [
-        { id: 'heal', name: 'Healing Salve', icon: '🧪', desc: 'Heal 25% of Max HP', type: 'consumable' },
-        { id: 'gold', name: 'Bounty', icon: '💰', desc: 'Gain 50 Gold instantly', type: 'consumable' },
-        { id: 'temp_atk', name: 'Whetstone', icon: '🗡️', desc: '+5 Base Attack', type: 'consumable' }
-    ],
-    uncommon: [
-        { id: 'p_atk', name: 'Strength', icon: '💪', desc: '+15 Physical Attack', type: 'stat' },
-        { id: 'm_atk', name: 'Intelligence', icon: '🧠', desc: '+15 Magic Attack', type: 'stat' },
-        { id: 'p_def', name: 'Iron Plating', icon: '🛡️', desc: '+10 Physical Defense', type: 'stat' },
-        { id: 'm_def', name: 'Mystic Ward', icon: '🔮', desc: '+10 Magic Defense', type: 'stat' },
-        { id: 'vitality', name: 'Vitality', icon: '❤️', desc: '+30 Max HP', type: 'stat' },
-        { id: 'spd', name: 'Agility', icon: '⚡', desc: '+0.05 Attack Speed', type: 'stat' },
-        { id: 'crit', name: 'Precision', icon: '🎯', desc: '+5% Crit Chance', type: 'stat' },
-        { id: 'lifesteal', name: 'Leech', icon: '🦇', desc: '+2% Lifesteal', type: 'stat' }
-    ],
-    rare: [
-        { id: 'venom_strike', name: 'Venom Strike', icon: '🐍', desc: '10% chance to Poison (5s) on hit.' },
-        { id: 'scorching_blade', name: 'Scorching Blade', icon: '🔥', desc: '10% chance to Burn (5s) on hit.' },
-        { id: 'sunder', name: 'Sunder', icon: '🔨', desc: '10% chance to make target Vulnerable (3s) on hit.' },
-        { id: 'frost_guard', name: 'Frost Guard', icon: '❄️', desc: '15% chance when hit to Slow attacker (3s).' },
-        { id: 'thornmail', name: 'Thornmail', icon: '🌵', desc: 'Reflect 15% of incoming damage permanently.' },
-        { id: 'focus_ring', name: 'Focus Ring', icon: '💍', desc: 'Every 5th attack is a guaranteed Critical Hit.' }
-    ],
-    ultimate: [
-        { id: 'sadism', name: 'Sadism', icon: '😈', desc: 'While an enemy has Poison/Burn/Bleed, gain 50% Speed.', req: ['venom_strike', 'scorching_blade'] },
-        { id: 'executioner', name: 'Executioner', icon: '🪓', desc: 'Critical Hits apply Doom (10s).', reqLvl: { id: 'crit', lvl: 3 } },
-        { id: 'paladin_resolve', name: 'Holy Resolve', icon: '🛡️', desc: 'Healing while at Max HP grants a Barrier (3s).' },
-        { id: 'blood_magic', name: 'Blood Magic', icon: '🩸', desc: 'M.Atk heals for 10% of damage. P.Def becomes 0.' },
-        { id: 'time_dilation', name: 'Time Dilation', icon: '⏳', desc: 'Applying a status to an enemy grants you Haste (3s).' }
-    ]
-};
-
+let runUpgradeData = [];
+let commonUpgradesData = [];
 let bossSkillsData = [];
 let cursedRelicsData = [];
 
@@ -70,7 +38,8 @@ let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', 
 let combatTickInterval;
 let isTestMode = false;
 
-// --- NAVIGATION & UI LOGIC ---
+// --- NAVIGATION & GENERAL LOGIC ---
+const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
 
 function showNotification(msg) {
     let el = document.getElementById('in-app-notification');
@@ -85,26 +54,15 @@ function openMenu(targetScreen) {
     if(targetScreen !== 'game') { clearInterval(combatTickInterval); }
     if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
     if(targetScreen === 'gear') { renderGearMenu(); }
-    
-    screens.forEach(s => {
-        let screenEl = document.getElementById('screen-' + s);
-        if(screenEl) screenEl.classList.remove('active');
-    });
-    
-    let targetEl = document.getElementById('screen-' + targetScreen);
-    if (targetEl) targetEl.classList.add('active');
+    screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
+    document.getElementById('screen-' + targetScreen).classList.add('active');
 
-    let navBar = document.getElementById('bottom-nav-bar');
     if(targetScreen !== 'game') {
-        if(navBar) navBar.style.display = 'flex';
-        screens.forEach(s => { 
-            let btn = document.getElementById('btn-' + s);
-            if(btn) btn.classList.remove('active'); 
-        });
-        let targetBtn = document.getElementById('btn-' + targetScreen);
-        if(targetBtn) targetBtn.classList.add('active');
+        document.getElementById('bottom-nav-bar').style.display = 'flex';
+        screens.forEach(s => { if(document.getElementById('btn-' + s)) document.getElementById('btn-' + s).classList.remove('active'); });
+        document.getElementById('btn-' + targetScreen).classList.add('active');
     } else {
-        if(navBar) navBar.style.display = 'none';
+        document.getElementById('bottom-nav-bar').style.display = 'none';
     }
 }
 
@@ -126,12 +84,9 @@ function checkSecretCheat() {
     }
 }
 
-// --- HERO SELECTION & UPGRADES ---
 function renderHeroSelection() {
     let listView = document.getElementById('heroes-list-view');
     let detailsView = document.getElementById('hero-details-view');
-
-    if (!listView || !detailsView) return;
 
     if (!viewingHero) {
         listView.style.display = 'block';
@@ -148,7 +103,6 @@ function renderHeroList() {
     let container = document.getElementById('heroes-list-container');
     if (!container) return;
     container.innerHTML = '';
-    
     for (let heroId in heroData) {
         let hero = heroData[heroId];
         let isSelected = player.currentHero === heroId ? 'selected' : '';
@@ -170,89 +124,75 @@ function renderHeroDetails(heroId) {
     let skillChance = hero.innateSkill ? Math.round(hero.innateSkill.chances[skillLvl] * 100) : 0;
 
     let contentDiv = document.getElementById('hero-details-content');
-    if (contentDiv) {
-        contentDiv.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                <div style="font-size: 4rem;">${hero.emoji}</div>
-                <div>
-                    <h2 style="margin: 0; font-size: 2rem;">${hero.name}</h2>
-                    <p style="margin: 0; font-size: 1.2rem;">Weapon: ${hero.weapon}</p>
-                </div>
+    contentDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <div style="font-size: 4rem;">${hero.emoji}</div>
+            <div>
+                <h2 style="margin: 0; font-size: 2rem;">${hero.name}</h2>
+                <p style="margin: 0; font-size: 1.2rem;">Weapon: ${hero.weapon}</p>
             </div>
-            <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
+        </div>
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem;">
-                <p><b>P.Atk:</b> <span style="color: #e74c3c;">${hero.pAtk}</span></p>
-                <p><b>M.Atk:</b> <span style="color: #9b59b6;">${hero.mAtk}</span></p>
-                <p><b>P.Def:</b> <span style="color: #f39c12;">${hero.pDef}</span></p>
-                <p><b>M.Def:</b> <span style="color: #3498db;">${hero.mDef}</span></p>
-                <p><b>Speed:</b> <span style="color: #2ecc71;">${hero.spd}</span></p>
-                <p><b>Atk.Spd:</b> <span style="color: #e67e22;">${hero.atkSpd}</span></p>
-                <p><b>Crit:</b> <span style="color: #f1c40f;">${hero.crit * 100}%</span></p>
-                <p><b>Dodge:</b> <span style="color: #1abc9c;">${hero.evasion * 100}%</span></p>
-                <p><b>Luck:</b> <span style="color: #f39c12;">${hero.luck * 100}%</span></p>
-            </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem;">
+            <p><b>P.Atk:</b> <span style="color: #e74c3c;">${hero.pAtk}</span></p>
+            <p><b>M.Atk:</b> <span style="color: #9b59b6;">${hero.mAtk}</span></p>
+            <p><b>P.Def:</b> <span style="color: #f39c12;">${hero.pDef}</span></p>
+            <p><b>M.Def:</b> <span style="color: #3498db;">${hero.mDef}</span></p>
+            <p><b>Speed:</b> <span style="color: #2ecc71;">${hero.spd}</span></p>
+            <p><b>Atk.Spd:</b> <span style="color: #e67e22;">${hero.atkSpd}</span></p>
+            <p><b>Crit:</b> <span style="color: #f1c40f;">${hero.crit * 100}%</span></p>
+            <p><b>Dodge:</b> <span style="color: #1abc9c;">${hero.evasion * 100}%</span></p>
+            <p><b>Luck:</b> <span style="color: #f39c12;">${hero.luck * 100}%</span></p>
+        </div>
 
-            <p style="margin-top: 5px;"><b>Innate Passive:</b> <span style="color: #f1c40f;">${hero.innateDesc || 'None'}</span></p>
-            <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
+        <p style="margin-top: 5px;"><b>Innate Passive:</b> <span style="color: #f1c40f;">${hero.innateDesc || 'None'}</span></p>
+        <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
 
-            <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
-        `;
-    }
+        <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
+
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+        <p style="font-size: 0.9rem; color: #95a5a6;">Shop Exclusives (Unlock in Run):</p>
+        <p style="font-size: 0.85rem; margin-top: 5px;">🟩 <b>${hero.rareUpgrade ? hero.rareUpgrade.name : 'N/A'}:</b> ${hero.rareUpgrade ? hero.rareUpgrade.desc : ''}</p>
+        <p style="font-size: 0.85rem; margin-top: 5px;">🟥 <b>${hero.ultimateUpgrade ? hero.ultimateUpgrade.name : 'N/A'}:</b> ${hero.ultimateUpgrade ? hero.ultimateUpgrade.desc : ''}</p>
+    `;
 
     let btnActive = document.getElementById('btn-set-active');
-    if (btnActive) {
-        btnActive.onclick = () => setActiveHero(heroId);
-        if (player.currentHero === heroId) {
-            btnActive.innerText = "CURRENTLY ACTIVE";
-            btnActive.style.background = "#2ecc71";
-            btnActive.disabled = true;
-        } else {
-            btnActive.innerText = "SET ACTIVE";
-            btnActive.style.background = "linear-gradient(180deg, #f1c40f 0%, #f39c12 100%)";
-            btnActive.disabled = false;
-        }
+    btnActive.onclick = () => setActiveHero(heroId);
+    if (player.currentHero === heroId) {
+        btnActive.innerText = "CURRENTLY ACTIVE";
+        btnActive.style.background = "#2ecc71";
+        btnActive.disabled = true;
+    } else {
+        btnActive.innerText = "SET ACTIVE";
+        btnActive.style.background = "linear-gradient(180deg, #f1c40f 0%, #f39c12 100%)";
+        btnActive.disabled = false;
     }
 }
 
 function upgradeHeroSkill(heroId) {
     let currentLvl = player.heroSkillLevels[heroId];
     if (currentLvl >= 2) { showNotification("Skill is already Max Level!"); return; }
-    
     let cost = (currentLvl + 1) * 500;
     if (player.gold >= cost) {
-        player.gold -= cost; 
-        player.heroSkillLevels[heroId]++;
-        updateUI(); 
-        renderHeroSelection(); 
-        showNotification(`Skill Upgraded to Level ${player.heroSkillLevels[heroId] + 1}!`);
-    } else { 
-        showNotification(`Not enough Gold! Need ${cost} 🪙`); 
-    }
+        player.gold -= cost; player.heroSkillLevels[heroId]++;
+        updateUI(); renderHeroSelection(); showNotification(`Skill Upgraded to Level ${player.heroSkillLevels[heroId] + 1}!`);
+    } else { showNotification(`Not enough Gold! Need ${cost} 🪙`); }
 }
 
 function setActiveHero(heroId) {
     player.currentHero = heroId;
-    let hEmoji = document.getElementById('home-hero');
-    let hWeap = document.getElementById('home-weapon');
-    if (hEmoji) hEmoji.innerText = heroData[heroId].emoji;
-    if (hWeap) hWeap.innerText = heroData[heroId].weapon;
-    
+    document.getElementById('home-hero').innerText = heroData[heroId].emoji;
+    document.getElementById('home-weapon').innerText = heroData[heroId].weapon;
     renderHeroSelection(); 
     showNotification(`${heroData[heroId].name} is now your active hero!`);
 }
 
 function upgradeTalent(type) {
-    if (player.talentPoints > 0) { 
-        player.talentPoints--; 
-        player.talents[type]++; 
-        updateUI(); 
-    } else { 
-        showNotification("You need Talent Points!"); 
-    }
+    if (player.talentPoints > 0) { player.talentPoints--; player.talents[type]++; updateUI(); }
+    else { showNotification("You need Talent Points!"); }
 }
 
-// --- GEAR & INVENTORY LOGIC ---
 function renderGearMenu() {
     let slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
     slots.forEach(slot => {
@@ -260,9 +200,7 @@ function renderGearMenu() {
         if (el) {
             if (player.equipment[slot]) {
                 el.innerHTML = `<span style="cursor:pointer;" onclick="showGearModal(player.equipment['${slot}'], 'equipped', '${slot}')">${player.equipment[slot].icon}</span>`;
-            } else { 
-                el.innerHTML = ''; 
-            }
+            } else { el.innerHTML = ''; }
         }
     });
 
@@ -278,55 +216,46 @@ function renderGearMenu() {
                 grid.innerHTML += `<div class="inv-slot" style="cursor:pointer; position: relative;" onclick="showGearModal(player.inventory[${i}], 'inventory', ${i})">${item.icon}
                 <div style="position: absolute; bottom: 2px; right: 2px; font-size: 0.5rem; background: rgba(0,0,0,0.6); padding: 1px 3px; border-radius: 3px; color: #ccc;">${item.type}</div>
                 </div>`;
-            } else { 
-                grid.innerHTML += `<div class="inv-slot"></div>`; 
-            }
+            } else { grid.innerHTML += `<div class="inv-slot"></div>`; }
         }
     }
 }
 
 function showGearModal(item, source, key) {
     if (!item) return;
-    
     document.getElementById('gear-modal-icon').innerText = item.icon;
     document.getElementById('gear-modal-name').innerText = item.name;
     document.getElementById('gear-modal-type').innerText = item.slot;
 
     let statsDiv = document.getElementById('gear-modal-stats');
-    if (statsDiv) {
-        statsDiv.innerHTML = '';
-        let statNames = { pAtk: 'P.Atk', mAtk: 'M.Atk', pDef: 'P.Def', mDef: 'M.Def', atkSpd: 'Atk.Spd', spd: 'Speed', evasion: 'Dodge', crit: 'Crit', luck: 'Luck' };
-        let currentEquipped = source === 'inventory' ? player.equipment[item.slot] : null;
+    statsDiv.innerHTML = '';
+    let statNames = { pAtk: 'P.Atk', mAtk: 'M.Atk', pDef: 'P.Def', mDef: 'M.Def', atkSpd: 'Atk.Spd', spd: 'Speed', evasion: 'Dodge', crit: 'Crit', luck: 'Luck' };
+    let currentEquipped = source === 'inventory' ? player.equipment[item.slot] : null;
 
-        for (let stat in statNames) {
-            let itemVal = item.stats[stat] || 0;
-            let equippedVal = currentEquipped && currentEquipped.stats[stat] ? currentEquipped.stats[stat] : 0;
-            if (itemVal > 0 || equippedVal > 0) {
-                let diff = itemVal - equippedVal;
-                let diffHtml = '';
-                if (source === 'inventory') {
-                    if (diff > 0) diffHtml = `<span class="stat-positive">(+${diff})</span>`;
-                    else if (diff < 0) diffHtml = `<span class="stat-negative">(${diff})</span>`;
-                    else diffHtml = `<span class="stat-neutral">(-)</span>`;
-                }
-                statsDiv.innerHTML += `<div style="display: flex; justify-content: space-between;"><span>${statNames[stat]}:</span><span><b>${itemVal}</b> ${diffHtml}</span></div>`;
+    for (let stat in statNames) {
+        let itemVal = item.stats[stat] || 0;
+        let equippedVal = currentEquipped && currentEquipped.stats[stat] ? currentEquipped.stats[stat] : 0;
+        if (itemVal > 0 || equippedVal > 0) {
+            let diff = itemVal - equippedVal;
+            let diffHtml = '';
+            if (source === 'inventory') {
+                if (diff > 0) diffHtml = `<span class="stat-positive">(+${diff})</span>`;
+                else if (diff < 0) diffHtml = `<span class="stat-negative">(${diff})</span>`;
+                else diffHtml = `<span class="stat-neutral">(-)</span>`;
             }
+            statsDiv.innerHTML += `<div style="display: flex; justify-content: space-between;"><span>${statNames[stat]}:</span><span><b>${itemVal}</b> ${diffHtml}</span></div>`;
         }
     }
 
     let actionBtn = document.getElementById('gear-modal-action-btn');
-    if (actionBtn) {
-        if (source === 'inventory') {
-            actionBtn.innerText = 'EQUIP';
-            actionBtn.onclick = () => { equipItem(key, item.slot); document.getElementById('gear-details-modal').style.display = 'none'; };
-        } else {
-            actionBtn.innerText = 'UNEQUIP';
-            actionBtn.onclick = () => { unequipItem(key); document.getElementById('gear-details-modal').style.display = 'none'; };
-        }
+    if (source === 'inventory') {
+        actionBtn.innerText = 'EQUIP';
+        actionBtn.onclick = () => { equipItem(key, item.slot); document.getElementById('gear-details-modal').style.display = 'none'; };
+    } else {
+        actionBtn.innerText = 'UNEQUIP';
+        actionBtn.onclick = () => { unequipItem(key); document.getElementById('gear-details-modal').style.display = 'none'; };
     }
-    
-    let modal = document.getElementById('gear-details-modal');
-    if (modal) modal.style.display = 'flex';
+    document.getElementById('gear-details-modal').style.display = 'flex';
 }
 
 function equipItem(invIndex, slot) {
@@ -340,10 +269,7 @@ function equipItem(invIndex, slot) {
 
 function unequipItem(slot) {
     let item = player.equipment[slot];
-    if (item) { 
-        player.inventory.push(item); 
-        player.equipment[slot] = null; 
-    }
+    if (item) { player.inventory.push(item); player.equipment[slot] = null; }
     renderGearMenu();
 }
 
@@ -375,7 +301,6 @@ function generateRandomEquipment() {
         else if (statName === 'maxHp') val = Math.floor(Math.random() * 50) + 10;
         else if (statName === 'luck') val = Math.floor(Math.random() * 3) + 1;
         else val = Math.floor(Math.random() * 10) + 2; 
-        
         if(!stats[statName]) stats[statName] = val;
         else stats[statName] += val;
     }
@@ -385,12 +310,9 @@ function generateRandomEquipment() {
 function updateGearStatsPanel() {
     let panel = document.getElementById('gear-hero-stats');
     if (!panel) return;
-    
     if (!player.currentHero || !heroData[player.currentHero]) {
-        panel.innerHTML = '<div style="text-align:center; padding: 20px;">No Hero Active</div>'; 
-        return;
+        panel.innerHTML = '<div style="text-align:center; padding: 20px;">No Hero Active</div>'; return;
     }
-    
     let stats = getPlayerStats();
     let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${heroData[player.currentHero].name}</h4>`;
     html += `<div class="equip-stat-row"><span>P.Atk</span> <span>${stats.pAtk}</span></div>`;
@@ -402,35 +324,21 @@ function updateGearStatsPanel() {
     html += `<div class="equip-stat-row"><span>Crit %</span> <span>${(stats.crit * 100).toFixed(1)}%</span></div>`;
     html += `<div class="equip-stat-row"><span>Evasion %</span> <span>${(stats.evasion * 100).toFixed(1)}%</span></div>`;
     html += `<div class="equip-stat-row"><span>Luck</span> <span>${stats.luck}</span></div>`;
-    
     panel.innerHTML = html;
 }
 
 function buyPremium(item) {
-    if (item === 'gold' && player.gems >= 10) { 
-        player.gems -= 10; player.gold += 1000; 
-        updateUI(); showNotification("Purchased 1,000 Gold!"); 
-    }
-    else if (item === 'damage' && player.gems >= 50) { 
-        player.gems -= 50; player.bonusDamage += 50; 
-        updateUI(); showNotification("Purchased +50 Permanent DMG!"); 
-    }
+    if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
+    else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
     else if (item === 'chest' && player.gems >= 20) {
-        player.gems -= 20; 
-        let newGear = generateRandomEquipment(); 
-        player.inventory.push(newGear); 
-        updateUI(); showNotification(`You got a ${newGear.name}!`);
-    } else { 
-        showNotification("Not enough Gems!"); 
-    }
+        player.gems -= 20; let newGear = generateRandomEquipment(); player.inventory.push(newGear); updateUI(); showNotification(`You got a ${newGear.name}!`);
+    } else { showNotification("Not enough Gems!"); }
 }
 
 function toggleGameSpeed() {
     gameSpeed = gameSpeed === 1 ? 2 : 1;
-    let btn = document.getElementById('speed-toggle-btn');
-    if (btn) btn.innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
+    document.getElementById('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
 }
-
 
 // --- HYBRID STATUS ENGINE ---
 
@@ -445,12 +353,6 @@ function applyStatus(unit, type, value, isCharge = false) {
         if (isCharge) unit.activeEffects.push({ type: type, charges: value, maxCharges: value });
         else unit.activeEffects.push({ type: type, duration: value, maxDuration: value, tickTimer: 0 });
     }
-    
-    // Synergy Check: Time Dilation
-    if (hasOwnedItem('time_dilation') && unit !== player) {
-        applyStatus(player, 'haste', 3000);
-    }
-    
     renderStatusEffects();
 }
 
@@ -461,7 +363,6 @@ function hasStatus(unit, type) {
 function consumeCharge(unit, type) {
     if (!unit.activeEffects) return false;
     let idx = unit.activeEffects.findIndex(eff => eff.type === type && eff.charges !== undefined);
-    
     if (idx !== -1) {
         unit.activeEffects[idx].charges--;
         let result = true;
@@ -477,7 +378,6 @@ function consumeCharge(unit, type) {
 // --- UNIVERSAL HEALING HELPER ---
 function applyHeal(unit, amount) {
     if (hasStatus(unit, 'decay')) {
-        // Healing deals damage instead!
         if (unit === player) {
             player.currentHealth -= amount;
             updatePlayerHealthBar();
@@ -489,13 +389,7 @@ function applyHeal(unit, amount) {
             spawnFloatingText(`enemy-${unit.id}`, "DECAY!", "float-enemy-dmg");
         }
     } else {
-        // Normal Heal
         if (unit === player) {
-            // Synergy Check: Holy Resolve
-            if (hasOwnedItem('paladin_resolve') && player.currentHealth >= player.maxHealth) {
-                applyStatus(player, 'barrier', 3000);
-            }
-            
             player.currentHealth = Math.min(player.maxHealth, player.currentHealth + amount);
             updatePlayerHealthBar();
             spawnFloatingText('player-combat-area', "+" + amount, "float-heal");
@@ -524,7 +418,6 @@ function processTimeEffects(unit) {
 
             let newSec = Math.ceil(eff.duration / 1000); 
 
-            // Time-based DoTs: Tick every 1000ms
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
@@ -538,8 +431,7 @@ function processTimeEffects(unit) {
                         spawnFloatingText('player-combat-area', "POISON -" + dmg, "float-enemy-dmg");
                         if (player.currentHealth <= 0) triggerGameOver("Succumbed to poison");
                     } else {
-                        unit.hp -= dmg;
-                        animateHit(unit.id, dmg, false);
+                        unit.hp -= dmg; animateHit(unit.id, dmg, false);
                     }
                 } 
                 else if (eff.type === 'burn') {
@@ -550,8 +442,7 @@ function processTimeEffects(unit) {
                         spawnFloatingText('player-combat-area', "BURN -" + dmg, "float-enemy-dmg");
                         if (player.currentHealth <= 0) triggerGameOver("Burnt to a crisp");
                     } else {
-                        unit.hp -= dmg;
-                        animateHit(unit.id, dmg, false);
+                        unit.hp -= dmg; animateHit(unit.id, dmg, false);
                     }
                 }
                 else if (eff.type === 'regen') {
@@ -562,13 +453,11 @@ function processTimeEffects(unit) {
             if (eff.duration <= 0) {
                 if (eff.type === 'doom') {
                     if (unit === player) {
-                        player.currentHealth = 0; 
-                        updatePlayerHealthBar();
+                        player.currentHealth = 0; updatePlayerHealthBar();
                         spawnFloatingText('player-combat-area', "DOOMED!", "float-enemy-dmg");
                         triggerGameOver("Erased from existence by Doom");
                     } else {
-                        unit.hp = 0; 
-                        animateHit(unit.id, 9999, false);
+                        unit.hp = 0; animateHit(unit.id, 9999, false);
                         spawnFloatingText(`enemy-${unit.id}`, "DOOMED!", "float-crit");
                     }
                 }
@@ -662,24 +551,15 @@ function debugApply(type, targetStr) {
     updateCombatStatsPanel();
 }
 
-
 // --- COMBAT CORE & MATH ENGINE ---
 
 function getEquipmentStats() {
     let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
     for (let slot in player.equipment) {
         let item = player.equipment[slot];
-        if (item && item.stats) { 
-            for (let key in eqStats) { 
-                if (item.stats[key]) eqStats[key] += item.stats[key]; 
-            } 
-        }
+        if (item && item.stats) { for (let key in eqStats) { if (item.stats[key]) eqStats[key] += item.stats[key]; } }
     }
     return eqStats;
-}
-
-function hasOwnedItem(id) {
-    return runStats.ownedItems.includes(id);
 }
 
 function getPlayerStats() {
@@ -694,32 +574,18 @@ function getPlayerStats() {
         mDef: Math.floor((hero.mDef + runStats.mDef + eq.mDef) * runStats.mDefMulti),
         atkSpd: (hero.atkSpd + runStats.atkSpd + eq.atkSpd) * runStats.atkSpdMulti,
         spd: hero.spd + runStats.spd + eq.spd,
+        evasion: hero.evasion + runStats.evasion + eq.evasion,
         crit: hero.crit + runStats.crit + eq.crit,
-        luck: hero.luck + runStats.luck + eq.luck,
-        evasion: 0 // Intentionally disabled based on feedback
+        luck: hero.luck + runStats.luck + eq.luck
     };
 
     if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
-        stats.pAtk = Math.floor(stats.pAtk * 0.75); 
-        stats.mAtk = Math.floor(stats.mAtk * 0.75); 
-        stats.atkSpd = stats.atkSpd * 0.75;
+        stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
     }
     
-    // Apply Hybrid Modifiers
     if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
     if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
-    if (hasStatus(player, 'berserk') || hasOwnedItem('blood_magic')) { 
-        stats.pDef = 0; 
-        stats.mDef = 0; 
-    }
-
-    // Synergy Check: Sadism
-    if (hasOwnedItem('sadism')) {
-        let dotEnemy = activeEnemies.find(e => e.hp > 0 && !e.isDead && (hasStatus(e, 'poison') || hasStatus(e, 'burn') || hasStatus(e, 'bleed')));
-        if (dotEnemy) {
-            stats.atkSpd *= 1.5; 
-        }
-    }
+    if (hasStatus(player, 'berserk')) { stats.pDef = 0; stats.mDef = 0; }
 
     return stats;
 }
@@ -736,40 +602,29 @@ function getTotalDamage() {
 
 function addCurrency(type, amount) {
     if (amount <= 0) return;
-    if (type === 'gold') { 
-        player.gold += amount; 
-        runStats.goldGained += amount; 
-        spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); 
-    } else if (type === 'gem') { 
-        player.gems += amount; 
-        runStats.gemsGained += amount; 
-        spawnFloatingText('gem-container', `+${amount}`, 'float-gem'); 
-    }
+    if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
+    else if (type === 'gem') { player.gems += amount; runStats.gemsGained += amount; spawnFloatingText('gem-container', `+${amount}`, 'float-gem'); }
     updateUI();
 }
 
 function updateCombatStatsPanel() {
     let panel = document.getElementById('combat-stats-panel');
-    let stats = getPlayerStats(); 
-    let d = getTotalDamage();
+    let stats = getPlayerStats(); let d = getTotalDamage();
 
-    if(panel) {
-        panel.innerHTML = `
-            <div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div>
-            <div>
-                <p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p>
-                <p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p>
-                <p>🎯 ${Math.round(stats.crit * 100)}% Crit</p>
-            </div>
-            <div>
-                <p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p>
-                <p>🦇 ${Math.round(runStats.lifesteal * 100)}% L.Steal</p>
-                <p>🍀 ${Math.round(stats.luck * 100)}% Lck</p>
-            </div>
-        `;
-    }
-    let runeText = document.getElementById('run-runes-text');
-    if (runeText) runeText.innerText = runStats.runes;
+    panel.innerHTML = `
+        <div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div>
+        <div>
+            <p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p>
+            <p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p>
+            <p>🎯 ${Math.round(stats.crit * 100)}% Crit</p>
+        </div>
+        <div>
+            <p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p>
+            <p>💨 ${Math.round(stats.evasion * 100)}% Ddg</p>
+            <p>🍀 ${Math.round(stats.luck * 100)}% Lck</p>
+        </div>
+    `;
+    document.getElementById('run-runes-text').innerText = runStats.runes;
 }
 
 function playBattleStartAnimation() {
@@ -789,23 +644,18 @@ function playBattleStartAnimation() {
 function spawnFloatingText(targetId, text, className) {
     let targetDiv = document.getElementById(targetId);
     if(!targetDiv) return;
-    
     let ft = document.createElement('div');
     ft.className = `floating-text ${className}`;
     ft.innerText = text;
     let offsetX = (Math.random() * 40) - 20;
     ft.style.left = `calc(50% + ${offsetX}px)`; ft.style.top = '10px';
     targetDiv.appendChild(ft);
-    
-    setTimeout(() => { 
-        if(ft.parentElement) ft.remove(); 
-    }, 1500);
+    setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
 function spawnLootDrop(targetId, type) {
     let targetDiv = document.getElementById(targetId);
     if(!targetDiv) return;
-    
     let emoji = type === 'rune' ? '🌀' : '🪙';
     let ft = document.createElement('div');
     ft.className = 'loot-drop'; ft.innerText = emoji;
@@ -813,10 +663,7 @@ function spawnLootDrop(targetId, type) {
     ft.style.setProperty('--dirX', dirX);
     ft.style.left = '50%'; ft.style.top = '30%';
     targetDiv.appendChild(ft);
-    
-    setTimeout(() => { 
-        if(ft.parentElement) ft.remove(); 
-    }, 1500);
+    setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
 // --- ATB LOOP ENGINE ---
@@ -826,8 +673,7 @@ function startCombatLoop() {
 }
 
 function combatTick() {
-    let screenGame = document.getElementById('screen-game');
-    if(!screenGame || !screenGame.classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
+    if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
     processTimeEffects(player);
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
@@ -882,7 +728,7 @@ function combatTick() {
     }
 }
 
-// --- BATTLE MODES ---
+// --- NEW TEST BATTLE MODE ---
 function startTestBattle() {
     if (!heroData || Object.keys(heroData).length === 0) {
         alert("ERROR: Game data failed to load.");
@@ -891,15 +737,15 @@ function startTestBattle() {
 
     isTestMode = true;
     player.activeEffects = []; 
-    player.attackCount = 0;
 
     runStats = {
-        pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, crit: 0.0, luck: 0.0, lifesteal: 0.0,
+        pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
+        splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
         pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
         goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, crit: 0, lifesteal: 0, p_def: 0, m_def: 0, vitality: 0 },
-        ownedItems: [],
+        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
+        hasRareUpgrade: false, hasUltimateUpgrade: false,
         commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
     };
 
@@ -911,16 +757,11 @@ function startTestBattle() {
     waveManager.wave = 1;
     player.currentHealth = player.maxHealth;
 
-    let uiRunSum = document.getElementById('run-summary-ui');
-    let uiWaveUp = document.getElementById('wave-upgrade-ui');
-    let uiBossClear = document.getElementById('boss-clear-ui');
-    let uiDebug = document.getElementById('debug-panel');
-
-    if(uiRunSum) uiRunSum.style.display = 'none';
-    if(uiWaveUp) uiWaveUp.style.display = 'none';
-    if(uiBossClear) uiBossClear.style.display = 'none';
-    if(uiDebug) uiDebug.style.display = 'flex'; 
+    document.getElementById('run-summary-ui').style.display = 'none';
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
     
+    document.getElementById('debug-panel').style.display = 'flex'; 
     waveManager.isUpgrading = true; 
 
     updateCombatStatsPanel();
@@ -928,9 +769,8 @@ function startTestBattle() {
 
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
-    if (!container || !textEl) return;
-    
     container.innerHTML = ''; activeEnemies = [];
+
     textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
 
     let dummyHp = 9999;
@@ -973,19 +813,17 @@ function startGame() {
     }
 
     isTestMode = false;
-    let uiDebug = document.getElementById('debug-panel');
-    if(uiDebug) uiDebug.style.display = 'none';
-    
-    player.activeEffects = []; 
-    player.attackCount = 0;
+    document.getElementById('debug-panel').style.display = 'none';
+    player.activeEffects = [];
 
     runStats = {
-        pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, crit: 0.0, luck: 0.0, lifesteal: 0.0,
+        pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
+        splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
         pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
         goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, crit: 0, lifesteal: 0, p_def: 0, m_def: 0, vitality: 0 },
-        ownedItems: [],
+        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
+        hasRareUpgrade: false, hasUltimateUpgrade: false,
         commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
     };
 
@@ -993,17 +831,12 @@ function startGame() {
         let innate = heroData[player.currentHero].innate;
         for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
-    
     waveManager.wave = 1;
     player.currentHealth = player.maxHealth;
 
-    let uiRunSum = document.getElementById('run-summary-ui');
-    let uiWaveUp = document.getElementById('wave-upgrade-ui');
-    let uiBossClear = document.getElementById('boss-clear-ui');
-    
-    if(uiRunSum) uiRunSum.style.display = 'none';
-    if(uiWaveUp) uiWaveUp.style.display = 'none';
-    if(uiBossClear) uiBossClear.style.display = 'none';
+    document.getElementById('run-summary-ui').style.display = 'none';
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
     
     waveManager.isUpgrading = true; 
 
@@ -1054,8 +887,6 @@ function getLevelAndWave() {
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
-    if(!container || !textEl) return;
-    
     container.innerHTML = ''; activeEnemies = [];
 
     let stageInfo = getLevelAndWave();
@@ -1201,21 +1032,16 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     }
 
     if (target.isDead) return;
-    target.isDead = true; 
-    runStats.enemiesKilled++;
+    target.isDead = true; runStats.enemiesKilled++;
 
     if (target.isBoss) {
-        let rGained = (5 + waveManager.wave); 
-        runStats.runes += rGained; 
-        spawnFloatingText('in-run-currency', `+${rGained}`, 'float-rune');
+        let rGained = (5 + waveManager.wave); runStats.runes += rGained; spawnFloatingText('in-run-currency', `+${rGained}`, 'float-rune');
         for(let i=0; i<5; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'rune'), i * 150); }
-        let stats = getPlayerStats(); 
-        let goldEarned = Math.floor(10 * (1 + stats.luck)); addCurrency('gold', goldEarned);
+        let stats = getPlayerStats(); let goldEarned = Math.floor(10 * (1 + stats.luck)); addCurrency('gold', goldEarned);
         for(let i=0; i<10; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100); }
     } else if (target.isElite) {
         if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
-        let stats = getPlayerStats(); 
-        let goldEarned = Math.floor(3 * (1 + stats.luck)); addCurrency('gold', goldEarned);
+        let stats = getPlayerStats(); let goldEarned = Math.floor(3 * (1 + stats.luck)); addCurrency('gold', goldEarned);
         for(let i=0; i<3; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150); }
     } else {
         if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
@@ -1226,13 +1052,8 @@ function handleEnemyDeath(target, unitId, unitDiv) {
         }
     }
 
-    let runeTxt = document.getElementById('run-runes-text');
-    if (runeTxt) runeTxt.innerText = runStats.runes;
-    
-    if(unitDiv) { 
-        unitDiv.classList.add('dead'); 
-        setTimeout(() => unitDiv.style.display = 'none', 300); 
-    }
+    document.getElementById('run-runes-text').innerText = runStats.runes;
+    if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 }
 
 function animateHit(unitId, damageDealt, isCrit) {
@@ -1248,29 +1069,20 @@ function animateHit(unitId, damageDealt, isCrit) {
         if(isCrit) {
             unitDiv.style.filter = "drop-shadow(0 0 10px red)";
             spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit");
-        } else { 
-            spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg"); 
-        }
-        setTimeout(() => { 
-            unitDiv.classList.remove('hit-anim'); 
-            unitDiv.style.filter = ""; 
-        }, 200);
+        } else { spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg"); }
+        setTimeout(() => { unitDiv.classList.remove('hit-anim'); unitDiv.style.filter = ""; }, 200);
     }
 
     let displayHp = Math.max(0, Math.ceil(target.hp));
     if (hpBarDiv) hpBarDiv.style.width = (displayHp / target.maxHp) * 100 + '%';
     if (hpTextDiv) hpTextDiv.innerText = `${displayHp}/${target.maxHp}`;
 
-    if (target.hp <= 0 && !target.isDead) { 
-        handleEnemyDeath(target, unitId, unitDiv); 
-    }
+    if (target.hp <= 0 && !target.isDead) { handleEnemyDeath(target, unitId, unitDiv); }
 }
 
 function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
     if(aliveEnemies.length === 0) return;
-    
-    player.attackCount++; 
 
     if (hasStatus(player, 'bleed')) {
         let bDmg = Math.floor(player.maxHealth * 0.05);
@@ -1288,18 +1100,9 @@ function executePlayerAttack() {
     let isEmpowered = consumeCharge(player, 'empower');
 
     let pIcon = document.getElementById('player-combat-icon');
-    if(pIcon) { 
-        pIcon.classList.add('player-attack-anim'); 
-        setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); 
-    }
+    if(pIcon) { pIcon.classList.add('player-attack-anim'); setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); }
 
-    // Synergy Check: Focus Ring
-    if (hasOwnedItem('focus_ring') && player.attackCount % 5 === 0) {
-        applyStatus(player, 'focused', 1, true);
-    }
-
-    // Since Double Hit was removed, strikes is always 1 unless specifically changed later
-    let strikes = 1;
+    let strikes = (Math.random() < runStats.doubleHitChance) ? 2 : 1;
 
     for (let s = 0; s < strikes; s++) {
         setTimeout(() => {
@@ -1326,13 +1129,7 @@ function executePlayerAttack() {
             }
 
             let dmg = pDmg + mDmg;
-            if (isCrit) {
-                dmg = Math.floor(dmg * 2.5);
-                // Synergy Check: Executioner
-                if (hasOwnedItem('executioner')) {
-                    applyStatus(target, 'doom', 10000); 
-                }
-            }
+            if (isCrit) dmg = Math.floor(dmg * 2.5);
             
             if (isEmpowered) { dmg *= 2; spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit"); }
             if (hasStatus(player, 'berserk')) dmg *= 2;
@@ -1358,16 +1155,6 @@ function executePlayerAttack() {
                     updatePlayerHealthBar();
                     if (player.currentHealth <= 0) { triggerGameOver("Consumed by Dark Magic"); return; }
                 }
-            }
-
-            // Item Status Procs
-            if (hasOwnedItem('venom_strike') && Math.random() < 0.10) applyStatus(target, 'poison', 5000);
-            if (hasOwnedItem('scorching_blade') && Math.random() < 0.10) applyStatus(target, 'burn', 5000);
-            if (hasOwnedItem('sunder') && Math.random() < 0.10) applyStatus(target, 'vulnerable', 3000);
-
-            // Synergy Check: Blood Magic
-            if (hasOwnedItem('blood_magic') && mDmg > 0) {
-                applyHeal(player, Math.floor(mDmg * 0.10));
             }
 
             if (consumeCharge(target, 'block')) {
@@ -1414,6 +1201,10 @@ function executePlayerAttack() {
                 applyHeal(player, Math.floor(dmg * runStats.lifesteal));
             }
 
+            if (runStats.splashDmg > 0 && dmg > 0) {
+                let sDmg = Math.floor(dmg * runStats.splashDmg);
+                activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= sDmg; animateHit(e.id, sDmg, false); } });
+            }
         }, s * 150);
     }
 
@@ -1436,10 +1227,7 @@ function executeEnemyAttack(e) {
     let isEmpowered = consumeCharge(e, 'empower');
 
     let unitDiv = document.getElementById(`enemy-${e.id}`);
-    if(unitDiv) { 
-        unitDiv.classList.add('attack-anim'); 
-        setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); 
-    }
+    if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
 
     let stats = getPlayerStats();
     let incomingDmg = e.damage;
@@ -1450,8 +1238,7 @@ function executeEnemyAttack(e) {
     if (consumeCharge(player, 'marked')) isCrit = true;
 
     if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && !isCrit && Math.random() < stats.evasion) { 
-        spawnFloatingText('player-combat-area', "MISS!", "float-miss"); 
-        return; 
+        spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; 
     }
 
     if (e.skill === 'bash' && Math.random() < 0.25) {
@@ -1491,12 +1278,7 @@ function executeEnemyAttack(e) {
     updatePlayerHealthBar();
     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
-    // Synergy Check: Frost Guard
-    if (hasOwnedItem('frost_guard') && incomingDmg > 0 && Math.random() < 0.15) {
-        applyStatus(e, 'slow', 3000);
-    }
-
-    if ((hasStatus(player, 'thorns') || hasOwnedItem('thornmail')) && incomingDmg > 0) {
+    if (hasStatus(player, 'thorns') && incomingDmg > 0) {
         let tDmg = Math.floor(incomingDmg * 0.2);
         e.hp -= tDmg;
         animateHit(e.id, tDmg, false);
@@ -1507,18 +1289,28 @@ function executeEnemyAttack(e) {
     }
 
     let container = document.getElementById('game-container');
-    if (container) {
-        container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
-        setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
-    }
+    container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
+    setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
-    if (player.currentHealth <= 0) { 
-        triggerGameOver("Killed by " + e.name); 
+    if (player.currentHealth <= 0) { triggerGameOver("Killed by " + e.name); }
+}
+
+function updatePlayerHealthBar() {
+    let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
+    let pBar = document.getElementById('player-health');
+    let pText = document.getElementById('player-hp-text');
+
+    if (pBar) pBar.style.width = pPercent + '%';
+    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
+
+    if (pBar) {
+        if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
+        else if (pPercent <= 50) pBar.style.backgroundColor = '#e67e22';
+        else if (pPercent <= 70) pBar.style.backgroundColor = '#f1c40f';
+        else pBar.style.backgroundColor = '#2ecc71';
     }
 }
 
-
-// --- NEW SHOP DRAFTING SYSTEM ---
 function packDefeated() {
     if(waveManager.isUpgrading) return;
     waveManager.isUpgrading = true;
@@ -1540,93 +1332,51 @@ function packDefeated() {
 
     updateCombatStatsPanel();
 
-    if(isBoss) { 
-        showBossClearUI(); 
-    } else { 
-        generateShop(); 
-    }
-}
+    let shopPool = []; window.currentShopPool = shopPool;
 
-function generateShop() {
-    let shopPool = [];
-    
-    // 1. Build Filtered Pools
-    let poolCommon = [...SHOP_DATA.common];
-    let poolUncommon = SHOP_DATA.uncommon.filter(u => runStats.upgradeLevels[u.id] < 10);
-    let poolRare = SHOP_DATA.rare.filter(u => !hasOwnedItem(u.id));
-    
-    // Synergies Check for Ultimates
-    let poolUltimate = SHOP_DATA.ultimate.filter(u => {
-        if (hasOwnedItem(u.id)) return false;
-        if (u.req && !u.req.some(reqId => hasOwnedItem(reqId))) return false;
-        if (u.reqLvl && runStats.upgradeLevels[u.reqLvl.id] < u.reqLvl.lvl) return false;
-        return true;
+    commonUpgradesData.forEach(u => {
+        let count = runStats.commonUpgradeCounts[u.id] || 0;
+        let scaleMult = count + 1;
+        let newEffect = {}; let newDesc = "";
+        if (u.id === 'heal') { newEffect.heal = 25 * scaleMult; newDesc = `Heal ${newEffect.heal} HP`; } 
+        else if (u.id === 'gold') { newEffect.gold = 50 * scaleMult; newDesc = `Gain ${newEffect.gold} Gold`; } 
+        else if (u.id === 'temp_atk') { newEffect.atk = 5 * scaleMult; newDesc = `+${newEffect.atk} Base Attack`; }
+        shopPool.push({ ...u, rarity: 'common', cost: 0, effect: newEffect, desc: newDesc });
     });
 
-    let choices = [];
-    
-    for(let i=0; i<3; i++) {
-        let roll = Math.random() * 100;
-        let rarity = 'common';
-        
-        if (roll > 95 && poolUltimate.length > 0) rarity = 'ultimate';
-        else if (roll > 80 && poolRare.length > 0) rarity = 'rare';
-        else if (roll > 25 && poolUncommon.length > 0) rarity = 'uncommon';
+    runUpgradeData.forEach(u => {
+        if (runStats.upgradeLevels[u.id] < u.maxLevel) {
+            let cost = 1 + (runStats.upgradeLevels[u.id] * 2);
+            shopPool.push({ ...u, rarity: 'uncommon', cost: cost, currentLvl: runStats.upgradeLevels[u.id] });
+        }
+    });
 
-        // Pity System
-        if (rarity === 'ultimate' && runStats.runes < 12) rarity = poolUncommon.length > 0 ? 'uncommon' : 'common';
-        if (rarity === 'rare' && runStats.runes < 6) rarity = poolUncommon.length > 0 ? 'uncommon' : 'common';
-
-        let targetPool = rarity === 'common' ? poolCommon : rarity === 'uncommon' ? poolUncommon : rarity === 'rare' ? poolRare : poolUltimate;
-        
-        if (targetPool.length === 0) targetPool = poolCommon;
-        
-        let itemIndex = Math.floor(Math.random() * targetPool.length);
-        let pickedItem = targetPool[itemIndex];
-        
-        // Calculate Cost
-        let cost = 0;
-        if (rarity === 'uncommon') cost = 2 + runStats.upgradeLevels[pickedItem.id];
-        else if (rarity === 'rare') cost = 6;
-        else if (rarity === 'ultimate') cost = 12;
-
-        choices.push({ ...pickedItem, rarity: rarity, cost: cost });
-        
-        // Prevent Duplicate in same shop
-        targetPool.splice(itemIndex, 1);
+    let hero = heroData[player.currentHero];
+    if (!runStats.hasRareUpgrade && runStats.runes >= 5 && hero.rareUpgrade) {
+        shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'rare' });
+    }
+    if (!runStats.hasUltimateUpgrade && runStats.runes >= 10 && hero.ultimateUpgrade) {
+        shopPool.push({ ...hero.ultimateUpgrade, id: 'ult_upg', rarity: 'ultimate', cost: 10, type: 'ultimate' });
     }
 
-    showUpgradeShopUI(choices);
+    let canAffordAny = shopPool.some(u => runStats.runes >= u.cost);
+    if(isBoss) { showBossClearUI(); } 
+    else if (shopPool.length === 0 || !canAffordAny) { setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); } 
+    else { showUpgradeShop(shopPool); }
 }
 
-function rerollShop() {
-    if (runStats.runes >= 1) {
-        runStats.runes -= 1;
-        document.getElementById('shop-runes-display').innerText = runStats.runes;
-        generateShop();
-    } else {
-        showNotification("Not enough Runes to reroll!");
-    }
-}
+function showUpgradeShop(shopPool) {
+    document.getElementById('wave-upgrade-ui').style.display = 'flex';
+    document.getElementById('shop-runes-display').innerText = runStats.runes;
 
-function showUpgradeShopUI(choices) {
-    let waveUi = document.getElementById('wave-upgrade-ui');
-    if(waveUi) waveUi.style.display = 'flex';
-    
-    let disp = document.getElementById('shop-runes-display');
-    if(disp) disp.innerText = runStats.runes;
-    
-    let list = document.getElementById('upgrade-list'); 
-    if(!list) return;
-    list.innerHTML = '';
+    let list = document.getElementById('upgrade-list'); list.innerHTML = '';
+    for (let i = shopPool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shopPool[i], shopPool[j]] = [shopPool[j], shopPool[i]]; }
 
-    window.currentShopPool = choices;
-
-    choices.forEach((u, index) => {
+    shopPool.slice(0, 3).forEach(u => {
         let canAfford = runStats.runes >= u.cost;
-        let lvlText = u.rarity === 'uncommon' ? ` <span class="lvl-badge">(Lv ${runStats.upgradeLevels[u.id] + 1}/10)</span>` : '';
+        let lvlText = u.rarity === 'uncommon' ? ` <span class="lvl-badge">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : '';
         list.innerHTML += `
-            <button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(${index})">
+            <button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
                 <div style="font-size: 3rem; margin-bottom: 10px;">${u.icon || '✨'}</div>
                 <h4 style="font-size: 0.8rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff;">${u.name}${lvlText}</h4>
                 <p style="font-size: 0.9rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>
@@ -1635,30 +1385,38 @@ function showUpgradeShopUI(choices) {
     });
 }
 
-function buyRunUpgrade(index) {
-    let upgrade = window.currentShopPool[index];
+function buyRunUpgrade(upgrade) {
     if (runStats.runes < upgrade.cost) return;
     runStats.runes -= upgrade.cost;
 
     if (upgrade.rarity === 'uncommon') {
         runStats.upgradeLevels[upgrade.id]++;
-        if(upgrade.id === 'p_atk') runStats.pAtk += 15;
-        if(upgrade.id === 'm_atk') runStats.mAtk += 15;
-        if(upgrade.id === 'spd') runStats.atkSpd += 0.05;
-        if(upgrade.id === 'crit') runStats.crit += 0.05;
-        if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.02;
+        if(upgrade.id === 'p_atk') runStats.pAtk += 10;
+        if(upgrade.id === 'm_atk') runStats.mAtk += 10;
+        if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; }
+        if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
+        if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
+        if(upgrade.id === 'crit') runStats.crit += 0.10;
+        if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.05;
+        if(upgrade.id === 'evasion') runStats.evasion += 0.05;
         if(upgrade.id === 'p_def') runStats.pDef += 10;
         if(upgrade.id === 'm_def') runStats.mDef += 10;
-        if(upgrade.id === 'vitality') { player.maxHealth += 30; applyHeal(player, 30); }
     } else if (upgrade.rarity === 'common') {
-        if (upgrade.id === 'heal') applyHeal(player, Math.floor(player.maxHealth * 0.25));
-        if (upgrade.id === 'gold') addCurrency('gold', 50);
-        if (upgrade.id === 'temp_atk') { runStats.pAtk += 5; runStats.mAtk += 5; }
+        runStats.commonUpgradeCounts[upgrade.id]++;
+        if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
+        if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
+        if (upgrade.effect.atk) { runStats.pAtk += upgrade.effect.atk; runStats.mAtk += upgrade.effect.atk; }
     } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
-        runStats.ownedItems.push(upgrade.id);
+        if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
+        if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
+        for (let key in upgrade.effect) {
+            if (runStats.hasOwnProperty(key)) { runStats[key] += upgrade.effect[key]; }
+            if (key === 'maxHealth') { player.maxHealth += upgrade.effect[key]; player.currentHealth += upgrade.effect[key]; updatePlayerHealthBar(); }
+            if (key === 'heal') { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect[key]); updatePlayerHealthBar(); }
+        }
     }
 
-    updateCombatStatsPanel(); 
+    updateCombatStatsPanel();
     continueToNextWave();
 }
 
@@ -1668,23 +1426,19 @@ function showBossClearUI() {
     document.getElementById('boss-ui-gems').innerText = runStats.gemsGained;
     document.getElementById('boss-ui-exp').innerText = runStats.expGained;
 
-    let list = document.getElementById('cursed-list'); 
-    if(list) {
-        list.innerHTML = '';
-        let shuffledCurses = cursedRelicsData.sort(() => 0.5 - Math.random());
-        let choices = shuffledCurses.slice(0, 3);
+    let list = document.getElementById('cursed-list'); list.innerHTML = '';
+    let shuffledCurses = cursedRelicsData.sort(() => 0.5 - Math.random());
+    let choices = shuffledCurses.slice(0, 3);
 
-        choices.forEach(c => {
-            list.innerHTML += `
-                <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
-                    <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
-                    <div class="cost">${c.icon}</div>
-                </button>`;
-        });
-    }
+    choices.forEach(c => {
+        list.innerHTML += `
+            <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
+                <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
+                <div class="cost">${c.icon}</div>
+            </button>`;
+    });
 
-    let btnDescend = document.getElementById('btn-descend');
-    if (btnDescend) btnDescend.disabled = true;
+    document.getElementById('btn-descend').disabled = true;
 }
 
 function selectCursedRelic(id) {
@@ -1698,11 +1452,8 @@ function selectCursedRelic(id) {
     if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; }
 
     updateCombatStatsPanel();
-    let btn = document.getElementById(`btn-curse-${id}`);
-    if (btn) btn.style.borderColor = '#2ecc71';
-    
-    let btnDescend = document.getElementById('btn-descend');
-    if (btnDescend) btnDescend.disabled = false;
+    document.getElementById(`btn-curse-${id}`).style.borderColor = '#2ecc71';
+    document.getElementById('btn-descend').disabled = false;
 }
 
 function adjustMaxHp(percentChange) {
@@ -1713,12 +1464,10 @@ function adjustMaxHp(percentChange) {
 }
 
 function continueToNextWave() {
-    let uiWaveUp = document.getElementById('wave-upgrade-ui');
-    let uiBossClear = document.getElementById('boss-clear-ui');
-    if(uiWaveUp) uiWaveUp.style.display = 'none';
-    if(uiBossClear) uiBossClear.style.display = 'none';
-    
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
     waveManager.wave++; 
+    
     waveManager.isUpgrading = true; 
     
     spawnEnemyPack();
@@ -1732,24 +1481,18 @@ function continueToNextWave() {
 
 function endRun(titleText, titleColor, killerText = "") {
     isTestMode = false;
-    let dbg = document.getElementById('debug-panel');
-    if (dbg) dbg.style.display = 'none';
+    document.getElementById('debug-panel').style.display = 'none';
 
     clearInterval(combatTickInterval); 
-    
-    let uiWaveUp = document.getElementById('wave-upgrade-ui');
-    let uiBossClear = document.getElementById('boss-clear-ui');
-    if(uiWaveUp) uiWaveUp.style.display = 'none';
-    if(uiBossClear) uiBossClear.style.display = 'none';
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
 
     let summaryUi = document.getElementById('run-summary-ui');
     let titleEl = document.getElementById('run-summary-title');
     let killerEl = document.getElementById('run-summary-killer');
 
-    if (titleEl) {
-        titleEl.innerText = titleText; 
-        titleEl.style.color = titleColor;
-    }
+    titleEl.innerText = titleText; 
+    titleEl.style.color = titleColor;
 
     if (killerEl) {
         if (killerText) {
@@ -1760,14 +1503,10 @@ function endRun(titleText, titleColor, killerText = "") {
         }
     }
 
-    let kTxt = document.getElementById('summary-kills');
-    let gTxt = document.getElementById('summary-gold');
-    let eTxt = document.getElementById('summary-exp');
-    if (kTxt) kTxt.innerText = runStats.enemiesKilled;
-    if (gTxt) gTxt.innerText = runStats.goldGained;
-    if (eTxt) eTxt.innerText = runStats.expGained;
-    
-    if (summaryUi) summaryUi.style.display = 'flex';
+    document.getElementById('summary-kills').innerText = runStats.enemiesKilled;
+    document.getElementById('summary-gold').innerText = runStats.goldGained;
+    document.getElementById('summary-exp').innerText = runStats.expGained;
+    summaryUi.style.display = 'flex';
 }
 
 function triggerGameOver(killerText = "Slain by Unknown Forces") { 
@@ -1784,41 +1523,23 @@ function collectRunRewards() {
     player.exp += runStats.expGained;
     let leveledUp = false;
     while(player.exp >= player.expNeeded) {
-        player.level++; 
-        player.exp -= player.expNeeded; 
-        player.expNeeded = Math.floor(player.expNeeded * 1.5);
-        player.talentPoints++; 
-        player.maxHealth += 25; 
-        player.currentHealth = player.maxHealth; 
-        leveledUp = true;
+        player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
+        player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; leveledUp = true;
     }
     if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
-    
-    let runUi = document.getElementById('run-summary-ui');
-    if (runUi) runUi.style.display = 'none';
-    
-    openMenu('home'); 
-    updateUI();
+    document.getElementById('run-summary-ui').style.display = 'none';
+    openMenu('home'); updateUI();
 }
 
 function updateUI() {
-    let gAmnt = document.getElementById('gold-amount');
-    let gemAmnt = document.getElementById('gem-amount');
-    let pLvl = document.getElementById('player-level-text');
-    let pExpF = document.getElementById('player-exp-fill');
-    let pExpT = document.getElementById('player-exp-text');
-    let tpAmnt = document.getElementById('tp-amount');
-    let tDmg = document.getElementById('talent-lvl-damage');
-    let tGld = document.getElementById('talent-lvl-gold');
-
-    if (gAmnt) gAmnt.innerText = player.gold;
-    if (gemAmnt) gemAmnt.innerText = player.gems;
-    if (pLvl) pLvl.innerText = player.level;
-    if (pExpF) pExpF.style.width = ((player.exp / player.expNeeded) * 100) + '%';
-    if (pExpT) pExpT.innerText = player.exp + '/' + player.expNeeded;
-    if (tpAmnt) tpAmnt.innerText = player.talentPoints;
-    if (tDmg) tDmg.innerText = player.talents.damage;
-    if (tGld) tGld.innerText = player.talents.gold;
+    document.getElementById('gold-amount').innerText = player.gold;
+    document.getElementById('gem-amount').innerText = player.gems;
+    document.getElementById('player-level-text').innerText = player.level;
+    document.getElementById('player-exp-fill').style.width = ((player.exp / player.expNeeded) * 100) + '%';
+    document.getElementById('player-exp-text').innerText = player.exp + '/' + player.expNeeded;
+    document.getElementById('tp-amount').innerText = player.talentPoints;
+    document.getElementById('talent-lvl-damage').innerText = player.talents.damage;
+    document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
 }
 
 async function initGame() {
@@ -1833,6 +1554,8 @@ async function initGame() {
         const enemiesResponse = await fetch('enemies.json');
         enemiesData = await enemiesResponse.json();
 
+        runUpgradeData = itemsData.runUpgradeData;
+        commonUpgradesData = itemsData.commonUpgradesData;
         bossSkillsData = itemsData.bossSkillsData;
         cursedRelicsData = itemsData.cursedRelicsData;
 
@@ -1841,11 +1564,7 @@ async function initGame() {
 
         if (heroData.warrior) { setActiveHero('warrior'); }
 
-        for (let h in heroData) { 
-            if (player.heroSkillLevels[h] === undefined) { 
-                player.heroSkillLevels[h] = 0; 
-            } 
-        }
+        for (let h in heroData) { if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } }
         renderHeroSelection();
     } catch (error) {
         console.error("Failed to load game data:", error);
