@@ -12,7 +12,7 @@ let player = {
     equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
     inventory: [],
     attackProgress: 0, 
-    activeEffects: [] // NEW: Hybrid Status Tracking
+    activeEffects: [] 
 };
 
 let runStats = {
@@ -73,6 +73,7 @@ let secretGemClickTimer = null;
 function checkSecretCheat() {
     secretGemClickCount++;
     clearTimeout(secretGemClickTimer);
+
     if (secretGemClickCount >= 10) {
         player.gems += 10000;
         updateUI();
@@ -352,7 +353,7 @@ function applyStatus(unit, type, value, isCharge = false) {
         if (isCharge) unit.activeEffects.push({ type: type, charges: value, maxCharges: value });
         else unit.activeEffects.push({ type: type, duration: value, maxDuration: value, tickTimer: 0 });
     }
-    if (unit === player) renderStatusEffects();
+    renderStatusEffects();
 }
 
 function hasStatus(unit, type) {
@@ -368,7 +369,7 @@ function consumeCharge(unit, type) {
         if (unit.activeEffects[idx].charges <= 0) {
             unit.activeEffects.splice(idx, 1);
         }
-        if (unit === player) renderStatusEffects();
+        renderStatusEffects();
         return result;
     }
     return false;
@@ -383,14 +384,14 @@ function processTimeEffects(unit) {
         if (eff.duration !== undefined) {
             eff.duration -= (50 * gameSpeed);
 
-            // Time-based Action: Poison Ticks every 1000ms
-            if (eff.type === 'poison') {
-                eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
-                if (eff.tickTimer >= 1000) {
-                    eff.tickTimer = 0;
-                    let maxH = unit.maxHealth || unit.maxHp;
+            // Time-based DoTs: Poison (Damage) and Regen (Heal) Tick every 1000ms
+            eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
+            if (eff.tickTimer >= 1000) {
+                eff.tickTimer = 0;
+                let maxH = unit.maxHealth || unit.maxHp;
+
+                if (eff.type === 'poison') {
                     let dmg = Math.max(1, Math.floor(maxH * 0.05));
-                    
                     if (unit === player) {
                         player.currentHealth -= dmg;
                         updatePlayerHealthBar();
@@ -399,6 +400,21 @@ function processTimeEffects(unit) {
                     } else {
                         unit.hp -= dmg;
                         animateHit(unit.id, dmg, false);
+                    }
+                } 
+                else if (eff.type === 'regen') {
+                    let heal = Math.max(1, Math.floor(maxH * 0.05));
+                    if (unit === player) {
+                        player.currentHealth = Math.min(player.maxHealth, player.currentHealth + heal);
+                        updatePlayerHealthBar();
+                        spawnFloatingText('player-combat-area', "+" + heal, "float-heal");
+                    } else {
+                        unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+                        let hpBarDiv = document.getElementById(`enemy-hp-bar-${unit.id}`);
+                        let hpTextDiv = document.getElementById(`enemy-hp-text-${unit.id}`);
+                        if (hpBarDiv) hpBarDiv.style.width = (unit.hp / unit.maxHp) * 100 + '%';
+                        if (hpTextDiv) hpTextDiv.innerText = `${Math.ceil(unit.hp)}/${unit.maxHp}`;
+                        spawnFloatingText(`enemy-${unit.id}`, "+" + heal, "float-heal");
                     }
                 }
             }
@@ -409,11 +425,74 @@ function processTimeEffects(unit) {
             }
         }
     }
-    if (uiChanged && unit === player) renderStatusEffects();
+    if (uiChanged) renderStatusEffects();
+}
+
+function createStatusHtml(eff, mini = false) {
+    let text = ""; let iconClass = "buff"; let emoji = "✨";
+    if (eff.type === 'stun') { text = "Stun"; iconClass = "debuff"; emoji = "💫"; }
+    else if (eff.type === 'poison') { text = "Poison"; iconClass = "debuff"; emoji = "☠️"; }
+    else if (eff.type === 'slow') { text = "Slow"; iconClass = "debuff"; emoji = "🐢"; }
+    else if (eff.type === 'haste') { text = "Haste"; iconClass = "buff"; emoji = "⚡"; }
+    else if (eff.type === 'blind') { text = "Blind"; iconClass = "debuff"; emoji = "👁️‍🗨️"; }
+    else if (eff.type === 'empower') { text = "Empower"; iconClass = "buff"; emoji = "🔥"; }
+    else if (eff.type === 'vulnerable') { text = "Vuln"; iconClass = "debuff"; emoji = "💔"; }
+    else if (eff.type === 'barrier') { text = "Barrier"; iconClass = "buff"; emoji = "🛡️"; }
+    else if (eff.type === 'regen') { text = "Regen"; iconClass = "buff"; emoji = "💖"; }
+
+    let durText = eff.duration !== undefined ? Math.ceil(eff.duration/1000) + "s" : eff.charges + "x";
+    if (mini) return `<div title="${text} (${durText})" style="font-size:0.9rem;">${emoji}</div>`;
+    return `<div class="status-icon ${iconClass}">${emoji} ${text} (${durText})</div>`;
+}
+
+function renderStatusEffects() {
+    // 1. Render Player Statuses
+    let pCont = document.getElementById('player-status-effects');
+    if (pCont) {
+        pCont.innerHTML = '';
+        if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+            pCont.innerHTML += `<div class="status-icon debuff" title="Intimidated">💀 Intimidated</div>`;
+        }
+        if (player.activeEffects) {
+            player.activeEffects.forEach(eff => { pCont.innerHTML += createStatusHtml(eff); });
+        }
+    }
+
+    // 2. Render Enemy Statuses
+    activeEnemies.forEach(e => {
+        let eCont = document.getElementById(`enemy-status-${e.id}`);
+        if (eCont) {
+            eCont.innerHTML = '';
+            if (e.activeEffects) {
+                e.activeEffects.forEach(eff => { eCont.innerHTML += createStatusHtml(eff, true); });
+            }
+        }
+    });
+}
+
+// --- DEBUG FUNCTIONS ---
+function debugApply(type, targetStr) {
+    if (!isTestMode) return;
+    
+    // Choose who gets the buff/debuff
+    let target = (targetStr === 'player') ? player : activeEnemies[0];
+    if (!target || target.hp <= 0 && target !== player) return;
+
+    if (type === 'stun') applyStatus(target, 'stun', 3000); 
+    else if (type === 'poison') applyStatus(target, 'poison', 5000); 
+    else if (type === 'regen') applyStatus(target, 'regen', 5000);
+    else if (type === 'haste') applyStatus(target, 'haste', 5000); 
+    else if (type === 'slow') applyStatus(target, 'slow', 5000); 
+    else if (type === 'vulnerable') applyStatus(target, 'vulnerable', 5000); 
+    else if (type === 'barrier') applyStatus(target, 'barrier', 5000); 
+    else if (type === 'blind') applyStatus(target, 'blind', 1, true); 
+    else if (type === 'empower') applyStatus(target, 'empower', 1, true); 
+    
+    updateCombatStatsPanel();
 }
 
 
-// --- COMBAT CORE & ATB ENGINE ---
+// --- COMBAT CORE & MATH ENGINE ---
 
 function getEquipmentStats() {
     let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
@@ -489,44 +568,6 @@ function updateCombatStatsPanel() {
     document.getElementById('run-runes-text').innerText = runStats.runes;
 }
 
-function renderStatusEffects() {
-    let container = document.getElementById('player-status-effects');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
-        container.innerHTML += `<div class="status-icon debuff" title="Intimidated: -25% Damage & Attack Speed">💀 Intimidated</div>`;
-    }
-    
-    if (player.activeEffects) {
-        player.activeEffects.forEach(eff => {
-            let text = ""; let iconClass = "buff"; let emoji = "✨";
-            if (eff.type === 'stun') { text = "Stunned"; iconClass = "debuff"; emoji = "💫"; }
-            else if (eff.type === 'poison') { text = "Poisoned"; iconClass = "debuff"; emoji = "☠️"; }
-            else if (eff.type === 'slow') { text = "Slowed"; iconClass = "debuff"; emoji = "🐢"; }
-            else if (eff.type === 'haste') { text = "Haste"; iconClass = "buff"; emoji = "⚡"; }
-            else if (eff.type === 'blind') { text = "Blinded"; iconClass = "debuff"; emoji = "👁️‍🗨️"; }
-            else if (eff.type === 'empower') { text = "Empowered"; iconClass = "buff"; emoji = "🔥"; }
-
-            let durText = eff.duration !== undefined ? Math.ceil(eff.duration/1000) + "s" : eff.charges + "x";
-            container.innerHTML += `<div class="status-icon ${iconClass}">${emoji} ${text} (${durText})</div>`;
-        });
-    }
-}
-
-// --- DEBUG FUNCTIONS ---
-function debugApply(type) {
-    if (!isTestMode) return;
-    
-    if (type === 'stun') applyStatus(player, 'stun', 3000); 
-    else if (type === 'poison') applyStatus(player, 'poison', 5000); 
-    else if (type === 'haste') applyStatus(player, 'haste', 5000); 
-    else if (type === 'blind') applyStatus(player, 'blind', 1, true); 
-    else if (type === 'empower') applyStatus(player, 'empower', 1, true); 
-    
-    updateCombatStatsPanel();
-}
-
 function playBattleStartAnimation() {
     let overlay = document.getElementById('battle-start-overlay');
     let swords = document.getElementById('crossed-swords');
@@ -575,18 +616,18 @@ function startCombatLoop() {
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
-    // Process Time-Based Effects 
+    // 1. Process Status Effects (Poison, Regen, Duration ticks)
     processTimeEffects(player);
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => processTimeEffects(e));
 
-    // Must re-fetch alive enemies in case Poison killed them!
+    // Re-filter in case poison killed someone
     aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
 
     let stats = getPlayerStats();
     let actionQueue = []; 
 
-    // 1. Player ATB Fill
+    // 2. Player ATB Fill
     if (!hasStatus(player, 'stun')) {
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
@@ -597,7 +638,7 @@ function combatTick() {
     let pAtb = document.getElementById('player-atb');
     if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
 
-    // 2. Enemy ATB Fill
+    // 3. Enemy ATB Fill
     aliveEnemies.forEach(e => {
         if (!hasStatus(e, 'stun')) {
             let eAtkSpd = e.atkSpd || 1.0;
@@ -614,7 +655,7 @@ function combatTick() {
         if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, e.attackProgress)) + '%';
     });
 
-    // 3. Execute Actions (Fastest acts FIRST)
+    // 4. Execute Actions (Fastest acts FIRST)
     if (actionQueue.length > 0) {
         actionQueue.sort((a, b) => b.spd - a.spd); 
         
@@ -641,7 +682,7 @@ function startTestBattle() {
     }
 
     isTestMode = true;
-    player.activeEffects = []; // Clear old effects
+    player.activeEffects = []; 
 
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
@@ -692,6 +733,7 @@ function startTestBattle() {
             <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
             <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
             <div class="mini-hp-text" id="enemy-hp-text-0">${dummyHp}/${dummyHp}</div>
+            <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
             <div class="boss-skill-badge" title="Immune to most damage">🛡️ 9999 DEF/MDEF</div>
         </div>`;
 
@@ -813,6 +855,7 @@ function spawnEnemyPack() {
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                 <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
+                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
             </div>`;
 
@@ -825,6 +868,7 @@ function spawnEnemyPack() {
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
+                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
                 </div>`;
             }
         }
@@ -845,6 +889,7 @@ function spawnEnemyPack() {
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                 <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
+                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
             </div>`;
     } else {
@@ -877,6 +922,7 @@ function spawnEnemyPack() {
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
+                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
                 </div>`;
         }
     }
@@ -979,7 +1025,6 @@ function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
     if(aliveEnemies.length === 0) return;
 
-    // Check Hybrid Charge Statuses
     if (consumeCharge(player, 'blind')) {
         spawnFloatingText('player-combat-area', "BLIND MISS!", "float-miss");
         return;
@@ -1018,6 +1063,10 @@ function executePlayerAttack() {
                 dmg *= 2;
                 spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit");
             }
+            
+            // --- NEW: VULNERABLE & BARRIER ---
+            if (hasStatus(target, 'vulnerable')) dmg = Math.floor(dmg * 1.5);
+            if (hasStatus(target, 'barrier')) dmg = Math.floor(dmg * 0.5);
 
             let hero = heroData[player.currentHero];
             let innateLvl = player.heroSkillLevels[player.currentHero] || 0;
@@ -1106,12 +1155,12 @@ function executeEnemyAttack(e) {
 
     if (e.skill === 'bash' && Math.random() < 0.25) {
         incomingDmg = Math.floor(incomingDmg * 2); 
-        applyStatus(player, 'stun', 2000); // 2 second stun
+        applyStatus(player, 'stun', 2000); 
         spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
     }
 
     if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
-        applyStatus(player, 'poison', 5000); // 5 second poison
+        applyStatus(player, 'poison', 5000); 
         spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
     }
 
@@ -1122,6 +1171,10 @@ function executeEnemyAttack(e) {
     }
 
     if (isEmpowered) incomingDmg *= 2;
+    
+    // --- NEW: VULNERABLE & BARRIER ---
+    if (hasStatus(player, 'vulnerable')) incomingDmg = Math.floor(incomingDmg * 1.5);
+    if (hasStatus(player, 'barrier')) incomingDmg = Math.floor(incomingDmg * 0.5);
 
     player.currentHealth -= incomingDmg;
     updatePlayerHealthBar();
