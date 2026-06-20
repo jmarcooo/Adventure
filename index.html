@@ -185,14 +185,18 @@
 
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
-                <p style="margin-bottom: 10px;">Spend your Runes for this run.</p>
+                <p style="margin-bottom: 10px;">Draft your upgrades wisely.</p>
                 
                 <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 20px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">
                     🌀 <span id="shop-runes-display">0</span>
                 </div>
 
                 <div id="upgrade-list" style="width: 100%; display: flex; gap: 15px; justify-content: center; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px;"></div>
-                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="action-btn" onclick="rerollShop()" style="font-size: 1rem; padding: 15px; background: #e67e22; box-shadow: 0 5px 0 #d35400;">Reroll (1 🌀)</button>
+                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1rem; padding: 15px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
+                </div>
             </div>
 
             <div id="boss-clear-ui">
