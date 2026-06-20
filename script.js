@@ -11,7 +11,8 @@ let player = {
     heroSkillLevels: {},
     equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
     inventory: [],
-    attackProgress: 0 
+    attackProgress: 0, 
+    activeEffects: [] // NEW: Hybrid Status Tracking
 };
 
 let runStats = {
@@ -35,10 +36,7 @@ let activeEnemies = [];
 let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 
 let combatTickInterval;
-
-// TEST MODE VARIABLES
 let isTestMode = false;
-let debugIntimidate = false;
 
 // --- NAVIGATION & GENERAL LOGIC ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
@@ -75,7 +73,6 @@ let secretGemClickTimer = null;
 function checkSecretCheat() {
     secretGemClickCount++;
     clearTimeout(secretGemClickTimer);
-
     if (secretGemClickCount >= 10) {
         player.gems += 10000;
         updateUI();
@@ -342,6 +339,80 @@ function toggleGameSpeed() {
     document.getElementById('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2';
 }
 
+// --- NEW: HYBRID STATUS ENGINE ---
+
+function applyStatus(unit, type, value, isCharge = false) {
+    if (!unit.activeEffects) unit.activeEffects = [];
+    let existing = unit.activeEffects.find(eff => eff.type === type);
+    
+    if (existing) {
+        if (isCharge) existing.charges = value;
+        else existing.duration = value;
+    } else {
+        if (isCharge) unit.activeEffects.push({ type: type, charges: value, maxCharges: value });
+        else unit.activeEffects.push({ type: type, duration: value, maxDuration: value, tickTimer: 0 });
+    }
+    if (unit === player) renderStatusEffects();
+}
+
+function hasStatus(unit, type) {
+    return unit.activeEffects && unit.activeEffects.some(eff => eff.type === type);
+}
+
+function consumeCharge(unit, type) {
+    if (!unit.activeEffects) return false;
+    let idx = unit.activeEffects.findIndex(eff => eff.type === type && eff.charges !== undefined);
+    if (idx !== -1) {
+        unit.activeEffects[idx].charges--;
+        let result = true;
+        if (unit.activeEffects[idx].charges <= 0) {
+            unit.activeEffects.splice(idx, 1);
+        }
+        if (unit === player) renderStatusEffects();
+        return result;
+    }
+    return false;
+}
+
+function processTimeEffects(unit) {
+    if (!unit || !unit.activeEffects) return;
+    let uiChanged = false;
+    
+    for (let i = unit.activeEffects.length - 1; i >= 0; i--) {
+        let eff = unit.activeEffects[i];
+        if (eff.duration !== undefined) {
+            eff.duration -= (50 * gameSpeed);
+
+            // Time-based Action: Poison Ticks every 1000ms
+            if (eff.type === 'poison') {
+                eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
+                if (eff.tickTimer >= 1000) {
+                    eff.tickTimer = 0;
+                    let maxH = unit.maxHealth || unit.maxHp;
+                    let dmg = Math.max(1, Math.floor(maxH * 0.05));
+                    
+                    if (unit === player) {
+                        player.currentHealth -= dmg;
+                        updatePlayerHealthBar();
+                        spawnFloatingText('player-combat-area', "POISON -" + dmg, "float-enemy-dmg");
+                        if (player.currentHealth <= 0) triggerGameOver();
+                    } else {
+                        unit.hp -= dmg;
+                        animateHit(unit.id, dmg, false);
+                    }
+                }
+            }
+
+            if (eff.duration <= 0) {
+                unit.activeEffects.splice(i, 1);
+                uiChanged = true;
+            }
+        }
+    }
+    if (uiChanged && unit === player) renderStatusEffects();
+}
+
+
 // --- COMBAT CORE & ATB ENGINE ---
 
 function getEquipmentStats() {
@@ -370,9 +441,14 @@ function getPlayerStats() {
         luck: hero.luck + runStats.luck + eq.luck
     };
 
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive') || debugIntimidate) {
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
         stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
     }
+    
+    // Apply Hybrid Modifiers
+    if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
+    if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
+
     return stats;
 }
 
@@ -418,41 +494,37 @@ function renderStatusEffects() {
     if (!container) return;
     container.innerHTML = '';
 
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive') || debugIntimidate) {
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
         container.innerHTML += `<div class="status-icon debuff" title="Intimidated: -25% Damage & Attack Speed">💀 Intimidated</div>`;
     }
-    if (player.isStunned) {
-        container.innerHTML += `<div class="status-icon debuff" title="Stunned: Skipping next attack">💫 Stunned</div>`;
+    
+    if (player.activeEffects) {
+        player.activeEffects.forEach(eff => {
+            let text = ""; let iconClass = "buff"; let emoji = "✨";
+            if (eff.type === 'stun') { text = "Stunned"; iconClass = "debuff"; emoji = "💫"; }
+            else if (eff.type === 'poison') { text = "Poisoned"; iconClass = "debuff"; emoji = "☠️"; }
+            else if (eff.type === 'slow') { text = "Slowed"; iconClass = "debuff"; emoji = "🐢"; }
+            else if (eff.type === 'haste') { text = "Haste"; iconClass = "buff"; emoji = "⚡"; }
+            else if (eff.type === 'blind') { text = "Blinded"; iconClass = "debuff"; emoji = "👁️‍🗨️"; }
+            else if (eff.type === 'empower') { text = "Empowered"; iconClass = "buff"; emoji = "🔥"; }
+
+            let durText = eff.duration !== undefined ? Math.ceil(eff.duration/1000) + "s" : eff.charges + "x";
+            container.innerHTML += `<div class="status-icon ${iconClass}">${emoji} ${text} (${durText})</div>`;
+        });
     }
 }
 
-// --- NEW DEBUG FUNCTIONS ---
+// --- DEBUG FUNCTIONS ---
 function debugApply(type) {
     if (!isTestMode) return;
     
-    if (type === 'stun') {
-        player.isStunned = true;
-        spawnFloatingText('player-combat-area', "STUNNED!", "float-enemy-dmg");
-    } else if (type === 'poison') {
-        let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05));
-        player.currentHealth -= poisonDmg;
-        spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
-        if (player.currentHealth <= 0) triggerGameOver();
-    } else if (type === 'intimidate') {
-        debugIntimidate = !debugIntimidate;
-        spawnFloatingText('player-combat-area', debugIntimidate ? "INTIMIDATED!" : "CLEARED!", "float-miss");
-    } else if (type === 'buff_atk') {
-        runStats.pAtk += 100;
-        runStats.mAtk += 100;
-        spawnFloatingText('player-combat-area', "+100 ATK", "float-heal");
-    } else if (type === 'buff_spd') {
-        runStats.atkSpdMulti += 0.5;
-        spawnFloatingText('player-combat-area', "+50% SPD", "float-heal");
-    }
+    if (type === 'stun') applyStatus(player, 'stun', 3000); 
+    else if (type === 'poison') applyStatus(player, 'poison', 5000); 
+    else if (type === 'haste') applyStatus(player, 'haste', 5000); 
+    else if (type === 'blind') applyStatus(player, 'blind', 1, true); 
+    else if (type === 'empower') applyStatus(player, 'empower', 1, true); 
     
     updateCombatStatsPanel();
-    renderStatusEffects();
-    updatePlayerHealthBar();
 }
 
 function playBattleStartAnimation() {
@@ -503,39 +575,46 @@ function startCombatLoop() {
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
+    // Process Time-Based Effects 
+    processTimeEffects(player);
+    let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
+    aliveEnemies.forEach(e => processTimeEffects(e));
+
+    // Must re-fetch alive enemies in case Poison killed them!
+    aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
+
     let stats = getPlayerStats();
     let actionQueue = []; 
 
-    if (!player.isStunned) {
+    // 1. Player ATB Fill
+    if (!hasStatus(player, 'stun')) {
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
             player.attackProgress = 100;
             actionQueue.push({ type: 'player', spd: stats.spd }); 
         }
-    } else {
-        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
-        if (player.attackProgress >= 100) {
-            player.attackProgress = 0;
-            player.isStunned = false;
-            spawnFloatingText('player-combat-area', "RECOVERED!", "float-miss");
-            renderStatusEffects();
-        }
-    }
+    } 
     let pAtb = document.getElementById('player-atb');
     if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
 
-    let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
+    // 2. Enemy ATB Fill
     aliveEnemies.forEach(e => {
-        let eAtkSpd = e.atkSpd || 1.0;
-        e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
-        if (e.attackProgress >= 100) {
-            e.attackProgress = 100;
-            actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
+        if (!hasStatus(e, 'stun')) {
+            let eAtkSpd = e.atkSpd || 1.0;
+            if (hasStatus(e, 'haste')) eAtkSpd *= 1.5;
+            if (hasStatus(e, 'slow')) eAtkSpd *= 0.5;
+
+            e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
+            if (e.attackProgress >= 100) {
+                e.attackProgress = 100;
+                actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
+            }
         }
         let atbBar = document.getElementById(`enemy-atb-bar-${e.id}`);
         if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, e.attackProgress)) + '%';
     });
 
+    // 3. Execute Actions (Fastest acts FIRST)
     if (actionQueue.length > 0) {
         actionQueue.sort((a, b) => b.spd - a.spd); 
         
@@ -562,7 +641,7 @@ function startTestBattle() {
     }
 
     isTestMode = true;
-    debugIntimidate = false;
+    player.activeEffects = []; // Clear old effects
 
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
@@ -582,20 +661,17 @@ function startTestBattle() {
     
     waveManager.wave = 1;
     player.currentHealth = player.maxHealth;
-    player.isStunned = false;
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
     
-    // Show Debug Panel
     document.getElementById('debug-panel').style.display = 'flex'; 
     waveManager.isUpgrading = true; 
 
     updateCombatStatsPanel();
     openMenu('game');
 
-    // Spawn ONLY the Dummy
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
     container.innerHTML = ''; activeEnemies = [];
@@ -605,7 +681,7 @@ function startTestBattle() {
     let dummyHp = 9999;
     let dummy = {
         id: 0, maxHp: dummyHp, hp: dummyHp, damage: 0, pDef: 9999, mDef: 9999,
-        skill: 'dummy', attackProgress: 0, isDead: false, isBoss: true, spd: 1, atkSpd: 0.1
+        skill: 'dummy', attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, spd: 1, atkSpd: 0.1
     };
     activeEnemies.push(dummy);
 
@@ -621,7 +697,6 @@ function startTestBattle() {
 
     player.attackProgress = 95;
     dummy.attackProgress = 0;
-    
     let pAtb = document.getElementById('player-atb');
     if(pAtb) pAtb.style.width = '95%';
 
@@ -634,13 +709,13 @@ function startTestBattle() {
 
 function startGame() {
     if (!heroData || Object.keys(heroData).length === 0) {
-        alert("ERROR: Game data failed to load.\n\nPlease start a Local Web Server (like 'Live Server' in VS Code) to play!");
+        alert("ERROR: Game data failed to load.");
         return;
     }
 
     isTestMode = false;
-    debugIntimidate = false;
     document.getElementById('debug-panel').style.display = 'none';
+    player.activeEffects = [];
 
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
@@ -659,7 +734,6 @@ function startGame() {
     }
     waveManager.wave = 1;
     player.currentHealth = player.maxHealth;
-    player.isStunned = false;
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
@@ -675,9 +749,7 @@ function startGame() {
 
     playBattleStartAnimation();
 
-    setTimeout(() => {
-        waveManager.isUpgrading = false; 
-    }, 1000);
+    setTimeout(() => { waveManager.isUpgrading = false; }, 1000);
 }
 
 const BIOMES = [
@@ -724,12 +796,12 @@ function spawnEnemyPack() {
         let bossDmg = 10 + Math.floor(waveManager.wave * 1.5);
         let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
 
-        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, isDead: false, isBoss: true, isBiomeBoss: true });
+        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, isBiomeBoss: true });
 
         if (stageInfo.biome.skill === 'leviathan_spawns') {
             for(let i=1; i<=4; i++) {
                 let spawnHp = Math.floor(bossHp * 0.2); let spawnDmg = Math.floor(bossDmg * 0.5);
-                activeEnemies.push({ id: i, maxHp: spawnHp, hp: spawnHp, damage: spawnDmg, skill: 'magic', attackProgress: 0, isDead: false, isBoss: false });
+                activeEnemies.push({ id: i, maxHp: spawnHp, hp: spawnHp, damage: spawnDmg, skill: 'magic', attackProgress: 0, activeEffects: [], isDead: false, isBoss: false });
             }
         }
 
@@ -763,7 +835,7 @@ function spawnEnemyPack() {
         let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
         let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
 
-        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, isDead: false, isBoss: true });
+        activeEnemies.push({ id: 0, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
 
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
         container.innerHTML = `
@@ -796,7 +868,7 @@ function spawnEnemyPack() {
             let finalDmg = isElite ? normDmg * 2 : normDmg;
             let eliteClass = isElite ? 'elite' : '';
 
-            activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, attackProgress: 0, isDead: false, isBoss: false, isElite: isElite });
+            activeEnemies.push({ id: i, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite });
             
             container.innerHTML += `
                 <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
@@ -809,7 +881,6 @@ function spawnEnemyPack() {
         }
     }
     
-    // --- STAGGERED ATB INITIATIVE CALCULATION ---
     let pStats = getPlayerStats();
     let combatants = [];
 
@@ -908,6 +979,14 @@ function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
     if(aliveEnemies.length === 0) return;
 
+    // Check Hybrid Charge Statuses
+    if (consumeCharge(player, 'blind')) {
+        spawnFloatingText('player-combat-area', "BLIND MISS!", "float-miss");
+        return;
+    }
+
+    let isEmpowered = consumeCharge(player, 'empower');
+
     let pIcon = document.getElementById('player-combat-icon');
     if(pIcon) { pIcon.classList.add('player-attack-anim'); setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); }
 
@@ -922,7 +1001,6 @@ function executePlayerAttack() {
             let stats = getPlayerStats();
             let isCrit = Math.random() < stats.crit;
 
-            // UPDATED: Factors in Enemy specific pDef and mDef
             let eDefP = target.pDef || 0;
             let eDefM = target.mDef || 0;
 
@@ -935,6 +1013,11 @@ function executePlayerAttack() {
 
             let dmg = pDmg + mDmg;
             if (isCrit) dmg = Math.floor(dmg * 2.5);
+            
+            if (isEmpowered) {
+                dmg *= 2;
+                spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit");
+            }
 
             let hero = heroData[player.currentHero];
             let innateLvl = player.heroSkillLevels[player.currentHero] || 0;
@@ -1005,6 +1088,13 @@ function executePlayerAttack() {
 }
 
 function executeEnemyAttack(e) {
+    if (consumeCharge(e, 'blind')) {
+        spawnFloatingText(`enemy-${e.id}`, "BLIND MISS!", "float-miss");
+        return;
+    }
+    
+    let isEmpowered = consumeCharge(e, 'empower');
+
     let unitDiv = document.getElementById(`enemy-${e.id}`);
     if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
 
@@ -1016,15 +1106,13 @@ function executeEnemyAttack(e) {
 
     if (e.skill === 'bash' && Math.random() < 0.25) {
         incomingDmg = Math.floor(incomingDmg * 2); 
-        player.isStunned = true; 
+        applyStatus(player, 'stun', 2000); // 2 second stun
         spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
-        renderStatusEffects(); 
     }
 
     if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
-        let poisonDmg = Math.max(1, Math.floor(player.maxHealth * 0.05)); 
-        player.currentHealth -= poisonDmg;
-        spawnFloatingText('player-combat-area', "POISON -" + poisonDmg, "float-enemy-dmg");
+        applyStatus(player, 'poison', 5000); // 5 second poison
+        spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
     }
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
@@ -1032,6 +1120,8 @@ function executeEnemyAttack(e) {
     } else {
         incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
+
+    if (isEmpowered) incomingDmg *= 2;
 
     player.currentHealth -= incomingDmg;
     updatePlayerHealthBar();
@@ -1227,7 +1317,6 @@ function continueToNextWave() {
     waveManager.isUpgrading = true; 
     
     spawnEnemyPack();
-
     playBattleStartAnimation();
 
     setTimeout(() => {
@@ -1237,7 +1326,6 @@ function continueToNextWave() {
 
 function endRun(titleText, titleColor) {
     isTestMode = false;
-    debugIntimidate = false;
     document.getElementById('debug-panel').style.display = 'none';
 
     clearInterval(combatTickInterval); 
