@@ -375,16 +375,22 @@ function consumeCharge(unit, type) {
     return false;
 }
 
+// THIS FUNCTION HANDLES BOTH DURATION COUNTDOWN AND VISUAL TICKING
 function processTimeEffects(unit) {
     if (!unit || !unit.activeEffects) return;
     let uiChanged = false;
     
     for (let i = unit.activeEffects.length - 1; i >= 0; i--) {
         let eff = unit.activeEffects[i];
+        
         if (eff.duration !== undefined) {
+            let oldSec = Math.ceil(eff.duration / 1000); // What the UI currently says
+
             eff.duration -= (50 * gameSpeed);
 
-            // Time-based DoTs: Poison (Damage) and Regen (Heal) Tick every 1000ms
+            let newSec = Math.ceil(eff.duration / 1000); // What the UI should say now
+
+            // DoTs tick every 1000ms
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
@@ -419,12 +425,16 @@ function processTimeEffects(unit) {
                 }
             }
 
+            // If it hits 0, it vanishes. If the round second changes, redraw to show the countdown!
             if (eff.duration <= 0) {
                 unit.activeEffects.splice(i, 1);
+                uiChanged = true;
+            } else if (oldSec !== newSec) {
                 uiChanged = true;
             }
         }
     }
+    
     if (uiChanged) renderStatusEffects();
 }
 
@@ -441,12 +451,11 @@ function createStatusHtml(eff, mini = false) {
     else if (eff.type === 'regen') { text = "Regen"; iconClass = "buff"; emoji = "💖"; }
 
     let durText = eff.duration !== undefined ? Math.ceil(eff.duration/1000) + "s" : eff.charges + "x";
-    if (mini) return `<div title="${text} (${durText})" style="font-size:0.9rem;">${emoji}</div>`;
+    if (mini) return `<div title="${text} (${durText})" style="font-size:0.9rem;">${emoji} ${durText}</div>`;
     return `<div class="status-icon ${iconClass}">${emoji} ${text} (${durText})</div>`;
 }
 
 function renderStatusEffects() {
-    // 1. Render Player Statuses
     let pCont = document.getElementById('player-status-effects');
     if (pCont) {
         pCont.innerHTML = '';
@@ -458,7 +467,6 @@ function renderStatusEffects() {
         }
     }
 
-    // 2. Render Enemy Statuses
     activeEnemies.forEach(e => {
         let eCont = document.getElementById(`enemy-status-${e.id}`);
         if (eCont) {
@@ -474,7 +482,6 @@ function renderStatusEffects() {
 function debugApply(type, targetStr) {
     if (!isTestMode) return;
     
-    // Choose who gets the buff/debuff
     let target = (targetStr === 'player') ? player : activeEnemies[0];
     if (!target || target.hp <= 0 && target !== player) return;
 
@@ -524,7 +531,6 @@ function getPlayerStats() {
         stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
     }
     
-    // Apply Hybrid Modifiers
     if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
     if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
 
@@ -616,18 +622,15 @@ function startCombatLoop() {
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
-    // 1. Process Status Effects (Poison, Regen, Duration ticks)
     processTimeEffects(player);
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => processTimeEffects(e));
 
-    // Re-filter in case poison killed someone
     aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
 
     let stats = getPlayerStats();
     let actionQueue = []; 
 
-    // 2. Player ATB Fill
     if (!hasStatus(player, 'stun')) {
         player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
         if (player.attackProgress >= 100) {
@@ -638,7 +641,6 @@ function combatTick() {
     let pAtb = document.getElementById('player-atb');
     if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
 
-    // 3. Enemy ATB Fill
     aliveEnemies.forEach(e => {
         if (!hasStatus(e, 'stun')) {
             let eAtkSpd = e.atkSpd || 1.0;
@@ -655,7 +657,6 @@ function combatTick() {
         if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, e.attackProgress)) + '%';
     });
 
-    // 4. Execute Actions (Fastest acts FIRST)
     if (actionQueue.length > 0) {
         actionQueue.sort((a, b) => b.spd - a.spd); 
         
@@ -733,7 +734,7 @@ function startTestBattle() {
             <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
             <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
             <div class="mini-hp-text" id="enemy-hp-text-0">${dummyHp}/${dummyHp}</div>
-            <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
+            <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
             <div class="boss-skill-badge" title="Immune to most damage">🛡️ 9999 DEF/MDEF</div>
         </div>`;
 
@@ -855,7 +856,7 @@ function spawnEnemyPack() {
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                 <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
-                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
+                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
             </div>`;
 
@@ -868,7 +869,7 @@ function spawnEnemyPack() {
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
-                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
+                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
                 </div>`;
             }
         }
@@ -889,7 +890,7 @@ function spawnEnemyPack() {
                 <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
                 <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                 <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
-                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
+                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
                 <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
             </div>`;
     } else {
@@ -922,7 +923,7 @@ function spawnEnemyPack() {
                     <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
                     <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
                     <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
-                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px;"></div>
+                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
                 </div>`;
         }
     }
@@ -1064,7 +1065,6 @@ function executePlayerAttack() {
                 spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit");
             }
             
-            // --- NEW: VULNERABLE & BARRIER ---
             if (hasStatus(target, 'vulnerable')) dmg = Math.floor(dmg * 1.5);
             if (hasStatus(target, 'barrier')) dmg = Math.floor(dmg * 0.5);
 
@@ -1171,8 +1171,6 @@ function executeEnemyAttack(e) {
     }
 
     if (isEmpowered) incomingDmg *= 2;
-    
-    // --- NEW: VULNERABLE & BARRIER ---
     if (hasStatus(player, 'vulnerable')) incomingDmg = Math.floor(incomingDmg * 1.5);
     if (hasStatus(player, 'barrier')) incomingDmg = Math.floor(incomingDmg * 0.5);
 
