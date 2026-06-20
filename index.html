@@ -79,8 +79,7 @@
                 <h2 id="gear-modal-name" style="margin: 0; color: #f1c40f; font-size: 1.5rem;"></h2>
                 <p id="gear-modal-type" style="margin: 5px 0 15px 0; color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase;"></p>
 
-                <div id="gear-modal-stats" style="width: 100%; text-align: left; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 5px;">
-                    </div>
+                <div id="gear-modal-stats" style="width: 100%; text-align: left; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 5px;"></div>
 
                 <button id="gear-modal-action-btn" class="action-btn" style="font-size: 1.2rem; padding: 15px; width: 100%;"></button>
             </div>
@@ -142,17 +141,16 @@
             <div style="width: 100%; position: relative;" id="player-combat-area">
                 
                 <div id="debug-panel" style="display: none; justify-content: center; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 10px; border: 1px dashed #f1c40f;">
-                    <button class="hud-btn" style="background: #e74c3c; font-size: 0.75rem;" onclick="debugApply('stun')">Stun</button>
-                    <button class="hud-btn" style="background: #27ae60; font-size: 0.75rem;" onclick="debugApply('poison')">Poison</button>
-                    <button class="hud-btn" style="background: #8e44ad; font-size: 0.75rem;" onclick="debugApply('intimidate')">Intimidate</button>
-                    <button class="hud-btn" style="background: #f39c12; font-size: 0.75rem;" onclick="debugApply('buff_atk')">+100 ATK</button>
-                    <button class="hud-btn" style="background: #3498db; font-size: 0.75rem;" onclick="debugApply('buff_spd')">+SPD</button>
+                    <button class="hud-btn" style="background: #e74c3c; font-size: 0.75rem;" onclick="debugApply('stun')">Stun (3s)</button>
+                    <button class="hud-btn" style="background: #27ae60; font-size: 0.75rem;" onclick="debugApply('poison')">Poison (5s)</button>
+                    <button class="hud-btn" style="background: #f1c40f; font-size: 0.75rem; color: #333;" onclick="debugApply('haste')">Haste (5s)</button>
+                    <button class="hud-btn" style="background: #34495e; font-size: 0.75rem;" onclick="debugApply('blind')">Blind (1 hit)</button>
+                    <button class="hud-btn" style="background: #e67e22; font-size: 0.75rem;" onclick="debugApply('empower')">Empower (1 hit)</button>
                 </div>
 
                 <div id="player-status-effects" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; min-height: 25px; margin-bottom: 10px;"></div>
 
-                <div class="combat-stats-panel" id="combat-stats-panel">
-                    </div>
+                <div class="combat-stats-panel" id="combat-stats-panel"></div>
 
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 0 auto; align-items: flex-end;">
                     <h3 style="margin:0;">Your Health</h3>
