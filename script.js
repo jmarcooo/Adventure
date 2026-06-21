@@ -968,7 +968,7 @@ function spawnEnemyPack() {
 
     // --- MUTATOR LOGIC ---
     // 25% chance for a Mutator on Waves 6, 7, 8, 9
-    if (stageInfo.wave >= 0 && stageInfo.wave <= 9 && Math.random() < 0.25 && mutatorsData && mutatorsData.length > 0) {
+    if (stageInfo.wave >= 0 && stageInfo.wave <= 9 && Math.random() < 1 && mutatorsData && mutatorsData.length > 0) {
         activeMutator = mutatorsData[Math.floor(Math.random() * mutatorsData.length)];
         if(mutatorEl) {
             mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`;
