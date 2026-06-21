@@ -259,18 +259,21 @@ body {
 
 /* --- EQUIPMENT & INVENTORY --- */
 .equipment-container { display: flex; flex-direction: column; gap: 15px; width: 100%; height: 100%; }
-.equip-top { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 20px; display: flex; justify-content: space-between; align-items: stretch; min-height: 250px; gap: 15px; }
-.equip-doll { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; }
-.equip-stats { flex: 0 0 35%; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; font-size: 0.8rem; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+.equip-top { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 15px; display: flex; justify-content: space-between; align-items: stretch; min-height: 280px; gap: 10px; }
+.equip-doll { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; min-height: 250px; }
+.equip-stats { flex: 0 0 45%; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px 15px 10px 10px; font-size: 0.8rem; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+
 .equip-stat-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.equip-slot { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.4); border-radius: 5px; position: absolute; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
-#slot-head { top: 10%; left: 50%; transform: translateX(-50%); }
-#slot-body { top: 40%; left: 50%; transform: translateX(-50%); }
-#slot-legs { top: 70%; left: 50%; transform: translateX(-50%); }
-#slot-weapon { top: 40%; left: 5%; }
-#slot-shield { top: 40%; right: 5%; }
-#slot-ring { bottom: 10%; left: 15%; }
-#slot-amulet { bottom: 10%; right: 15%; }
+.equip-slot { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.4); border-radius: 5px; position: absolute; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 5;}
+
+#slot-head { top: 0%; left: 50%; transform: translateX(-50%); }
+#slot-amulet { top: 15%; right: 5%; }
+#slot-weapon { top: 35%; left: 2%; }
+#slot-body { top: 35%; left: 50%; transform: translateX(-50%); }
+#slot-leftHand { top: 35%; right: 2%; }
+#slot-ring { top: 65%; left: 10%; }
+#slot-legs { top: 65%; left: 50%; transform: translateX(-50%); }
+#slot-boots { bottom: 0%; left: 50%; transform: translateX(-50%); }
 
 .equip-bottom { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 15px; flex-grow: 1; overflow-y: auto; }
 .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -309,7 +312,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 200;
-    pointer-events: none; /* Allows clicks to pass through */
+    pointer-events: none;
     background: rgba(0,0,0,0.3); 
 }
 #crossed-swords {
