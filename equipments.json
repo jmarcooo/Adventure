@@ -1,0 +1,215 @@
+[
+  // --- WEAPONS ---
+  {
+    "id": "wep_rusty_sword",
+    "slot": "weapon",
+    "rarity": "common",
+    "name": "Rusty Sword",
+    "icon": "🗡️",
+    "stats": { "pAtk": 2, "atkSpd": 0.05 },
+    "onHit": null
+  },
+  {
+    "id": "wep_venom_dagger",
+    "slot": "weapon",
+    "rarity": "uncommon",
+    "name": "Venom Dagger",
+    "icon": "🔪",
+    "stats": { "pAtk": 5, "atkSpd": 0.20 },
+    "onHit": { "type": "poison", "chance": 0.20, "duration": 5000 }
+  },
+  {
+    "id": "wep_blood_axe",
+    "slot": "weapon",
+    "rarity": "rare",
+    "name": "Bloodletter Axe",
+    "icon": "🪓",
+    "stats": { "pAtk": 15, "atkSpd": -0.10, "crit": 0.10 },
+    "onHit": { "type": "bleed", "chance": 0.25, "duration": 5000 }
+  },
+  {
+    "id": "wep_thunder_hammer",
+    "slot": "weapon",
+    "rarity": "super_rare",
+    "name": "Thunder Hammer",
+    "icon": "🔨",
+    "stats": { "pAtk": 25, "mAtk": 10, "atkSpd": -0.15 },
+    "onHit": { "type": "stun", "chance": 0.15, "duration": 2000 }
+  },
+  {
+    "id": "wep_void_blade",
+    "slot": "weapon",
+    "rarity": "ultimate",
+    "name": "Void Blade",
+    "icon": "🌌",
+    "stats": { "pAtk": 35, "mAtk": 35, "atkSpd": 0.15, "crit": 0.20 },
+    "onHit": { "type": "doom", "chance": 0.05, "duration": 5000 }
+  },
+
+  // --- HEAD ---
+  {
+    "id": "head_leather_cap",
+    "slot": "head",
+    "rarity": "common",
+    "name": "Leather Cap",
+    "icon": "🧢",
+    "stats": { "pDef": 2, "maxHp": 10 },
+    "onHitTaken": null
+  },
+  {
+    "id": "head_spiked_helm",
+    "slot": "head",
+    "rarity": "rare",
+    "name": "Spiked Helm",
+    "icon": "🪖",
+    "stats": { "pDef": 12, "maxHp": 30 },
+    "onHitTaken": { "type": "bleed", "chance": 0.20, "duration": 4000 }
+  },
+  {
+    "id": "head_crown_of_thorns",
+    "slot": "head",
+    "rarity": "ultimate",
+    "name": "Crown of Thorns",
+    "icon": "👑",
+    "stats": { "pDef": 20, "mDef": 20, "maxHp": 100 },
+    "onHitTaken": { "type": "thorns", "chance": 0.50, "duration": 5000 }
+  },
+
+  // --- BODY ---
+  {
+    "id": "body_cloth_tunic",
+    "slot": "body",
+    "rarity": "common",
+    "name": "Cloth Tunic",
+    "icon": "👕",
+    "stats": { "pDef": 3, "mDef": 2 },
+    "onHitTaken": null
+  },
+  {
+    "id": "body_frostmail",
+    "slot": "body",
+    "rarity": "super_rare",
+    "name": "Frostmail Armor",
+    "icon": "🧊",
+    "stats": { "pDef": 25, "mDef": 15, "maxHp": 50 },
+    "onHitTaken": { "type": "slow", "chance": 0.35, "duration": 4000 }
+  },
+  {
+    "id": "body_dragon_scale",
+    "slot": "body",
+    "rarity": "ultimate",
+    "name": "Dragon Scale Armor",
+    "icon": "🐉",
+    "stats": { "pDef": 40, "mDef": 40, "maxHp": 150 },
+    "onHitTaken": { "type": "burn", "chance": 0.40, "duration": 5000 }
+  },
+
+  // --- LEGS ---
+  {
+    "id": "legs_iron_greaves",
+    "slot": "legs",
+    "rarity": "uncommon",
+    "name": "Iron Greaves",
+    "icon": "👖",
+    "stats": { "pDef": 8, "spd": 2 },
+    "onHitTaken": null
+  },
+  {
+    "id": "legs_shadow_pants",
+    "slot": "legs",
+    "rarity": "super_rare",
+    "name": "Shadow Pantaloons",
+    "icon": "🥷",
+    "stats": { "pDef": 15, "evasion": 0.15, "spd": 8 },
+    "onHitTaken": { "type": "blind", "chance": 0.20, "duration": 2 }
+  },
+
+  // --- BOOTS ---
+  {
+    "id": "boots_traveler",
+    "slot": "boots",
+    "rarity": "common",
+    "name": "Traveler's Boots",
+    "icon": "🥾",
+    "stats": { "spd": 5, "evasion": 0.02 },
+    "onHitTaken": null
+  },
+  {
+    "id": "boots_hermes",
+    "slot": "boots",
+    "rarity": "ultimate",
+    "name": "Hermes Sandals",
+    "icon": "🪽",
+    "stats": { "spd": 25, "evasion": 0.20, "atkSpd": 0.10 },
+    "onHitTaken": { "type": "haste", "chance": 0.15, "duration": 3000 }
+  },
+
+  // --- LEFT HAND (Off-Hand) ---
+  {
+    "id": "left_wooden_shield",
+    "slot": "leftHand",
+    "rarity": "common",
+    "name": "Wooden Shield",
+    "icon": "🪵",
+    "stats": { "pDef": 5, "maxHp": 15 },
+    "onHitTaken": null
+  },
+  {
+    "id": "left_cursed_tome",
+    "slot": "leftHand",
+    "rarity": "rare",
+    "name": "Cursed Tome",
+    "icon": "📘",
+    "stats": { "mAtk": 20, "mDef": 10 },
+    "onHitTaken": { "type": "vulnerable", "chance": 0.25, "duration": 5000 }
+  },
+  {
+    "id": "left_aegis",
+    "slot": "leftHand",
+    "rarity": "ultimate",
+    "name": "Aegis Shield",
+    "icon": "🛡️",
+    "stats": { "pDef": 30, "mDef": 30, "maxHp": 200 },
+    "onHitTaken": { "type": "stun", "chance": 0.15, "duration": 2000 }
+  },
+
+  // --- RING ---
+  {
+    "id": "ring_copper",
+    "slot": "ring",
+    "rarity": "common",
+    "name": "Copper Ring",
+    "icon": "💍",
+    "stats": { "luck": 1 },
+    "onHitTaken": null
+  },
+  {
+    "id": "ring_berserker",
+    "slot": "ring",
+    "rarity": "super_rare",
+    "name": "Berserker's Band",
+    "icon": "🩸",
+    "stats": { "pAtk": 25, "atkSpd": 0.15, "crit": 0.10 },
+    "onHitTaken": { "type": "berserk", "chance": 0.10, "duration": 4000 }
+  },
+
+  // --- AMULET ---
+  {
+    "id": "amulet_glass",
+    "slot": "amulet",
+    "rarity": "uncommon",
+    "name": "Glass Pendant",
+    "icon": "🔮",
+    "stats": { "mAtk": 8, "mDef": 5 },
+    "onHitTaken": null
+  },
+  {
+    "id": "amulet_phoenix",
+    "slot": "amulet",
+    "rarity": "ultimate",
+    "name": "Phoenix Tear",
+    "icon": "🔥",
+    "stats": { "maxHp": 150, "luck": 5, "mDef": 25 },
+    "onHitTaken": { "type": "regen", "chance": 0.30, "duration": 5000 }
+  }
+]
