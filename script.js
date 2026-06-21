@@ -3,8 +3,8 @@ let gameSpeed = 1;
 
 let heroData = {};
 let enemiesData = {}; 
-let equipmentData = []; // Uses equipment.json
-let mutatorsData = []; // Uses mutators.json
+let equipmentData = []; 
+let mutatorsData = []; 
 let activeMutator = null;
 
 let player = {
@@ -12,7 +12,6 @@ let player = {
     gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
     talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
     heroSkillLevels: {},
-    // Updated equipment structure with Boots and LeftHand
     equipment: { head: null, body: null, legs: null, boots: null, weapon: null, leftHand: null, ring: null, amulet: null },
     inventory: [],
     attackProgress: 0, 
@@ -328,6 +327,7 @@ function generateRandomEquipment() {
     // --- DATA-DRIVEN EQUIPMENT INJECTION ---
     if (equipmentData && equipmentData.length > 0) {
         let validItems = equipmentData.filter(item => item.slot === slot);
+        
         if (validItems.length > 0) {
             let baseItem = validItems[Math.floor(Math.random() * validItems.length)];
             name = `${prefix} ${baseItem.name}`;
@@ -339,6 +339,8 @@ function generateRandomEquipment() {
             if (baseItem.stats) {
                 for (let key in baseItem.stats) { stats[key] = baseItem.stats[key]; }
             }
+        } else {
+            console.warn(`Engine Warning: No custom items found for slot "${slot}". Falling back to default.`);
         }
     }
 
@@ -1718,8 +1720,10 @@ async function initGame() {
             if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); }
         } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
 
+        // Smart Fetch: Tries equipment.json first, falls back to equipments.json
         try {
-            const equipResponse = await fetch('equipment.json');
+            let equipResponse = await fetch('equipment.json');
+            if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
             if (equipResponse.ok) { equipmentData = await equipResponse.json(); }
         } catch (err) { console.warn("Failed to fetch equipment:", err); }
 
