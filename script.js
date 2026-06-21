@@ -301,9 +301,32 @@ function unequipItem(slot) {
 }
 
 function generateRandomEquipment() {
+    // --- 100% STRICT DATA-DRIVEN ITEM GENERATION ---
+    if (equipmentData && equipmentData.length > 0) {
+        let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
+        
+        let statsCopy = {};
+        if (baseItem.stats) {
+            for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; }
+        }
+
+        return { 
+            name: baseItem.name, 
+            type: baseItem.slot, 
+            slot: baseItem.slot, 
+            icon: baseItem.icon, 
+            stats: statsCopy, 
+            onHit: baseItem.onHit || null, 
+            onHitTaken: baseItem.onHitTaken || null 
+        };
+    }
+
+    // --- EMERGENCY FALLBACK ---
+    console.warn("CRITICAL: equipment.json is empty or failed to load. Using fallback generator.");
+    
     const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
     const slot = slots[Math.floor(Math.random() * slots.length)];
-    const prefixes = ['Rusty', 'Iron', 'Steel', 'Mithril', 'Adamant', 'Divine'];
+    const prefixes = ['Rusty', 'Iron', 'Steel'];
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     
     const itemTypes = {
@@ -318,51 +341,19 @@ function generateRandomEquipment() {
     };
 
     const itemDef = itemTypes[slot];
-    let name = `${prefix} ${itemDef.name}`;
-    let iconToUse = itemDef.icon;
-    let stats = {};
-    let onHit = null;
-    let onHitTaken = null;
+    let fallbackStats = {};
+    let statName = itemDef.stats[0];
+    fallbackStats[statName] = 5;
 
-    // --- DATA-DRIVEN EQUIPMENT INJECTION ---
-    if (equipmentData && equipmentData.length > 0) {
-        let validItems = equipmentData.filter(item => item.slot === slot);
-        
-        if (validItems.length > 0) {
-            let baseItem = validItems[Math.floor(Math.random() * validItems.length)];
-            name = `${prefix} ${baseItem.name}`;
-            iconToUse = baseItem.icon;
-            
-            if (baseItem.onHit) onHit = baseItem.onHit;
-            if (baseItem.onHitTaken) onHitTaken = baseItem.onHitTaken;
-            
-            if (baseItem.stats) {
-                for (let key in baseItem.stats) { stats[key] = baseItem.stats[key]; }
-            }
-        } else {
-            console.warn(`Engine Warning: No custom items found for slot "${slot}". Falling back to default.`);
-        }
-    }
-
-    // Add extra random stats (Prefix Bonus)
-    let numStats = Math.floor(Math.random() * 3) + 1;
-    for(let i=0; i<numStats; i++) {
-        let statName = itemDef.stats[Math.floor(Math.random() * itemDef.stats.length)];
-        let val = 0;
-        if (statName === 'atkSpd') val = parseFloat((Math.random() * 0.2 + 0.05).toFixed(2));
-        else if (statName === 'crit' || statName === 'evasion') val = parseFloat((Math.random() * 0.1 + 0.02).toFixed(2));
-        else if (statName === 'maxHp') val = Math.floor(Math.random() * 50) + 10;
-        else if (statName === 'luck') val = Math.floor(Math.random() * 3) + 1;
-        else val = Math.floor(Math.random() * 10) + 2; 
-        
-        if(!stats[statName]) stats[statName] = val;
-        else stats[statName] += val;
-    }
-
-    if (stats.atkSpd) stats.atkSpd = parseFloat(stats.atkSpd.toFixed(2));
-    if (stats.crit) stats.crit = parseFloat(stats.crit.toFixed(2));
-
-    return { name: name, type: slot, slot: slot, icon: iconToUse, stats: stats, onHit: onHit, onHitTaken: onHitTaken };
+    return { 
+        name: `${prefix} ${itemDef.name}`, 
+        type: slot, 
+        slot: slot, 
+        icon: itemDef.icon, 
+        stats: fallbackStats, 
+        onHit: null, 
+        onHitTaken: null 
+    };
 }
 
 function updateGearStatsPanel() {
@@ -1720,7 +1711,6 @@ async function initGame() {
             if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); }
         } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
 
-        // Smart Fetch: Tries equipment.json first, falls back to equipments.json
         try {
             let equipResponse = await fetch('equipment.json');
             if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
