@@ -5,7 +5,7 @@
     "rarity": "common",
     "name": "Rusty Sword",
     "icon": "🗡️",
-    "stats": { "pAtk": 2, "atkSpd": 0.05 },
+    "stats": { "pAtk": 3, "atkSpd": 0.05 },
     "onHit": null,
     "onHitTaken": null
   },
@@ -15,24 +15,116 @@
     "rarity": "uncommon",
     "name": "Venom Dagger",
     "icon": "🔪",
-    "stats": { "pAtk": 5, "atkSpd": 0.20 },
-    "onHit": { "type": "poison", "chance": 0.20, "duration": 5000 },
+    "stats": { "pAtk": 5, "atkSpd": 0.20, "crit": 0.05 },
+    "onHit": { "type": "poison", "chance": 0.25, "duration": 5000 },
+    "onHitTaken": null
+  },
+  {
+    "id": "wep_bloodletter_axe",
+    "slot": "weapon",
+    "rarity": "rare",
+    "name": "Bloodletter Axe",
+    "icon": "🪓",
+    "stats": { "pAtk": 18, "atkSpd": -0.10, "crit": 0.10 },
+    "onHit": { "type": "bleed", "chance": 0.30, "duration": 4000 },
+    "onHitTaken": null
+  },
+  {
+    "id": "wep_stun_hammer",
+    "slot": "weapon",
+    "rarity": "rare",
+    "name": "War Hammer",
+    "icon": "🔨",
+    "stats": { "pAtk": 25, "atkSpd": -0.15 },
+    "onHit": { "type": "stun", "chance": 0.15, "duration": 2000 },
+    "onHitTaken": null
+  },
+  {
+    "id": "wep_plague_staff",
+    "slot": "weapon",
+    "rarity": "rare",
+    "name": "Plague Staff",
+    "icon": "🪄",
+    "stats": { "mAtk": 22, "pAtk": 2, "luck": 2 },
+    "onHit": { "type": "decay", "chance": 0.20, "duration": 6000 },
+    "onHitTaken": null
+  },
+  {
+    "id": "wep_void_blade",
+    "slot": "weapon",
+    "rarity": "ultimate",
+    "name": "Void Blade",
+    "icon": "🌌",
+    "stats": { "pAtk": 35, "mAtk": 35, "atkSpd": 0.15, "crit": 0.15 },
+    "onHit": { "type": "doom", "chance": 0.05, "duration": 8000 },
+    "onHitTaken": null
+  },
+
+  {
+    "id": "head_leather_cap",
+    "slot": "head",
+    "rarity": "common",
+    "name": "Leather Cap",
+    "icon": "🧢",
+    "stats": { "pDef": 3, "maxHp": 10 },
+    "onHit": null,
     "onHitTaken": null
   },
   {
     "id": "head_spiked_helm",
     "slot": "head",
-    "rarity": "rare",
+    "rarity": "uncommon",
     "name": "Spiked Helm",
     "icon": "🪖",
-    "stats": { "pDef": 12, "maxHp": 30 },
+    "stats": { "pDef": 8, "maxHp": 25 },
     "onHit": null,
     "onHitTaken": { "type": "bleed", "chance": 0.20, "duration": 4000 }
   },
   {
+    "id": "head_medusa_gaze",
+    "slot": "head",
+    "rarity": "rare",
+    "name": "Medusa's Visage",
+    "icon": "🐍",
+    "stats": { "pDef": 15, "mDef": 15 },
+    "onHit": null,
+    "onHitTaken": { "type": "stun", "chance": 0.10, "duration": 1500 }
+  },
+  {
+    "id": "head_cursed_crown",
+    "slot": "head",
+    "rarity": "ultimate",
+    "name": "Crown of the Mad King",
+    "icon": "👑",
+    "stats": { "pDef": 20, "mDef": 20, "maxHp": 100, "mAtk": 20 },
+    "onHit": null,
+    "onHitTaken": { "type": "vulnerable", "chance": 0.30, "duration": 5000 }
+  },
+
+  {
+    "id": "body_cloth_tunic",
+    "slot": "body",
+    "rarity": "common",
+    "name": "Cloth Tunic",
+    "icon": "👕",
+    "stats": { "pDef": 4, "mDef": 2 },
+    "onHit": null,
+    "onHitTaken": null
+  },
+  {
+    "id": "body_toxic_cloak",
+    "slot": "body",
+    "rarity": "uncommon",
+    "name": "Toxic Cloak",
+    "icon": "🧥",
+    "stats": { "pDef": 10, "evasion": 0.05 },
+    "onHit": null,
+    "onHitTaken": { "type": "poison", "chance": 0.25, "duration": 4000 }
+  },
+  {
     "id": "body_frostmail",
     "slot": "body",
-    "rarity": "super_rare",
+    "rarity": "rare",
     "name": "Frostmail Armor",
     "icon": "🧊",
     "stats": { "pDef": 25, "mDef": 15, "maxHp": 50 },
@@ -40,14 +132,87 @@
     "onHitTaken": { "type": "slow", "chance": 0.35, "duration": 4000 }
   },
   {
-    "id": "boots_hermes",
-    "slot": "boots",
+    "id": "body_dragon_scale",
+    "slot": "body",
     "rarity": "ultimate",
-    "name": "Hermes Sandals",
-    "icon": "🪽",
-    "stats": { "spd": 25, "evasion": 0.20, "atkSpd": 0.10 },
+    "name": "Dragon Scale Armor",
+    "icon": "🐉",
+    "stats": { "pDef": 45, "mDef": 35, "maxHp": 150 },
     "onHit": null,
-    "onHitTaken": { "type": "haste", "chance": 0.15, "duration": 3000 }
+    "onHitTaken": { "type": "burn", "chance": 0.40, "duration": 5000 }
+  },
+
+  {
+    "id": "legs_iron_greaves",
+    "slot": "legs",
+    "rarity": "common",
+    "name": "Iron Greaves",
+    "icon": "👖",
+    "stats": { "pDef": 6, "spd": 2 },
+    "onHit": null,
+    "onHitTaken": null
+  },
+  {
+    "id": "legs_shadow_pants",
+    "slot": "legs",
+    "rarity": "rare",
+    "name": "Shadow Pantaloons",
+    "icon": "🥷",
+    "stats": { "pDef": 12, "evasion": 0.15, "spd": 8 },
+    "onHit": null,
+    "onHitTaken": { "type": "blind", "chance": 0.20, "duration": 1 }
+  },
+
+  {
+    "id": "boots_traveler",
+    "slot": "boots",
+    "rarity": "common",
+    "name": "Traveler's Boots",
+    "icon": "🥾",
+    "stats": { "spd": 5, "evasion": 0.02 },
+    "onHit": null,
+    "onHitTaken": null
+  },
+  {
+    "id": "boots_static",
+    "slot": "boots",
+    "rarity": "uncommon",
+    "name": "Static Treads",
+    "icon": "⚡",
+    "stats": { "spd": 10, "evasion": 0.05 },
+    "onHit": null,
+    "onHitTaken": { "type": "stun", "chance": 0.10, "duration": 1000 }
+  },
+  {
+    "id": "boots_quagmire",
+    "slot": "boots",
+    "rarity": "rare",
+    "name": "Quagmire Stompers",
+    "icon": "🐸",
+    "stats": { "spd": 8, "maxHp": 40, "pDef": 10 },
+    "onHit": null,
+    "onHitTaken": { "type": "slow", "chance": 0.25, "duration": 3000 }
+  },
+
+  {
+    "id": "left_wooden_shield",
+    "slot": "leftHand",
+    "rarity": "common",
+    "name": "Wooden Shield",
+    "icon": "🪵",
+    "stats": { "pDef": 5, "maxHp": 15 },
+    "onHit": null,
+    "onHitTaken": null
+  },
+  {
+    "id": "left_defender_torch",
+    "slot": "leftHand",
+    "rarity": "uncommon",
+    "name": "Defender's Torch",
+    "icon": "🔥",
+    "stats": { "pDef": 8, "mAtk": 5 },
+    "onHit": null,
+    "onHitTaken": { "type": "burn", "chance": 0.25, "duration": 4000 }
   },
   {
     "id": "left_cursed_tome",
@@ -55,8 +220,80 @@
     "rarity": "rare",
     "name": "Cursed Tome",
     "icon": "📘",
-    "stats": { "mAtk": 20, "mDef": 10 },
+    "stats": { "mAtk": 25, "mDef": 10, "luck": -2 },
     "onHit": null,
-    "onHitTaken": { "type": "vulnerable", "chance": 0.25, "duration": 5000 }
+    "onHitTaken": { "type": "blind", "chance": 0.15, "duration": 1 }
+  },
+  {
+    "id": "left_aegis",
+    "slot": "leftHand",
+    "rarity": "ultimate",
+    "name": "Aegis Shield",
+    "icon": "🛡️",
+    "stats": { "pDef": 30, "mDef": 30, "maxHp": 200 },
+    "onHit": null,
+    "onHitTaken": { "type": "stun", "chance": 0.20, "duration": 2000 }
+  },
+
+  {
+    "id": "ring_copper",
+    "slot": "ring",
+    "rarity": "common",
+    "name": "Copper Ring",
+    "icon": "💍",
+    "stats": { "luck": 1 },
+    "onHit": null,
+    "onHitTaken": null
+  },
+  {
+    "id": "ring_viper",
+    "slot": "ring",
+    "rarity": "uncommon",
+    "name": "Viper Band",
+    "icon": "🐍",
+    "stats": { "pAtk": 5, "atkSpd": 0.05 },
+    "onHit": null,
+    "onHitTaken": { "type": "poison", "chance": 0.15, "duration": 3000 }
+  },
+  {
+    "id": "ring_nightmares",
+    "slot": "ring",
+    "rarity": "ultimate",
+    "name": "Ring of Nightmares",
+    "icon": "👁️‍🗨️",
+    "stats": { "mAtk": 20, "crit": 0.10, "luck": 3 },
+    "onHit": null,
+    "onHitTaken": { "type": "doom", "chance": 0.02, "duration": 10000 }
+  },
+
+  {
+    "id": "amulet_glass",
+    "slot": "amulet",
+    "rarity": "common",
+    "name": "Glass Pendant",
+    "icon": "🔮",
+    "stats": { "mAtk": 4, "mDef": 4 },
+    "onHit": null,
+    "onHitTaken": null
+  },
+  {
+    "id": "amulet_gorgon",
+    "slot": "amulet",
+    "rarity": "rare",
+    "name": "Amulet of the Gorgon",
+    "icon": "🪨",
+    "stats": { "pDef": 15, "mDef": 15 },
+    "onHit": null,
+    "onHitTaken": { "type": "slow", "chance": 0.30, "duration": 3000 }
+  },
+  {
+    "id": "amulet_void_eye",
+    "slot": "amulet",
+    "rarity": "ultimate",
+    "name": "Eye of the Void",
+    "icon": "🧿",
+    "stats": { "pAtk": 15, "mAtk": 15, "crit": 0.15 },
+    "onHit": null,
+    "onHitTaken": { "type": "marked", "chance": 0.25, "duration": 1 }
   }
 ]
