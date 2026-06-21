@@ -294,7 +294,8 @@ function generateRandomEquipment() {
         'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
         'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
         'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
-        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk'] },
+        'weapon': { name: 'Magic Wand', icon: '🪄', stats: ['mAtk'] },
         'shield': { name: 'Shield', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp'] },
         'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
         'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
