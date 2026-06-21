@@ -1,8 +1,12 @@
-// --- GAME DATA ---
+// --- GAME DATA & GLOBALS ---
 let gameSpeed = 1; 
 
 let heroData = {};
 let enemiesData = {}; 
+
+// --- NEW GLOBALS FOR MUTATORS ---
+let activeMutator = null;
+let mutatorsData = []; // Will be populated from mutators.json
 
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
@@ -37,6 +41,14 @@ let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', 
 
 let combatTickInterval;
 let isTestMode = false;
+
+// --- MUTATOR HELPER ---
+function getMutatorMod(key, defaultValue) {
+    if (activeMutator && activeMutator.modifiers && activeMutator.modifiers[key] !== undefined) {
+        return activeMutator.modifiers[key];
+    }
+    return defaultValue;
+}
 
 // --- NAVIGATION & GENERAL LOGIC ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
@@ -343,6 +355,11 @@ function toggleGameSpeed() {
 // --- HYBRID STATUS ENGINE ---
 
 function applyStatus(unit, type, value, isCharge = false) {
+    // --- MUTATOR: Nullify Field ---
+    if (getMutatorMod('nullifyStatuses', false)) {
+        return; 
+    }
+
     if (!unit.activeEffects) unit.activeEffects = [];
     let existing = unit.activeEffects.find(eff => eff.type === type);
     
@@ -413,15 +430,25 @@ function processTimeEffects(unit) {
         
         if (eff.duration !== undefined) {
             let oldSec = Math.ceil(eff.duration / 1000); 
-
             eff.duration -= (50 * gameSpeed);
-
             let newSec = Math.ceil(eff.duration / 1000); 
 
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
                 let maxH = unit.maxHealth || unit.maxHp;
+
+                // --- MUTATOR: Data-Driven DoT (Toxic Air) ---
+                let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
+                if (hpDmgPct > 0) {
+                    let mutatorDmg = Math.max(1, Math.floor(maxH * hpDmgPct));
+                    if (unit === player) {
+                        player.currentHealth -= mutatorDmg; updatePlayerHealthBar();
+                        if (player.currentHealth <= 0) triggerGameOver("Choked by Toxic Air");
+                    } else {
+                        unit.hp -= mutatorDmg; animateHit(unit.id, mutatorDmg, false);
+                    }
+                }
 
                 if (eff.type === 'poison') {
                     let dmg = Math.max(1, Math.floor(maxH * 0.05));
@@ -597,6 +624,11 @@ function getTotalDamage() {
     baseP = Math.floor(baseP * (1 + (player.talents.damage * 0.10)));
     baseM = Math.floor(baseM * (1 + (player.talents.damage * 0.10)));
     baseP += player.bonusDamage;
+
+    // Apply Mutator Multipliers
+    baseP = Math.floor(baseP * getMutatorMod('pAtkMult', 1.0));
+    baseM = Math.floor(baseM * getMutatorMod('mAtkMult', 1.0));
+
     return { pDmg: baseP, mDmg: baseM };
 }
 
@@ -683,9 +715,10 @@ function combatTick() {
 
     let stats = getPlayerStats();
     let actionQueue = []; 
+    let atbMult = getMutatorMod('atbSpeedMult', 1.0);
 
     if (!hasStatus(player, 'stun')) {
-        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
+        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5 * atbMult);
         if (player.attackProgress >= 100) {
             player.attackProgress = 100;
             actionQueue.push({ type: 'player', spd: stats.spd }); 
@@ -700,7 +733,7 @@ function combatTick() {
             if (hasStatus(e, 'haste')) eAtkSpd *= 1.5;
             if (hasStatus(e, 'slow')) eAtkSpd *= 0.5;
 
-            e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
+            e.attackProgress += (eAtkSpd * gameSpeed * 2.5 * atbMult);
             if (e.attackProgress >= 100) {
                 e.attackProgress = 100;
                 actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
@@ -769,6 +802,10 @@ function startTestBattle() {
 
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
+    let mutatorEl = document.getElementById('mutator-display');
+    if(mutatorEl) mutatorEl.style.display = 'none';
+    activeMutator = null;
+
     container.innerHTML = ''; activeEnemies = [];
 
     textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
@@ -865,9 +902,10 @@ const BIOMES = [
     { id: 'celestial', name: "Celestial Palace", levels: 5, bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash', normalEmojis: ['🕊️', '☁️', '⚡', '👁️', '✨', '🦅'] }
 ];
 
+// --- UPDATED LEVEL & WAVE CALCULATOR (10 WAVES PER LEVEL) ---
 function getLevelAndWave() {
-    let totalLevel = Math.floor((waveManager.wave - 1) / 15) + 1;
-    let stageWave = ((waveManager.wave - 1) % 15) + 1;
+    let totalLevel = Math.floor((waveManager.wave - 1) / 10) + 1;
+    let stageWave = ((waveManager.wave - 1) % 10) + 1;
 
     let biomeIndex = 0; let levelsAccumulated = 0;
     for (let i = 0; i < BIOMES.length; i++) {
@@ -878,18 +916,64 @@ function getLevelAndWave() {
 
     let biome = BIOMES[biomeIndex];
     let levelInBiome = totalLevel - levelsAccumulated;
-    let isGenericBoss = stageWave === 15;
+    
+    let isGenericBoss = stageWave === 10;
     let isBiomeBoss = isGenericBoss && (totalLevel === levelsAccumulated + biome.levels);
+    let isMiniBoss = stageWave === 5;
 
-    return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
+    return { totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss, isMiniBoss, biome };
+}
+
+// --- HELPER RENDERING FUNCTIONS ---
+function renderBossUI(id, name, emoji, hp, bSkill) {
+    let container = document.getElementById('enemy-container');
+    container.innerHTML += `
+        <div class="enemy-unit boss" id="enemy-${id}">
+            <div class="emoji" style="font-size: 4rem;">${emoji}</div>
+            <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${name}</div>
+            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div>
+            <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
+            <div class="mini-hp-text" id="enemy-hp-text-${id}">${hp}/${hp}</div>
+            <div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
+            ${bSkill ? `<div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>` : ''}
+        </div>`;
+}
+
+function renderNormalEnemyUI(id, enemyData, emoji, isElite) {
+    let container = document.getElementById('enemy-container');
+    let eliteClass = isElite ? 'elite' : '';
+    container.innerHTML += `
+        <div class="enemy-unit ${eliteClass}" id="enemy-${id}">
+            <div class="emoji">${emoji}</div>
+            <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${enemyData.name}</div>
+            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div>
+            <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
+            <div class="mini-hp-text" id="enemy-hp-text-${id}">${enemyData.hp}/${enemyData.hp}</div>
+            <div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
+        </div>`;
 }
 
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
+    let mutatorEl = document.getElementById('mutator-display'); // Make sure this div exists in index.html!
+    
     container.innerHTML = ''; activeEnemies = [];
+    activeMutator = null; 
+    if(mutatorEl) mutatorEl.style.display = 'none';
 
     let stageInfo = getLevelAndWave();
+    let biomeEnemies = enemiesData[stageInfo.biome.id] || [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
+
+    // --- MUTATOR LOGIC ---
+    // 25% chance for a Mutator on Waves 6, 7, 8, 9
+    if (stageInfo.wave >= 6 && stageInfo.wave <= 9 && Math.random() < 0.25 && mutatorsData && mutatorsData.length > 0) {
+        activeMutator = mutatorsData[Math.floor(Math.random() * mutatorsData.length)];
+        if(mutatorEl) {
+            mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`;
+            mutatorEl.style.display = 'block';
+        }
+    }
 
     if (stageInfo.isBiomeBoss) {
         let bossHp = Math.floor((300 + (waveManager.wave * 35)) * runStats.enemyHpMultiplier);
@@ -906,31 +990,11 @@ function spawnEnemyPack() {
         }
 
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS ⚠️</span>`;
-        let html = `
-            <div class="enemy-unit boss" id="enemy-0">
-                <div class="emoji" style="font-size: 4rem;">${stageInfo.biome.bossEmoji}</div>
-                <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${stageInfo.biome.bossName}</div>
-                <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
-                <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
-                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
-            </div>`;
+        renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
 
         if (stageInfo.biome.skill === 'leviathan_spawns') {
-            for(let i=1; i<=4; i++) {
-                html += `
-                <div class="enemy-unit elite" id="enemy-${i}">
-                    <div class="emoji">🦑</div>
-                    <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">Leviathan Spawn</div>
-                    <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
-                    <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                    <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
-                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                </div>`;
-            }
+            for(let i=1; i<=4; i++) { renderNormalEnemyUI(i, activeEnemies[i], '🦑', true); }
         }
-        container.innerHTML = html;
 
     } else if (stageInfo.isBoss) {
         let bossHp = Math.floor((150 + (waveManager.wave * 25)) * runStats.enemyHpMultiplier);
@@ -938,51 +1002,77 @@ function spawnEnemyPack() {
         let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
 
         activeEnemies.push({ id: 0, name: "Level Boss", maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Floor 10 ⚠️</span>`;
+        renderBossUI(0, "Level Boss", waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)], bossHp, bSkill);
 
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
-        container.innerHTML = `
-            <div class="enemy-unit boss" id="enemy-0">
-                <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
-                <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Level Boss</div>
-                <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
-                <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
-                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
-            </div>`;
-    } else {
-        let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
-        let biomeEnemies = enemiesData[stageInfo.biome.id];
+    } else if (stageInfo.isMiniBoss) {
+        // --- MINI-BOSS LOGIC (Floor 5) ---
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ MINI-BOSS Floor 5 ⚔️</span>`;
         
-        if (!biomeEnemies || biomeEnemies.length === 0) {
-            biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
+        let strongestTemplate = [...biomeEnemies].sort((a, b) => b.baseHp - a.baseHp)[0];
+        let mbHp = Math.floor((strongestTemplate.baseHp + (waveManager.wave * 15)) * runStats.enemyHpMultiplier * 2.5); 
+        let mbDmg = Math.max(1, Math.floor(strongestTemplate.baseDmg + (waveManager.wave * 0.8)) * 1.5); 
+        
+        activeEnemies.push({ id: 0, name: `Elite ${strongestTemplate.name}`, maxHp: mbHp, hp: mbHp, damage: mbDmg, skill: strongestTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: true });
+        renderNormalEnemyUI(0, activeEnemies[0], strongestTemplate.emoji, true);
+
+        let minionTemplate = [...biomeEnemies].sort((a, b) => a.baseHp - b.baseHp)[0];
+        for(let i=1; i<=2; i++) {
+            let mHp = Math.floor((minionTemplate.baseHp + (waveManager.wave * 10)) * runStats.enemyHpMultiplier);
+            let mDmg = Math.max(1, Math.floor(minionTemplate.baseDmg + (waveManager.wave * 0.5)));
+            activeEnemies.push({ id: i, name: minionTemplate.name, maxHp: mHp, hp: mHp, damage: mDmg, skill: minionTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: false });
+            renderNormalEnemyUI(i, activeEnemies[i], minionTemplate.emoji, false);
         }
 
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
+    } else {
+        // --- NORMAL WAVES WITH TIERING & FORMATIONS ---
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Level ${stageInfo.level} - Floor ${stageInfo.wave}`;
 
-        for(let i = 0; i < enemyCount; i++) {
-            let isElite = Math.random() < 0.20;
-            let enemyTemplate = biomeEnemies[Math.floor(Math.random() * biomeEnemies.length)];
-            
-            let normHp = Math.floor((enemyTemplate.baseHp + (waveManager.wave * 15)) * runStats.enemyHpMultiplier);
-            let normDmg = Math.max(1, Math.floor(enemyTemplate.baseDmg + (waveManager.wave * 0.8)));
+        let waveProgress = stageInfo.wave / 10;
+        let poolSize = Math.max(2, Math.ceil(biomeEnemies.length * (waveProgress + 0.3))); 
+        if (poolSize > biomeEnemies.length) poolSize = biomeEnemies.length;
+        let availableEnemies = biomeEnemies.slice(0, poolSize);
+
+        let baseCount = Math.floor(stageInfo.wave / 3) + 2; 
+        let variance = Math.floor(Math.random() * 3) - 1; 
+        let enemyCount = Math.min(5, Math.max(1, baseCount + variance));
+
+        let sortedByHp = [...availableEnemies].sort((a, b) => b.baseHp - a.baseHp);
+        let tankT = sortedByHp[0];
+        let squishyT = sortedByHp[sortedByHp.length - 1];
+        let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
+        
+        let formationRoll = Math.random();
+        let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
+        let formationType = formationRoll < 0.2 ? 'wall' : (formationRoll < 0.4 ? 'ambush' : 'coven');
+
+        let spawnList = [];
+
+        if (useFormation) {
+            if (formationType === 'wall') { spawnList = [tankT, tankT, squishyT]; } 
+            else if (formationType === 'ambush') { spawnList = [squishyT, squishyT, squishyT, squishyT]; } 
+            else if (formationType === 'coven') { spawnList = [tankT, magicT, magicT]; }
+        } else {
+            for(let i=0; i<enemyCount; i++) {
+                spawnList.push(availableEnemies[Math.floor(Math.random() * availableEnemies.length)]);
+            }
+        }
+
+        for(let i = 0; i < spawnList.length; i++) {
+            let eTemp = spawnList[i];
+            let dynamicEliteChance = 0.05 + (0.25 * (stageInfo.wave / 10));
+            let isElite = Math.random() < dynamicEliteChance;
+            if (stageInfo.wave >= 8 && i === 0 && !useFormation) isElite = true; 
+
+            let normHp = Math.floor((eTemp.baseHp + (waveManager.wave * 15)) * runStats.enemyHpMultiplier);
+            let normDmg = Math.max(1, Math.floor(eTemp.baseDmg + (waveManager.wave * 0.8)));
             
             let finalHp = isElite ? normHp * 2 : normHp;
             let finalDmg = isElite ? normDmg * 2 : normDmg;
-            let eliteClass = isElite ? 'elite' : '';
-            let eName = (isElite ? 'Elite ' : '') + enemyTemplate.name; 
+            let eName = (isElite ? 'Elite ' : '') + eTemp.name; 
 
-            activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite });
-            
-            container.innerHTML += `
-                <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
-                    <div class="emoji">${enemyTemplate.emoji}</div>
-                    <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${eName}</div>
-                    <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
-                    <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                    <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
-                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                </div>`;
+            activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: eTemp.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite });
+            renderNormalEnemyUI(i, activeEnemies[i], eTemp.emoji, isElite);
         }
     }
     
@@ -1124,6 +1214,11 @@ function executePlayerAttack() {
             let pDmg = Math.max(1, damages.pDmg - eDefP);
             let mDmg = Math.max(0, damages.mDmg - eDefM);
 
+            // --- MUTATOR: Nullify Field ---
+            if (getMutatorMod('nullifyMagic', false)) {
+                mDmg = 0; 
+            }
+
             if (target.skill === 'high_armor' || target.skill === 'armor') {
                 pDmg = Math.floor(pDmg * 0.1); 
             }
@@ -1259,6 +1354,12 @@ function executeEnemyAttack(e) {
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
+
+        // --- MUTATOR: Nullify Field ---
+        if (getMutatorMod('nullifyMagic', false)) {
+            spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
+            return; 
+        }
     } else {
         incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
@@ -1553,6 +1654,18 @@ async function initGame() {
 
         const enemiesResponse = await fetch('enemies.json');
         enemiesData = await enemiesResponse.json();
+
+        // --- NEW: FETCH MUTATORS ---
+        try {
+            const mutatorsResponse = await fetch('mutators.json');
+            if (mutatorsResponse.ok) {
+                mutatorsData = await mutatorsResponse.json();
+            } else {
+                console.warn("mutators.json not found. Proceeding without mutators.");
+            }
+        } catch (mErr) {
+            console.warn("Failed to fetch mutators:", mErr);
+        }
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
