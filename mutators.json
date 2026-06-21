@@ -1,0 +1,40 @@
+[
+  {
+    "id": "toxic",
+    "name": "Toxic Air",
+    "desc": "Everyone loses 1% Max HP per second",
+    "icon": "☣️",
+    "modifiers": {
+      "hpDmgPerSec": 0.01
+    }
+  },
+  {
+    "id": "leyline",
+    "name": "Leyline Surge",
+    "desc": "Magic DMG x2, Phys DMG halved",
+    "icon": "✨",
+    "modifiers": {
+      "mAtkMult": 2.0,
+      "pAtkMult": 0.5
+    }
+  },
+  {
+    "id": "sluggish",
+    "name": "Sluggish",
+    "desc": "ATB fills 50% slower for all",
+    "icon": "🐢",
+    "modifiers": {
+      "atbSpeedMult": 0.5
+    }
+  },
+  {
+    "id": "nullify",
+    "name": "Nullify Field",
+    "desc": "Magic DMG is reduced to 0, no statuses apply.",
+    "icon": "🚫",
+    "modifiers": {
+      "nullifyMagic": true,
+      "nullifyStatuses": true
+    }
+  }
+]
