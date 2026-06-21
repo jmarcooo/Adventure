@@ -3,17 +3,17 @@ let gameSpeed = 1;
 
 let heroData = {};
 let enemiesData = {}; 
-
-// --- NEW GLOBALS FOR MUTATORS ---
+let equipmentData = []; // Uses equipment.json
+let mutatorsData = []; // Uses mutators.json
 let activeMutator = null;
-let mutatorsData = []; // Will be populated from mutators.json
 
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
     gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
     talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
     heroSkillLevels: {},
-    equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
+    // Updated equipment structure with Boots and LeftHand
+    equipment: { head: null, body: null, legs: null, boots: null, weapon: null, leftHand: null, ring: null, amulet: null },
     inventory: [],
     attackProgress: 0, 
     activeEffects: [] 
@@ -206,7 +206,7 @@ function upgradeTalent(type) {
 }
 
 function renderGearMenu() {
-    let slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
+    let slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
     slots.forEach(slot => {
         let el = document.getElementById(`slot-${slot}`);
         if (el) {
@@ -259,6 +259,22 @@ function showGearModal(item, source, key) {
         }
     }
 
+    if (item.onHit) {
+        statsDiv.innerHTML += `
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
+        <div style="display: flex; justify-content: space-between; color: #e74c3c;">
+            <span>On Hit:</span><span><b>${Math.round(item.onHit.chance * 100)}%</b> chance to <b>${item.onHit.type.toUpperCase()}</b></span>
+        </div>`;
+    }
+
+    if (item.onHitTaken) {
+        statsDiv.innerHTML += `
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
+        <div style="display: flex; justify-content: space-between; color: #3498db;">
+            <span>When Hit:</span><span><b>${Math.round(item.onHitTaken.chance * 100)}%</b> chance to <b>${item.onHitTaken.type.toUpperCase()}</b> attacker</span>
+        </div>`;
+    }
+
     let actionBtn = document.getElementById('gear-modal-action-btn');
     if (source === 'inventory') {
         actionBtn.innerText = 'EQUIP';
@@ -286,25 +302,47 @@ function unequipItem(slot) {
 }
 
 function generateRandomEquipment() {
-    const slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
+    const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
     const slot = slots[Math.floor(Math.random() * slots.length)];
     const prefixes = ['Rusty', 'Iron', 'Steel', 'Mithril', 'Adamant', 'Divine'];
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    
     const itemTypes = {
         'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
         'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
         'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
-        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk'] },
-        'weapon': { name: 'Magic Wand', icon: '🪄', stats: ['mAtk'] },
-        'shield': { name: 'Shield', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp'] },
+        'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] },
+        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+        'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] },
         'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
         'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
     };
 
     const itemDef = itemTypes[slot];
-    const name = `${prefix} ${itemDef.name}`;
-
+    let name = `${prefix} ${itemDef.name}`;
+    let iconToUse = itemDef.icon;
     let stats = {};
+    let onHit = null;
+    let onHitTaken = null;
+
+    // --- DATA-DRIVEN EQUIPMENT INJECTION ---
+    if (equipmentData && equipmentData.length > 0) {
+        let validItems = equipmentData.filter(item => item.slot === slot);
+        if (validItems.length > 0) {
+            let baseItem = validItems[Math.floor(Math.random() * validItems.length)];
+            name = `${prefix} ${baseItem.name}`;
+            iconToUse = baseItem.icon;
+            
+            if (baseItem.onHit) onHit = baseItem.onHit;
+            if (baseItem.onHitTaken) onHitTaken = baseItem.onHitTaken;
+            
+            if (baseItem.stats) {
+                for (let key in baseItem.stats) { stats[key] = baseItem.stats[key]; }
+            }
+        }
+    }
+
+    // Add extra random stats (Prefix Bonus)
     let numStats = Math.floor(Math.random() * 3) + 1;
     for(let i=0; i<numStats; i++) {
         let statName = itemDef.stats[Math.floor(Math.random() * itemDef.stats.length)];
@@ -314,10 +352,15 @@ function generateRandomEquipment() {
         else if (statName === 'maxHp') val = Math.floor(Math.random() * 50) + 10;
         else if (statName === 'luck') val = Math.floor(Math.random() * 3) + 1;
         else val = Math.floor(Math.random() * 10) + 2; 
+        
         if(!stats[statName]) stats[statName] = val;
         else stats[statName] += val;
     }
-    return { name: name, type: slot, slot: slot, icon: itemDef.icon, stats: stats };
+
+    if (stats.atkSpd) stats.atkSpd = parseFloat(stats.atkSpd.toFixed(2));
+    if (stats.crit) stats.crit = parseFloat(stats.crit.toFixed(2));
+
+    return { name: name, type: slot, slot: slot, icon: iconToUse, stats: stats, onHit: onHit, onHitTaken: onHitTaken };
 }
 
 function updateGearStatsPanel() {
@@ -344,7 +387,11 @@ function buyPremium(item) {
     if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
     else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
     else if (item === 'chest' && player.gems >= 20) {
-        player.gems -= 20; let newGear = generateRandomEquipment(); player.inventory.push(newGear); updateUI(); showNotification(`You got a ${newGear.name}!`);
+        player.gems -= 20; 
+        let newGear = generateRandomEquipment(); 
+        player.inventory.push(newGear); 
+        updateUI(); 
+        showNotification(`You got a ${newGear.name}!`);
     } else { showNotification("Not enough Gems!"); }
 }
 
@@ -356,7 +403,6 @@ function toggleGameSpeed() {
 // --- HYBRID STATUS ENGINE ---
 
 function applyStatus(unit, type, value, isCharge = false) {
-    // --- MUTATOR: Nullify Field ---
     if (getMutatorMod('nullifyStatuses', false)) {
         return; 
     }
@@ -393,7 +439,6 @@ function consumeCharge(unit, type) {
     return false;
 }
 
-// --- UNIVERSAL HEALING HELPER ---
 function applyHeal(unit, amount) {
     if (hasStatus(unit, 'decay')) {
         if (unit === player) {
@@ -439,7 +484,6 @@ function processTimeEffects(unit) {
                 eff.tickTimer = 0;
                 let maxH = unit.maxHealth || unit.maxHp;
 
-                // --- MUTATOR: Data-Driven DoT (Toxic Air) ---
                 let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
                 if (hpDmgPct > 0) {
                     let mutatorDmg = Math.max(1, Math.floor(maxH * hpDmgPct));
@@ -626,7 +670,6 @@ function getTotalDamage() {
     baseM = Math.floor(baseM * (1 + (player.talents.damage * 0.10)));
     baseP += player.bonusDamage;
 
-    // Apply Mutator Multipliers
     baseP = Math.floor(baseP * getMutatorMod('pAtkMult', 1.0));
     baseM = Math.floor(baseM * getMutatorMod('mAtkMult', 1.0));
 
@@ -903,7 +946,6 @@ const BIOMES = [
     { id: 'celestial', name: "Celestial Palace", levels: 5, bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash', normalEmojis: ['🕊️', '☁️', '⚡', '👁️', '✨', '🦅'] }
 ];
 
-// --- UPDATED LEVEL & WAVE CALCULATOR (10 WAVES PER LEVEL) ---
 function getLevelAndWave() {
     let totalLevel = Math.floor((waveManager.wave - 1) / 10) + 1;
     let stageWave = ((waveManager.wave - 1) % 10) + 1;
@@ -925,7 +967,6 @@ function getLevelAndWave() {
     return { totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss, isMiniBoss, biome };
 }
 
-// --- HELPER RENDERING FUNCTIONS ---
 function renderBossUI(id, name, emoji, hp, bSkill) {
     let container = document.getElementById('enemy-container');
     container.innerHTML += `
@@ -957,7 +998,7 @@ function renderNormalEnemyUI(id, enemyData, emoji, isElite) {
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
-    let mutatorEl = document.getElementById('mutator-display'); // Make sure this div exists in index.html!
+    let mutatorEl = document.getElementById('mutator-display'); 
     
     container.innerHTML = ''; activeEnemies = [];
     activeMutator = null; 
@@ -966,9 +1007,7 @@ function spawnEnemyPack() {
     let stageInfo = getLevelAndWave();
     let biomeEnemies = enemiesData[stageInfo.biome.id] || [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
 
-    // --- MUTATOR LOGIC ---
-    // 25% chance for a Mutator on Waves 6, 7, 8, 9
-    if (stageInfo.wave >= 0 && stageInfo.wave <= 9 && Math.random() < 1 && mutatorsData && mutatorsData.length > 0) {
+    if (stageInfo.wave >= 6 && stageInfo.wave <= 9 && Math.random() < 0.25 && mutatorsData && mutatorsData.length > 0) {
         activeMutator = mutatorsData[Math.floor(Math.random() * mutatorsData.length)];
         if(mutatorEl) {
             mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`;
@@ -1007,7 +1046,6 @@ function spawnEnemyPack() {
         renderBossUI(0, "Level Boss", waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)], bossHp, bSkill);
 
     } else if (stageInfo.isMiniBoss) {
-        // --- MINI-BOSS LOGIC (Floor 5) ---
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ MINI-BOSS Floor 5 ⚔️</span>`;
         
         let strongestTemplate = [...biomeEnemies].sort((a, b) => b.baseHp - a.baseHp)[0];
@@ -1026,7 +1064,6 @@ function spawnEnemyPack() {
         }
 
     } else {
-        // --- NORMAL WAVES WITH TIERING & FORMATIONS ---
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Level ${stageInfo.level} - Floor ${stageInfo.wave}`;
 
         let waveProgress = stageInfo.wave / 10;
@@ -1215,7 +1252,6 @@ function executePlayerAttack() {
             let pDmg = Math.max(1, damages.pDmg - eDefP);
             let mDmg = Math.max(0, damages.mDmg - eDefM);
 
-            // --- MUTATOR: Nullify Field ---
             if (getMutatorMod('nullifyMagic', false)) {
                 mDmg = 0; 
             }
@@ -1259,6 +1295,15 @@ function executePlayerAttack() {
             } else {
                 target.hp -= dmg;
                 animateHit(target.id, dmg, isCrit);
+
+                // --- WEAPON ON-HIT TRIGGER ---
+                if (player.equipment && player.equipment.weapon && player.equipment.weapon.onHit) {
+                    let hitEff = player.equipment.weapon.onHit;
+                    if (Math.random() < hitEff.chance) {
+                        applyStatus(target, hitEff.type, hitEff.duration);
+                        spawnFloatingText(`enemy-${target.id}`, `${hitEff.type.toUpperCase()}!`, "float-enemy-dmg");
+                    }
+                }
 
                 if (hasStatus(target, 'thorns') && dmg > 0) {
                     let tDmg = Math.floor(dmg * 0.2);
@@ -1355,8 +1400,6 @@ function executeEnemyAttack(e) {
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
-
-        // --- MUTATOR: Nullify Field ---
         if (getMutatorMod('nullifyMagic', false)) {
             spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
             return; 
@@ -1379,6 +1422,20 @@ function executeEnemyAttack(e) {
     player.currentHealth -= incomingDmg;
     updatePlayerHealthBar();
     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
+
+    // --- ON-HIT-TAKEN LOGIC (Defensive Procs) ---
+    if (incomingDmg > 0) {
+        for (let slotKey in player.equipment) {
+            let equippedItem = player.equipment[slotKey];
+            if (equippedItem && equippedItem.onHitTaken) {
+                let proc = equippedItem.onHitTaken;
+                if (Math.random() < proc.chance) {
+                    applyStatus(e, proc.type, proc.duration, proc.type === 'blind'); 
+                    spawnFloatingText(`enemy-${e.id}`, `${proc.type.toUpperCase()}!`, "float-enemy-dmg");
+                }
+            }
+        }
+    }
 
     if (hasStatus(player, 'thorns') && incomingDmg > 0) {
         let tDmg = Math.floor(incomingDmg * 0.2);
@@ -1656,17 +1713,15 @@ async function initGame() {
         const enemiesResponse = await fetch('enemies.json');
         enemiesData = await enemiesResponse.json();
 
-        // --- NEW: FETCH MUTATORS ---
         try {
             const mutatorsResponse = await fetch('mutators.json');
-            if (mutatorsResponse.ok) {
-                mutatorsData = await mutatorsResponse.json();
-            } else {
-                console.warn("mutators.json not found. Proceeding without mutators.");
-            }
-        } catch (mErr) {
-            console.warn("Failed to fetch mutators:", mErr);
-        }
+            if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); }
+        } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
+
+        try {
+            const equipResponse = await fetch('equipment.json');
+            if (equipResponse.ok) { equipmentData = await equipResponse.json(); }
+        } catch (err) { console.warn("Failed to fetch equipment:", err); }
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
