@@ -39,6 +39,7 @@ let activeEnemies = [];
 let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 
 let combatTickInterval;
+let mutatorTickTimer = 0; // --- NEW: Independent mutator timer ---
 let isTestMode = false;
 
 // --- MUTATOR HELPER ---
@@ -475,17 +476,6 @@ function processTimeEffects(unit) {
                 eff.tickTimer = 0;
                 let maxH = unit.maxHealth || unit.maxHp;
 
-                let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
-                if (hpDmgPct > 0) {
-                    let mutatorDmg = Math.max(1, Math.floor(maxH * hpDmgPct));
-                    if (unit === player) {
-                        player.currentHealth -= mutatorDmg; updatePlayerHealthBar();
-                        if (player.currentHealth <= 0) triggerGameOver("Choked by Toxic Air");
-                    } else {
-                        unit.hp -= mutatorDmg; animateHit(unit.id, mutatorDmg, false);
-                    }
-                }
-
                 if (eff.type === 'poison') {
                     let dmg = Math.max(1, Math.floor(maxH * 0.05));
                     if (unit === player) {
@@ -763,6 +753,25 @@ function startCombatLoop() {
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
+    // --- NEW: Independent Global Mutator Field Timer ---
+    mutatorTickTimer += (50 * gameSpeed);
+    if (mutatorTickTimer >= 1000) {
+        mutatorTickTimer = 0;
+        let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
+        if (hpDmgPct > 0) {
+            let pDmg = Math.max(1, Math.floor(player.maxHealth * hpDmgPct));
+            player.currentHealth -= pDmg; updatePlayerHealthBar();
+            spawnFloatingText('player-combat-area', "TOXIC -" + pDmg, "float-enemy-dmg");
+            
+            activeEnemies.filter(e => e.hp > 0 && !e.isDead).forEach(e => {
+                let eDmg = Math.max(1, Math.floor(e.maxHp * hpDmgPct));
+                e.hp -= eDmg; animateHit(e.id, eDmg, false);
+            });
+
+            if (player.currentHealth <= 0) { triggerGameOver("Choked by Toxic Air"); return; }
+        }
+    }
+
     processTimeEffects(player);
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => processTimeEffects(e));
@@ -892,6 +901,7 @@ function startTestBattle() {
 
     renderStatusEffects(); 
     playBattleStartAnimation();
+    mutatorTickTimer = 0; // Reset field timer
 
     setTimeout(() => { 
         waveManager.isUpgrading = false; 
@@ -1014,6 +1024,7 @@ function spawnEnemyPack() {
     
     container.innerHTML = ''; activeEnemies = [];
     activeMutator = null; 
+    mutatorTickTimer = 0; // Reset field timer
     if(mutatorEl) mutatorEl.style.display = 'none';
 
     let stageInfo = getLevelAndWave();
@@ -1195,7 +1206,7 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 
-    // --- THE FIX: ALWAYS CHECK IF WAVE IS CLEARED WHEN ANY ENEMY DIES ---
+    // THE FIX: ALWAYS CHECK IF WAVE IS CLEARED
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
         setTimeout(() => packDefeated(), 400);
     }
@@ -1228,7 +1239,7 @@ function animateHit(unitId, damageDealt, isCrit) {
 function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     
-    // --- FAILSAFE: If ATB triggers but enemies died to poison ---
+    // FAILSAFE: If ATB triggers but enemies died to poison
     if(aliveEnemies.length === 0) { 
         if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
             packDefeated(); 
@@ -1258,7 +1269,7 @@ function executePlayerAttack() {
 
     for (let s = 0; s < strikes; s++) {
         setTimeout(() => {
-            let target = activeEnemies.find(e => e.hp > 0);
+            let target = activeEnemies.find(e => e.hp > 0 && !e.isDead);
             if (!target) return;
 
             let damages = getTotalDamage();
@@ -1320,7 +1331,6 @@ function executePlayerAttack() {
                 target.hp -= dmg;
                 animateHit(target.id, dmg, isCrit);
 
-                // --- WEAPON ON-HIT TRIGGER ---
                 if (player.equipment && player.equipment.weapon && player.equipment.weapon.onHit) {
                     let hitEff = player.equipment.weapon.onHit;
                     if (Math.random() < hitEff.chance) {
@@ -1372,8 +1382,6 @@ function executePlayerAttack() {
             }
         }, s * 150);
     }
-
-    setTimeout(() => { if (activeEnemies.every(e => e.hp <= 0)) packDefeated(); }, 400);
 }
 
 function executeEnemyAttack(e) {
@@ -1447,7 +1455,6 @@ function executeEnemyAttack(e) {
     updatePlayerHealthBar();
     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
-    // --- ON-HIT-TAKEN LOGIC (Defensive Procs) ---
     if (incomingDmg > 0) {
         for (let slotKey in player.equipment) {
             let equippedItem = player.equipment[slotKey];
