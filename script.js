@@ -39,7 +39,7 @@ let viewingHero = null; let activeEnemies = [];
 let waveManager = { wave: 1, isUpgrading: false, transitioning: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 let combatTickInterval; let mutatorTickTimer = 0; let isTestMode = false;
 
-// --- FALLBACK BIOMES (Ensures biomes exist even if JSON fails) ---
+// --- FALLBACK BIOMES ---
 const FALLBACK_BIOMES = [
     { id: 'forest', name: 'Forest', bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', background: '' },
     { id: 'cave', name: 'Cave', bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', background: '' },
@@ -144,7 +144,6 @@ function updateUI() {
     }
 }
 
-// --- TALENT LOGIC (Gold Based & Per-Hero) ---
 function renderTalentsMenu() {
     let container = document.getElementById('talents-list-container');
     if (!heroData[player.currentHero] || !player.heroStats[player.currentHero]) return;
@@ -192,7 +191,6 @@ function checkSecretCheat() {
     else { secretGemClickTimer = setTimeout(() => { secretGemClickCount = 0; }, 1000); }
 }
 
-// --- RENDERING MENUS ---
 function renderHeroSelection() {
     let listView = document.getElementById('heroes-list-view'); let detailsView = document.getElementById('hero-details-view');
     if (!viewingHero) { listView.style.display = 'block'; detailsView.style.display = 'none'; renderHeroList(); } 
@@ -487,8 +485,6 @@ function debugApply(type, targetStr) {
     updateCombatStatsPanel();
 }
 
-// --- COMBAT CORE & MATH ENGINE ---
-
 function updateCombatStatsPanel() {
     let panel = document.getElementById('combat-stats-panel');
     let stats = getPlayerStats(); let d = getTotalDamage();
@@ -535,7 +531,6 @@ function spawnLootDrop(targetId, type) {
     targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
-// --- ATB LOOP ENGINE ---
 function startCombatLoop() {
     clearInterval(combatTickInterval); combatTickInterval = setInterval(combatTick, 50); 
 }
@@ -598,6 +593,7 @@ function startTestBattle() {
     if (!heroData || Object.keys(heroData).length === 0) { alert("ERROR: Game data failed to load."); return; }
     isTestMode = true; player.activeEffects = []; 
     
+    // STRICT RESET FOR TEST BATTLE
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
         pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0, critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0,
@@ -647,6 +643,7 @@ function startGame() {
     if (!heroData || Object.keys(heroData).length === 0) { alert("ERROR: Game data failed to load."); return; }
     isTestMode = false; document.getElementById('debug-panel').style.display = 'none'; player.activeEffects = [];
 
+    // --- STRICT RESET FOR ACTUAL RUN ---
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
         pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0, critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0,
@@ -660,7 +657,8 @@ function startGame() {
         let innate = heroData[player.currentHero].innate; for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
     
-    waveManager.wave = 1; player.currentHealth = getMaxHealth();
+    waveManager.wave = 1; 
+    player.currentHealth = getMaxHealth();
 
     document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
     waveManager.isUpgrading = true; 
@@ -668,21 +666,17 @@ function startGame() {
     setTimeout(() => { waveManager.isUpgrading = false; startCombatLoop(); }, 1500); 
 }
 
-// --- BUG FIX: THE 15 WAVE BIOME LOGIC ---
 function getLevelAndWave() {
-    // Math logic fixed: Exactly 15 waves per Biome chunk.
     let totalLevel = Math.floor((waveManager.wave - 1) / 15) + 1;
     let stageWave = ((waveManager.wave - 1) % 15) + 1;
 
     let bData = (biomesData && biomesData.length > 0) ? biomesData : FALLBACK_BIOMES;
 
-    // We simply cycle through the array based on totalLevel. 
-    // Level 1 = Forest, Level 2 = Cave, etc. 
     let biomeIndex = (totalLevel - 1) % bData.length;
     let biome = bData[biomeIndex];
     
     let isGenericBoss = stageWave === 15;
-    let isBiomeBoss = stageWave === 15; // In this system, every 15th wave is the biome boss.
+    let isBiomeBoss = stageWave === 15; 
     let isMiniBoss = stageWave === 8;
 
     return { totalLevel, level: totalLevel, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, isMiniBoss, biome };
@@ -879,9 +873,12 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 
+    // --- FIX: Using the transitioning lock instead of isUpgrading to prevent the paradox ---
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
-        waveManager.isUpgrading = true; // Lock combat instantly
-        setTimeout(() => packDefeated(), 400);
+        if (!waveManager.transitioning) {
+            waveManager.transitioning = true;
+            setTimeout(() => packDefeated(), 400);
+        }
     }
 }
 
@@ -912,8 +909,12 @@ function animateHit(unitId, damageDealt, isCrit) {
 function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     
+    // --- FIX: Failsafe uses the correct transition lock ---
     if(aliveEnemies.length === 0) { 
-        if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) { packDefeated(); } return; 
+        if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) { 
+            if (!waveManager.transitioning) { waveManager.transitioning = true; packDefeated(); }
+        } 
+        return; 
     }
 
     if (hasStatus(player, 'bleed')) {
@@ -1083,11 +1084,10 @@ function updatePlayerHealthBar() {
 }
 
 function packDefeated() {
-    if(player.currentHealth <= 0) return; // SAFETY: Don't shop if dead.
-    if(waveManager.isUpgrading) return;
+    if(player.currentHealth <= 0) return; 
+    
     waveManager.isUpgrading = true;
 
-    // --- RESET TEMPORARY WAVE BUFFS ---
     runStats.tempAtkActive = false; runStats.purificationActive = false;
 
     if (isTestMode) { endRun('TEST CLEARED', '#2ecc71'); return; }
@@ -1246,13 +1246,22 @@ function adjustMaxHp(percentChange) {
 }
 
 function continueToNextWave() {
-    if (waveManager.transitioning) return; // SAFETY: Stop spam clicks
-    waveManager.transitioning = true;
+    let waveUI = document.getElementById('wave-upgrade-ui');
+    let bossUI = document.getElementById('boss-clear-ui');
     
-    document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
+    // --- FIX: Button Spam Lock ---
+    if (waveUI.style.display === 'none' && bossUI.style.display === 'none') return; 
+
+    waveUI.style.display = 'none'; bossUI.style.display = 'none';
     waveManager.wave++; waveManager.isUpgrading = true; 
+    
     spawnEnemyPack(); playBattleStartAnimation();
-    setTimeout(() => { waveManager.isUpgrading = false; waveManager.transitioning = false; startCombatLoop(); }, 1500); 
+
+    setTimeout(() => { 
+        waveManager.isUpgrading = false; 
+        waveManager.transitioning = false; 
+        startCombatLoop(); 
+    }, 1500); 
 }
 
 function endRun(titleText, titleColor, killerText = "") {
@@ -1265,6 +1274,10 @@ function endRun(titleText, titleColor, killerText = "") {
 
     document.getElementById('summary-kills').innerText = runStats.enemiesKilled; document.getElementById('summary-gold').innerText = runStats.goldGained; document.getElementById('summary-exp').innerText = runStats.expGained;
     summaryUi.style.display = 'flex';
+    
+    // Safety resets
+    waveManager.transitioning = false;
+    waveManager.isUpgrading = false;
 }
 
 function triggerGameOver(killerText = "Slain by Unknown Forces") { player.currentHealth = 0; updatePlayerHealthBar(); endRun('DEFEATED', '#e74c3c', killerText); }
@@ -1279,7 +1292,25 @@ function collectRunRewards() {
     }
     
     if(leveledUp) showNotification(`🎉 ${heroData[player.currentHero].name} Leveled Up to ${hStats.level}!`);
-    document.getElementById('run-summary-ui').style.display = 'none'; openMenu('home'); updateUI();
+    document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
+    
+    openMenu('home'); updateUI();
+    
+    // Safety resets
+    waveManager.transitioning = false;
+    waveManager.isUpgrading = false;
+}
+
+function updateUI() {
+    document.getElementById('gold-amount').innerText = player.gold;
+    document.getElementById('gem-amount').innerText = player.gems;
+    
+    if (player.heroStats && player.heroStats[player.currentHero]) {
+        let activeH = player.heroStats[player.currentHero];
+        document.getElementById('player-level-text').innerText = activeH.level;
+        document.getElementById('player-exp-fill').style.width = ((activeH.exp / activeH.expNeeded) * 100) + '%';
+        document.getElementById('player-exp-text').innerText = activeH.exp + '/' + activeH.expNeeded;
+    }
 }
 
 function generateRandomEquipment() {
@@ -1311,7 +1342,7 @@ async function initGame() {
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
-        rareUpgradesData = itemsData.rareUpgradesData || []; // NEW
+        rareUpgradesData = itemsData.rareUpgradesData || [];
         bossSkillsData = itemsData.bossSkillsData;
         cursedRelicsData = itemsData.cursedRelicsData;
 
