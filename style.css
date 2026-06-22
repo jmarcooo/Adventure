@@ -333,3 +333,5 @@ body {
     80% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 20px #e74c3c); }
     100% { transform: scale(2); opacity: 0; }
 }
+/* --- STAGE LOCK STYLING --- */
+.card.locked { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
