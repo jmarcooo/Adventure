@@ -1175,6 +1175,11 @@ function handleEnemyDeath(target, unitId, unitDiv) {
 
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
+
+    // --- THE FIX: ALWAYS CHECK IF WAVE IS CLEARED WHEN ANY ENEMY DIES ---
+    if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
+        setTimeout(() => packDefeated(), 400);
+    }
 }
 
 function animateHit(unitId, damageDealt, isCrit) {
@@ -1202,8 +1207,15 @@ function animateHit(unitId, damageDealt, isCrit) {
 }
 
 function executePlayerAttack() {
-    let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
-    if(aliveEnemies.length === 0) return;
+    let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
+    
+    // --- FAILSAFE: If ATB triggers but enemies died to poison ---
+    if(aliveEnemies.length === 0) { 
+        if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
+            packDefeated(); 
+        }
+        return; 
+    }
 
     if (hasStatus(player, 'bleed')) {
         let bDmg = Math.floor(player.maxHealth * 0.05);
@@ -1694,6 +1706,62 @@ function updateUI() {
     document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
 }
 
+function generateRandomEquipment() {
+    // --- 100% STRICT DATA-DRIVEN ITEM GENERATION ---
+    if (equipmentData && equipmentData.length > 0) {
+        let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
+        
+        let statsCopy = {};
+        if (baseItem.stats) {
+            for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; }
+        }
+
+        return { 
+            name: baseItem.name, 
+            type: baseItem.slot, 
+            slot: baseItem.slot, 
+            icon: baseItem.icon, 
+            stats: statsCopy, 
+            onHit: baseItem.onHit || null, 
+            onHitTaken: baseItem.onHitTaken || null 
+        };
+    }
+
+    // --- EMERGENCY FALLBACK ---
+    console.warn("CRITICAL: equipment.json is empty or failed to load. Using fallback generator.");
+    
+    const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
+    const slot = slots[Math.floor(Math.random() * slots.length)];
+    const prefixes = ['Rusty', 'Iron', 'Steel'];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    
+    const itemTypes = {
+        'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
+        'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
+        'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
+        'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] },
+        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+        'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] },
+        'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
+        'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
+    };
+
+    const itemDef = itemTypes[slot];
+    let fallbackStats = {};
+    let statName = itemDef.stats[0];
+    fallbackStats[statName] = 5;
+
+    return { 
+        name: `${prefix} ${itemDef.name}`, 
+        type: slot, 
+        slot: slot, 
+        icon: itemDef.icon, 
+        stats: fallbackStats, 
+        onHit: null, 
+        onHitTaken: null 
+    };
+}
+
 async function initGame() {
     try {
         const heroesResponse = await fetch('heroes.json');
@@ -1714,8 +1782,16 @@ async function initGame() {
         try {
             let equipResponse = await fetch('equipment.json');
             if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
-            if (equipResponse.ok) { equipmentData = await equipResponse.json(); }
-        } catch (err) { console.warn("Failed to fetch equipment:", err); }
+            
+            if (equipResponse.ok) { 
+                equipmentData = await equipResponse.json(); 
+            } else {
+                alert("CRITICAL ERROR: Could not read equipment.json! Make sure the file exists and is named exactly 'equipment.json'.");
+            }
+        } catch (err) { 
+            alert("BROWSER ERROR: Your browser is blocking the game from reading equipment.json. You must run this using a local server (like Live Server in VS Code) or upload it to the web.");
+            console.warn("Failed to fetch equipment:", err); 
+        }
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
