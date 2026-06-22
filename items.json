@@ -167,6 +167,16 @@
       "icon": "\ud83d\udc96"
     },
     {
+      "id": "Vitality",
+      "name": "Potion",
+      "desc": "Increase HP by 25",
+      "effect": {
+        "hp": 25
+      },
+      "type": "common",
+      "icon": "\ud83d\udc96"
+    },
+    {
       "id": "gold",
       "name": "Coin Pouch",
       "desc": "Gain 50 Gold",
