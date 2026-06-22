@@ -5,9 +5,9 @@ let heroData = {};
 let enemiesData = {}; 
 let equipmentData = []; 
 let mutatorsData = []; 
+let biomesData = [];
 let activeMutator = null;
 
-// --- DYNAMIC PER-HERO PROGRESSION SYSTEM ---
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
     gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
@@ -17,7 +17,7 @@ let player = {
     inventory: [],
     attackProgress: 0, 
     activeEffects: [],
-    highestStageUnlocked: 0 // NEW: Tracks stage progression (0 = Forest)
+    highestStageUnlocked: 0 // NEW: Tracks your stage progress
 };
 
 let runStats = {
@@ -34,7 +34,7 @@ let runStats = {
 let runUpgradeData = [];
 let commonUpgradesData = [];
 let bossSkillsData = [];
-let cursedRelicsData = [];
+let cursedRelicsData = []; // Not used in this version but kept for safety
 
 let viewingHero = null;
 let activeEnemies = [];
@@ -94,10 +94,14 @@ function openMenu(targetScreen) {
 
     if(targetScreen !== 'game') {
         document.getElementById('bottom-nav-bar').style.display = 'flex';
-        screens.forEach(s => { if(document.getElementById('btn-' + s)) document.getElementById('btn-' + s).classList.remove('active'); });
-        if(targetScreen !== 'stages') { // Stages doesn't have a bottom nav button
+        screens.forEach(s => { 
+            let btn = document.getElementById('btn-' + s);
+            if(btn) btn.classList.remove('active'); 
+        });
+        if(targetScreen !== 'stages') { 
             document.getElementById('btn-' + targetScreen).classList.add('active');
         } else {
+            // If on Stages menu, keep Home highlighted
             document.getElementById('btn-home').classList.add('active'); 
         }
     } else {
@@ -131,11 +135,11 @@ function renderStagesMenu() {
 }
 
 function startStage(index) {
+    if (index > player.highestStageUnlocked) return;
     waveManager.currentStageIndex = index;
     startGame();
 }
 
-// --- HIDDEN DEVELOPER CHEAT MODE ---
 let secretGemClickCount = 0;
 let secretGemClickTimer = null;
 
@@ -398,9 +402,7 @@ function toggleGameSpeed() {
 // --- HYBRID STATUS ENGINE ---
 
 function applyStatus(unit, type, value, isCharge = false) {
-    if (getMutatorMod('nullifyStatuses', false)) {
-        return; 
-    }
+    if (getMutatorMod('nullifyStatuses', false)) { return; }
 
     if (!unit.activeEffects) unit.activeEffects = [];
     let existing = unit.activeEffects.find(eff => eff.type === type);
@@ -620,6 +622,57 @@ function debugApply(type, targetStr) {
 
 // --- COMBAT CORE & MATH ENGINE ---
 
+function getEquipmentStats() {
+    let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
+    for (let slot in player.equipment) {
+        let item = player.equipment[slot];
+        if (item && item.stats) { for (let key in eqStats) { if (item.stats[key]) eqStats[key] += item.stats[key]; } }
+    }
+    return eqStats;
+}
+
+function getPlayerStats() {
+    if (!heroData || !heroData[player.currentHero]) return { pAtk:1, mAtk:1, pDef:0, mDef:0, atkSpd:1, spd:1, evasion:0, crit:0, luck:0 };
+    let hero = heroData[player.currentHero];
+    let eq = getEquipmentStats();
+
+    let stats = {
+        pAtk: Math.floor((hero.pAtk + runStats.pAtk + eq.pAtk) * runStats.pAtkMulti),
+        mAtk: Math.floor((hero.mAtk + runStats.mAtk + eq.mAtk) * runStats.mAtkMulti),
+        pDef: Math.floor((hero.pDef + runStats.pDef + eq.pDef) * runStats.pDefMulti),
+        mDef: Math.floor((hero.mDef + runStats.mDef + eq.mDef) * runStats.mDefMulti),
+        atkSpd: (hero.atkSpd + runStats.atkSpd + eq.atkSpd) * runStats.atkSpdMulti,
+        spd: hero.spd + runStats.spd + eq.spd,
+        evasion: hero.evasion + runStats.evasion + eq.evasion,
+        crit: hero.crit + runStats.crit + eq.crit,
+        luck: hero.luck + runStats.luck + eq.luck
+    };
+
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+        stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
+    }
+    
+    if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
+    if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
+    if (hasStatus(player, 'berserk')) { stats.pDef = 0; stats.mDef = 0; }
+
+    return stats;
+}
+
+function getTotalDamage() {
+    let stats = getPlayerStats();
+    let baseP = stats.pAtk;
+    let baseM = stats.mAtk;
+    baseP = Math.floor(baseP * (1 + (player.talents.damage * 0.10)));
+    baseM = Math.floor(baseM * (1 + (player.talents.damage * 0.10)));
+    baseP += player.bonusDamage;
+
+    baseP = Math.floor(baseP * getMutatorMod('pAtkMult', 1.0));
+    baseM = Math.floor(baseM * getMutatorMod('mAtkMult', 1.0));
+
+    return { pDmg: baseP, mDmg: baseM };
+}
+
 function addCurrency(type, amount) {
     if (amount <= 0) return;
     if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
@@ -695,27 +748,6 @@ function startCombatLoop() {
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
-    mutatorTickTimer += (50 * gameSpeed);
-    if (mutatorTickTimer >= 2000) {
-        mutatorTickTimer = 0;
-        let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
-        if (hpDmgPct > 0) {
-            if (!runStats.purificationActive) {
-                let maxH = player.maxHealth; 
-                let pDmg = Math.max(1, Math.floor(maxH * hpDmgPct));
-                player.currentHealth -= pDmg; updatePlayerHealthBar();
-                spawnFloatingText('player-combat-area', "TOXIC -" + pDmg, "float-enemy-dmg");
-            }
-            
-            activeEnemies.filter(e => e.hp > 0 && !e.isDead).forEach(e => {
-                let eDmg = Math.max(1, Math.floor(e.maxHp * hpDmgPct));
-                e.hp -= eDmg; animateHit(e.id, eDmg, false);
-            });
-
-            if (player.currentHealth <= 0) { triggerGameOver("Choked by Toxic Air"); return; }
-        }
-    }
-
     processTimeEffects(player);
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     aliveEnemies.forEach(e => processTimeEffects(e));
@@ -783,13 +815,12 @@ function startTestBattle() {
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
         splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
-        pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0,
-        critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0,
-        goldMultiplier: 1.0, enemyHpMultiplier: 1.0, tempAtkActive: false, purificationActive: false,
+        pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+        goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, crit: 0, p_def: 0, m_def: 0 },
+        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
         hasRareUpgrade: false, hasUltimateUpgrade: false,
-        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
     };
 
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -798,7 +829,7 @@ function startTestBattle() {
     }
     
     waveManager.wave = 1;
-    waveManager.currentStageIndex = 0; 
+    waveManager.currentStageIndex = 0;
     player.currentHealth = player.maxHealth;
 
     document.getElementById('run-summary-ui').style.display = 'none';
@@ -807,6 +838,7 @@ function startTestBattle() {
     
     document.getElementById('debug-panel').style.display = 'flex'; 
     waveManager.isUpgrading = true; 
+    waveManager.transitioning = false; 
 
     updateCombatStatsPanel();
     openMenu('game');
@@ -821,9 +853,9 @@ function startTestBattle() {
 
     textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
 
-    let dummyHp = 9999999;
+    let dummyHp = 9999;
     let dummy = {
-        id: 0, maxHp: dummyHp, hp: dummyHp, damage: 0, pDef: 0, mDef: 0,
+        id: 0, maxHp: dummyHp, hp: dummyHp, damage: 0, pDef: 9999, mDef: 9999,
         skill: 'dummy', attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, spd: 1, atkSpd: 0.1,
         name: "Training Dummy"
     };
@@ -837,7 +869,7 @@ function startTestBattle() {
             <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
             <div class="mini-hp-text" id="enemy-hp-text-0">${dummyHp}/${dummyHp}</div>
             <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-            <div class="boss-skill-badge" title="Takes raw unmitigated damage">🛡️ 0 DEF / 9.9M HP</div>
+            <div class="boss-skill-badge" title="Immune to most damage">🛡️ 9999 DEF/MDEF</div>
         </div>`;
 
     player.attackProgress = 95;
@@ -847,7 +879,6 @@ function startTestBattle() {
 
     renderStatusEffects(); 
     playBattleStartAnimation();
-    mutatorTickTimer = 0;
 
     setTimeout(() => { 
         waveManager.isUpgrading = false; 
@@ -865,17 +896,15 @@ function startGame() {
     document.getElementById('debug-panel').style.display = 'none';
     player.activeEffects = [];
 
-    // --- STRICT RESET FOR ACTUAL RUN ---
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
         splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
-        pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0,
-        critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0,
-        goldMultiplier: 1.0, enemyHpMultiplier: 1.0, tempAtkActive: false, purificationActive: false,
+        pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+        goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, crit: 0, p_def: 0, m_def: 0 },
+        upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
         hasRareUpgrade: false, hasUltimateUpgrade: false,
-        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
     };
 
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -883,7 +912,7 @@ function startGame() {
         for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
     
-    // Game starts at Wave 1 of the selected stage
+    // Always start at wave 1 of the selected stage
     waveManager.wave = 1; 
     player.currentHealth = player.maxHealth;
 
@@ -906,19 +935,25 @@ function startGame() {
     }, 1500); 
 }
 
-// --- UPDATED LEVEL AND WAVE LOGIC ---
+// --- CHANGED: NEW EXACT STAGE LOGIC ---
 function getLevelAndWave() {
     let stageWave = waveManager.wave;
-
-    // Use the explicitly selected Stage
-    let biome = STAGE_DATA[waveManager.currentStageIndex];
+    let biome = STAGE_DATA[waveManager.currentStageIndex] || STAGE_DATA[0];
     
-    // Wave 10 is the Boss. Wave 5 is Elite.
+    // Exactly 10 waves per stage. Wave 10 is the Boss. Wave 5 is Elite.
     let isGenericBoss = stageWave === 10;
-    let isBiomeBoss = stageWave === 10; 
+    let isBiomeBoss = stageWave === 10;
     let isMiniBoss = stageWave === 5;
 
-    return { totalLevel: waveManager.currentStageIndex + 1, level: waveManager.currentStageIndex + 1, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, isMiniBoss, biome };
+    return { 
+        totalLevel: waveManager.currentStageIndex + 1, 
+        level: waveManager.currentStageIndex + 1, 
+        wave: stageWave, 
+        isBoss: isGenericBoss, 
+        isBiomeBoss: isBiomeBoss, 
+        isMiniBoss: isMiniBoss, 
+        biome: biome 
+    };
 }
 
 function renderBossUI(id, name, emoji, hp, bSkill) {
@@ -954,27 +989,16 @@ function spawnEnemyPack() {
     let textEl = document.getElementById('level-wave-text');
     let mutatorEl = document.getElementById('mutator-display'); 
     
-    container.innerHTML = ''; activeEnemies = []; activeMutator = null; mutatorTickTimer = 0;
+    container.innerHTML = ''; activeEnemies = [];
+    activeMutator = null; 
     if(mutatorEl) mutatorEl.style.display = 'none';
 
     let stageInfo = getLevelAndWave();
-
-    let gameScreen = document.getElementById('screen-game');
-    if (stageInfo.biome && stageInfo.biome.background) {
-        gameScreen.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.7), rgba(44, 62, 80, 0.9)), url('${stageInfo.biome.background}')`;
-        gameScreen.style.backgroundSize = 'cover'; gameScreen.style.backgroundPosition = 'center'; gameScreen.style.backgroundRepeat = 'no-repeat';
-    } else {
-        gameScreen.style.backgroundImage = 'none'; gameScreen.style.backgroundColor = '#2c3e50';
-    }
-
-    let biomeEnemies = enemiesData[stageInfo.biome.id] || [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
-
-    if (stageInfo.wave >= 6 && stageInfo.wave <= 9 && Math.random() < 0.25 && mutatorsData && mutatorsData.length > 0) {
-        activeMutator = mutatorsData[Math.floor(Math.random() * mutatorsData.length)];
-        if(mutatorEl) {
-            mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`;
-            mutatorEl.style.display = 'block';
-        }
+    
+    // Make sure we have a fallback if enemiesData fails to load or biome is missing
+    let biomeEnemies = enemiesData[stageInfo.biome.id];
+    if (!biomeEnemies || biomeEnemies.length === 0) {
+        biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null, spd: 10, atkSpd: 1.0 }];
     }
 
     if (stageInfo.isBiomeBoss) {
@@ -990,9 +1014,13 @@ function spawnEnemyPack() {
                 activeEnemies.push({ id: i, name: "Leviathan Spawn", maxHp: spawnHp, hp: spawnHp, damage: spawnDmg, skill: 'magic', attackProgress: 0, activeEffects: [], isDead: false, isBoss: false });
             }
         }
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS ⚠️</span>`;
+
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ STAGE BOSS ⚠️</span>`;
         renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
-        if (stageInfo.biome.skill === 'leviathan_spawns') { for(let i=1; i<=4; i++) { renderNormalEnemyUI(i, activeEnemies[i], '🦑', true); } }
+
+        if (stageInfo.biome.skill === 'leviathan_spawns') {
+            for(let i=1; i<=4; i++) { renderNormalEnemyUI(i, activeEnemies[i], '🦑', true); }
+        }
 
     } else if (stageInfo.isMiniBoss) {
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ MINI-BOSS Floor 5 ⚔️</span>`;
@@ -1025,9 +1053,12 @@ function spawnEnemyPack() {
         let enemyCount = Math.min(5, Math.max(1, baseCount + variance));
 
         let sortedByHp = [...availableEnemies].sort((a, b) => b.baseHp - a.baseHp);
-        let tankT = sortedByHp[0]; let squishyT = sortedByHp[sortedByHp.length - 1]; let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
+        let tankT = sortedByHp[0];
+        let squishyT = sortedByHp[sortedByHp.length - 1];
+        let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
         
-        let formationRoll = Math.random(); let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
+        let formationRoll = Math.random();
+        let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
         let formationType = formationRoll < 0.2 ? 'wall' : (formationRoll < 0.4 ? 'ambush' : 'coven');
 
         let spawnList = [];
@@ -1037,7 +1068,9 @@ function spawnEnemyPack() {
             else if (formationType === 'ambush') { spawnList = [squishyT, squishyT, squishyT, squishyT]; } 
             else if (formationType === 'coven') { spawnList = [tankT, magicT, magicT]; }
         } else {
-            for(let i=0; i<enemyCount; i++) { spawnList.push(availableEnemies[Math.floor(Math.random() * availableEnemies.length)]); }
+            for(let i=0; i<enemyCount; i++) {
+                spawnList.push(availableEnemies[Math.floor(Math.random() * availableEnemies.length)]);
+            }
         }
 
         for(let i = 0; i < spawnList.length; i++) {
@@ -1049,31 +1082,46 @@ function spawnEnemyPack() {
             let normHp = Math.floor((eTemp.baseHp + (stageInfo.level * 15)) * runStats.enemyHpMultiplier);
             let normDmg = Math.max(1, Math.floor(eTemp.baseDmg + (stageInfo.level * 0.8)));
             
-            let finalHp = isElite ? normHp * 2 : normHp; let finalDmg = isElite ? normDmg * 2 : normDmg; let eName = (isElite ? 'Elite ' : '') + eTemp.name; 
+            let finalHp = isElite ? normHp * 2 : normHp;
+            let finalDmg = isElite ? normDmg * 2 : normDmg;
+            let eName = (isElite ? 'Elite ' : '') + eTemp.name; 
 
-            activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: eTemp.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite });
+            // Ensure spd and atkSpd are passed so combat loop doesn't fail
+            let finalSpd = eTemp.spd || (isElite ? 12 : 10);
+            let finalAtkSpd = eTemp.atkSpd || 1.0;
+
+            activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: eTemp.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite, spd: finalSpd, atkSpd: finalAtkSpd });
             renderNormalEnemyUI(i, activeEnemies[i], eTemp.emoji, isElite);
         }
     }
     
-    let pStats = getPlayerStats(); let combatants = [];
+    let pStats = getPlayerStats();
+    let combatants = [];
+
     combatants.push({ type: 'player', spd: pStats.spd, atkSpd: Math.max(0.1, pStats.atkSpd), ref: player });
 
     activeEnemies.forEach(e => {
-        e.spd = e.spd || (e.isBoss ? 15 : (e.isElite ? 12 : 10)); e.atkSpd = e.atkSpd || (e.isBoss ? 1.2 : 1.0); 
+        e.spd = e.spd || (e.isBoss ? 15 : (e.isElite ? 12 : 10)); 
+        e.atkSpd = e.atkSpd || (e.isBoss ? 1.2 : 1.0); 
         combatants.push({ type: 'enemy', spd: e.spd, atkSpd: e.atkSpd, ref: e });
     });
 
     combatants.sort((a, b) => b.spd - a.spd);
 
     combatants.forEach((c, index) => {
-        let progressPerTick = c.atkSpd * gameSpeed * 2.5; let staggerTicks = index * 10; 
+        let progressPerTick = c.atkSpd * gameSpeed * 2.5;
+        let staggerTicks = index * 10; 
+        
         let initialProgress = 100 - (staggerTicks * progressPerTick);
 
         if (c.type === 'player') {
-            player.attackProgress = initialProgress; let pAtb = document.getElementById('player-atb'); if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
+            player.attackProgress = initialProgress;
+            let pAtb = document.getElementById('player-atb');
+            if(pAtb) pAtb.style.width = Math.max(0, Math.min(100, player.attackProgress)) + '%';
         } else {
-            c.ref.attackProgress = initialProgress; let atbBar = document.getElementById(`enemy-atb-bar-${c.ref.id}`); if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, c.ref.attackProgress)) + '%';
+            c.ref.attackProgress = initialProgress;
+            let atbBar = document.getElementById(`enemy-atb-bar-${c.ref.id}`);
+            if (atbBar) atbBar.style.width = Math.max(0, Math.min(100, c.ref.attackProgress)) + '%';
         }
     });
 
@@ -1082,10 +1130,14 @@ function spawnEnemyPack() {
 
 function handleEnemyDeath(target, unitId, unitDiv) {
     if (target.skill === 'intimidate_revive' && !target.hasRevived) {
-        target.hasRevived = true; target.hp = Math.floor(target.maxHp * 0.5); 
-        let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`); let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
-        if (hpBarDiv) hpBarDiv.style.width = '50%'; if (hpTextDiv) hpTextDiv.innerText = `${target.hp}/${target.maxHp}`;
-        spawnFloatingText(`enemy-${unitId}`, "REVIVED!", "float-heal"); return; 
+        target.hasRevived = true;
+        target.hp = Math.floor(target.maxHp * 0.5); 
+        let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
+        let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
+        if (hpBarDiv) hpBarDiv.style.width = '50%';
+        if (hpTextDiv) hpTextDiv.innerText = `${target.hp}/${target.maxHp}`;
+        spawnFloatingText(`enemy-${unitId}`, "REVIVED!", "float-heal");
+        return; 
     }
 
     if (target.isDead) return;
@@ -1112,6 +1164,7 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 
+    // Use transitioning lock to prevent spam calls
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
         if (!waveManager.transitioning) {
             waveManager.transitioning = true;
@@ -1148,20 +1201,30 @@ function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     
     if(aliveEnemies.length === 0) { 
-        if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) { 
-            if (!waveManager.transitioning) { waveManager.transitioning = true; packDefeated(); }
-        } 
+        if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
+            if (!waveManager.transitioning) {
+                waveManager.transitioning = true;
+                packDefeated(); 
+            }
+        }
         return; 
     }
 
     if (hasStatus(player, 'bleed')) {
-        let maxH = player.maxHealth; let bDmg = Math.floor(maxH * 0.05); player.currentHealth -= bDmg; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "BLEED -" + bDmg, "float-enemy-dmg");
+        let bDmg = Math.floor(player.maxHealth * 0.05);
+        player.currentHealth -= bDmg;
+        updatePlayerHealthBar();
+        spawnFloatingText('player-combat-area', "BLEED -" + bDmg, "float-enemy-dmg");
         if (player.currentHealth <= 0) { triggerGameOver("Died from severe blood loss"); return; }
     }
 
-    if (consumeCharge(player, 'blind')) { spawnFloatingText('player-combat-area', "BLIND MISS!", "float-miss"); return; }
+    if (consumeCharge(player, 'blind')) {
+        spawnFloatingText('player-combat-area', "BLIND MISS!", "float-miss");
+        return;
+    }
 
     let isEmpowered = consumeCharge(player, 'empower');
+
     let pIcon = document.getElementById('player-combat-icon');
     if(pIcon) { pIcon.classList.add('player-attack-anim'); setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); }
 
@@ -1172,71 +1235,113 @@ function executePlayerAttack() {
             let target = activeEnemies.find(e => e.hp > 0 && !e.isDead);
             if (!target) return;
 
-            let damages = getTotalDamage(); let stats = getPlayerStats();
+            let damages = getTotalDamage();
+            let stats = getPlayerStats();
+            
             let isCrit = Math.random() < stats.crit;
             if (consumeCharge(player, 'focused')) isCrit = true;
             if (consumeCharge(target, 'marked')) isCrit = true;
 
-            let eDefP = target.pDef || 0; let eDefM = target.mDef || 0;
+            let eDefP = target.pDef || 0;
+            let eDefM = target.mDef || 0;
+            
             if (hasStatus(target, 'berserk')) { eDefP = 0; eDefM = 0; }
 
-            let pDmg = Math.max(1, damages.pDmg - eDefP); let mDmg = Math.max(0, damages.mDmg - eDefM);
+            let pDmg = Math.max(1, damages.pDmg - eDefP);
+            let mDmg = Math.max(0, damages.mDmg - eDefM);
 
-            if (getMutatorMod('nullifyMagic', false)) { mDmg = 0; }
-            if (target.skill === 'high_armor' || target.skill === 'armor') { pDmg = Math.floor(pDmg * 0.1); }
+            if (getMutatorMod('nullifyMagic', false)) {
+                mDmg = 0; 
+            }
+
+            if (target.skill === 'high_armor' || target.skill === 'armor') {
+                pDmg = Math.floor(pDmg * 0.1); 
+            }
 
             let dmg = pDmg + mDmg;
-            if (isCrit) { let baseCritMult = 2.5 + runStats.critDmg; dmg = Math.floor(dmg * baseCritMult); }
+            if (isCrit) dmg = Math.floor(dmg * 2.5);
             
             if (isEmpowered) { dmg *= 2; spawnFloatingText('player-combat-area', "EMPOWERED!", "float-crit"); }
             if (hasStatus(player, 'berserk')) dmg *= 2;
+            
             if (hasStatus(target, 'vulnerable')) dmg = Math.floor(dmg * 1.5);
             if (hasStatus(target, 'barrier')) dmg = Math.floor(dmg * 0.5);
 
-            let hero = heroData[player.currentHero]; let innateLvl = player.heroSkillLevels[player.currentHero] || 0; let innateTrigger = false;
+            let hero = heroData[player.currentHero];
+            let innateLvl = player.heroSkillLevels[player.currentHero] || 0;
+            let innateTrigger = false;
+
             if (hero.innateSkill && Math.random() < hero.innateSkill.chances[innateLvl]) innateTrigger = true;
 
             if (innateTrigger) {
                 spawnFloatingText('player-combat-area', hero.innateSkill.name + "!", "float-crit");
-                if (hero.innateSkill.type === 'hunter_instakill' && !target.isBoss) { dmg = target.hp; } 
-                else if (hero.innateSkill.type === 'berserker_rage') { dmg = dmg * 2; } 
-                else if (hero.innateSkill.type === 'warlock_curse') {
-                    dmg = dmg * 3; let maxH = player.maxHealth; player.currentHealth -= Math.floor(maxH * 0.05); updatePlayerHealthBar();
+                if (hero.innateSkill.type === 'hunter_instakill' && !target.isBoss) {
+                    dmg = target.hp; 
+                } else if (hero.innateSkill.type === 'berserker_rage') {
+                    dmg = dmg * 2;
+                } else if (hero.innateSkill.type === 'warlock_curse') {
+                    dmg = dmg * 3;
+                    player.currentHealth -= Math.floor(player.maxHealth * 0.05);
+                    updatePlayerHealthBar();
                     if (player.currentHealth <= 0) { triggerGameOver("Consumed by Dark Magic"); return; }
                 }
             }
 
             if (consumeCharge(target, 'block')) {
-                spawnFloatingText(`enemy-${target.id}`, "BLOCKED!", "float-miss"); dmg = 0;
+                spawnFloatingText(`enemy-${target.id}`, "BLOCKED!", "float-miss");
+                dmg = 0;
             } else {
-                target.hp -= dmg; animateHit(target.id, dmg, isCrit);
+                target.hp -= dmg;
+                animateHit(target.id, dmg, isCrit);
 
                 if (player.equipment && player.equipment.weapon && player.equipment.weapon.onHit) {
                     let hitEff = player.equipment.weapon.onHit;
-                    if (Math.random() < hitEff.chance) { applyStatus(target, hitEff.type, hitEff.duration); spawnFloatingText(`enemy-${target.id}`, `${hitEff.type.toUpperCase()}!`, "float-enemy-dmg"); }
+                    if (Math.random() < hitEff.chance) {
+                        applyStatus(target, hitEff.type, hitEff.duration);
+                        spawnFloatingText(`enemy-${target.id}`, `${hitEff.type.toUpperCase()}!`, "float-enemy-dmg");
+                    }
                 }
 
                 if (hasStatus(target, 'thorns') && dmg > 0) {
-                    let tDmg = Math.floor(dmg * 0.2); player.currentHealth -= tDmg; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "THORNS -" + tDmg, "float-enemy-dmg");
+                    let tDmg = Math.floor(dmg * 0.2);
+                    player.currentHealth -= tDmg;
+                    updatePlayerHealthBar();
+                    spawnFloatingText('player-combat-area', "THORNS -" + tDmg, "float-enemy-dmg");
                     if (player.currentHealth <= 0) { triggerGameOver("Slain by " + target.name + "'s Thorns"); return; }
                 }
             }
 
             if (innateTrigger) {
-                if (hero.innateSkill.type === 'warrior_splash') { activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } }); } 
-                else if (hero.innateSkill.type === 'mage_arcane') { activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } }); } 
-                else if (hero.innateSkill.type === 'paladin_heal') { let maxH = player.maxHealth; applyHeal(player, Math.floor(maxH * 0.20)); } 
-                else if (hero.innateSkill.type === 'rogue_steal') { addCurrency('gold', 5); spawnLootDrop(`enemy-${target.id}`, 'gold'); } 
-                else if (hero.innateSkill.type === 'necro_summon') { let d = Math.floor(dmg * 0.5); activeEnemies.forEach(e => { if (e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } }); applyHeal(player, d); } 
-                else if (hero.innateSkill.type === 'beast_bite') { let biteDmg = Math.floor(dmg * 1.5); target.hp -= biteDmg; animateHit(target.id, biteDmg, false); } 
-                else if (hero.innateSkill.type === 'monk_combo') { target.hp -= dmg; animateHit(target.id, dmg, false); target.hp -= dmg; animateHit(target.id, dmg, false); } 
-                else if (hero.innateSkill.type === 'bard_song') { runStats.runes += 1; spawnLootDrop('player-combat-area', 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); } 
-                else if (hero.innateSkill.type === 'druid_roots') { let d = Math.floor(dmg * 0.5); activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } }); }
+                if (hero.innateSkill.type === 'warrior_splash') {
+                    activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
+                } else if (hero.innateSkill.type === 'mage_arcane') {
+                    activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
+                } else if (hero.innateSkill.type === 'paladin_heal') {
+                    applyHeal(player, Math.floor(player.maxHealth * 0.20));
+                } else if (hero.innateSkill.type === 'rogue_steal') {
+                    addCurrency('gold', 5); spawnLootDrop(`enemy-${target.id}`, 'gold');
+                } else if (hero.innateSkill.type === 'necro_summon') {
+                    let d = Math.floor(dmg * 0.5);
+                    activeEnemies.forEach(e => { if (e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
+                    applyHeal(player, d);
+                } else if (hero.innateSkill.type === 'beast_bite') {
+                    let biteDmg = Math.floor(dmg * 1.5); target.hp -= biteDmg; animateHit(target.id, biteDmg, false);
+                } else if (hero.innateSkill.type === 'monk_combo') {
+                    target.hp -= dmg; animateHit(target.id, dmg, false); target.hp -= dmg; animateHit(target.id, dmg, false);
+                } else if (hero.innateSkill.type === 'bard_song') {
+                    runStats.runes += 1; spawnLootDrop('player-combat-area', 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune');
+                } else if (hero.innateSkill.type === 'druid_roots') {
+                    let d = Math.floor(dmg * 0.5); activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } });
+                }
             }
 
-            if (runStats.lifesteal > 0 && dmg > 0) { applyHeal(player, Math.floor(dmg * runStats.lifesteal)); }
+            if (runStats.lifesteal > 0 && dmg > 0) {
+                applyHeal(player, Math.floor(dmg * runStats.lifesteal));
+            }
+
             if (runStats.splashDmg > 0 && dmg > 0) {
-                let sDmg = Math.floor(dmg * runStats.splashDmg); activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= sDmg; animateHit(e.id, sDmg, false); } });
+                let sDmg = Math.floor(dmg * runStats.splashDmg);
+                activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= sDmg; animateHit(e.id, sDmg, false); } });
             }
         }, s * 150);
     }
@@ -1244,16 +1349,24 @@ function executePlayerAttack() {
 
 function executeEnemyAttack(e) {
     if (hasStatus(e, 'bleed')) {
-        let bDmg = Math.floor(e.maxHp * 0.05); e.hp -= bDmg; animateHit(e.id, bDmg, false); if (e.hp <= 0) return; 
+        let bDmg = Math.floor(e.maxHp * 0.05);
+        e.hp -= bDmg;
+        animateHit(e.id, bDmg, false);
+        if (e.hp <= 0) return; 
     }
 
-    if (consumeCharge(e, 'blind')) { spawnFloatingText(`enemy-${e.id}`, "BLIND MISS!", "float-miss"); return; }
+    if (consumeCharge(e, 'blind')) {
+        spawnFloatingText(`enemy-${e.id}`, "BLIND MISS!", "float-miss");
+        return;
+    }
+    
     let isEmpowered = consumeCharge(e, 'empower');
 
     let unitDiv = document.getElementById(`enemy-${e.id}`);
     if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
 
-    let stats = getPlayerStats(); let incomingDmg = e.damage;
+    let stats = getPlayerStats();
+    let incomingDmg = e.damage;
 
     let isCrit = false;
     if (e.skill === 'crit' && Math.random() < 0.25) isCrit = true;
@@ -1265,52 +1378,87 @@ function executeEnemyAttack(e) {
     }
 
     if (e.skill === 'bash' && Math.random() < 0.25) {
-        incomingDmg = Math.floor(incomingDmg * 2); applyStatus(player, 'stun', 2000); spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
+        incomingDmg = Math.floor(incomingDmg * 2); 
+        applyStatus(player, 'stun', 2000); 
+        spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
     }
 
     if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
-        applyStatus(player, 'poison', 5000); spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
+        applyStatus(player, 'poison', 5000); 
+        spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
     }
 
-    if (consumeCharge(player, 'block')) { spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss"); return; }
+    if (consumeCharge(player, 'block')) {
+        spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss");
+        return; 
+    }
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
-        if (runStats.purificationActive) { spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss"); return; }
+        if (runStats.purificationActive) {
+            spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
+            return; 
+        }
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
-        if (getMutatorMod('nullifyMagic', false)) { spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss"); return; }
-    } else { incomingDmg = Math.max(1, incomingDmg - stats.pDef); }
+        if (getMutatorMod('nullifyMagic', false)) {
+            spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
+            return; 
+        }
+    } else {
+        incomingDmg = Math.max(1, incomingDmg - stats.pDef);
+    }
 
-    if (isCrit) { incomingDmg = Math.floor(incomingDmg * 2); spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg"); }
-    if (isEmpowered) incomingDmg *= 2; if (hasStatus(e, 'berserk')) incomingDmg *= 2;
+    if (isCrit) {
+        incomingDmg = Math.floor(incomingDmg * 2);
+        spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg");
+    }
+
+    if (isEmpowered) incomingDmg *= 2;
+    if (hasStatus(e, 'berserk')) incomingDmg *= 2;
+    
     if (hasStatus(player, 'vulnerable')) incomingDmg = Math.floor(incomingDmg * 1.5);
     if (hasStatus(player, 'barrier')) incomingDmg = Math.floor(incomingDmg * 0.5);
 
-    player.currentHealth -= incomingDmg; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
+    player.currentHealth -= incomingDmg;
+    updatePlayerHealthBar();
+    spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
 
     if (incomingDmg > 0) {
         for (let slotKey in player.equipment) {
             let equippedItem = player.equipment[slotKey];
             if (equippedItem && equippedItem.onHitTaken) {
                 let proc = equippedItem.onHitTaken;
-                if (Math.random() < proc.chance) { applyStatus(e, proc.type, proc.duration, proc.type === 'blind'); spawnFloatingText(`enemy-${e.id}`, `${proc.type.toUpperCase()}!`, "float-enemy-dmg"); }
+                if (Math.random() < proc.chance) {
+                    applyStatus(e, proc.type, proc.duration, proc.type === 'blind'); 
+                    spawnFloatingText(`enemy-${e.id}`, `${proc.type.toUpperCase()}!`, "float-enemy-dmg");
+                }
             }
         }
     }
 
-    if (hasStatus(player, 'thorns') && incomingDmg > 0) { let tDmg = Math.floor(incomingDmg * 0.2); e.hp -= tDmg; animateHit(e.id, tDmg, false); }
-    if (e.skill === 'vampire') { applyHeal(e, Math.floor(incomingDmg * 0.5)); }
+    if (hasStatus(player, 'thorns') && incomingDmg > 0) {
+        let tDmg = Math.floor(incomingDmg * 0.2);
+        e.hp -= tDmg;
+        animateHit(e.id, tDmg, false);
+    }
+
+    if (e.skill === 'vampire') {
+        applyHeal(e, Math.floor(incomingDmg * 0.5));
+    }
 
     let container = document.getElementById('game-container');
-    container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)'; setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
+    container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)';
+    setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
 
     if (player.currentHealth <= 0) { triggerGameOver("Killed by " + e.name); }
 }
 
 function updatePlayerHealthBar() {
-    let maxH = player.maxHealth || 100;
-    let pPercent = Math.max(0, (player.currentHealth / maxH) * 100);
-    let pBar = document.getElementById('player-health'); let pText = document.getElementById('player-hp-text');
-    if (pBar) pBar.style.width = pPercent + '%'; if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + maxH;
+    let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
+    let pBar = document.getElementById('player-health');
+    let pText = document.getElementById('player-hp-text');
+
+    if (pBar) pBar.style.width = pPercent + '%';
+    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
 
     if (pBar) {
         if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
@@ -1321,16 +1469,19 @@ function updatePlayerHealthBar() {
 }
 
 function packDefeated() {
-    if(player.currentHealth <= 0) return; 
-    
+    if(waveManager.isUpgrading) return;
     waveManager.isUpgrading = true;
 
-    runStats.tempAtkActive = false; runStats.purificationActive = false;
+    if (isTestMode) {
+        endRun('TEST CLEARED', '#2ecc71');
+        return;
+    }
 
-    if (isTestMode) { endRun('TEST CLEARED', '#2ecc71'); return; }
+    let isBoss = getLevelAndWave().isBoss;
+    let packSize = activeEnemies.length;
 
-    let isBoss = getLevelAndWave().isBoss; let packSize = activeEnemies.length;
-    let gemsEarned = 0; if (isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1;
+    let gemsEarned = 0;
+    if (isBoss) gemsEarned = 5; else if (Math.random() > 0.8) gemsEarned = 1;
     if (gemsEarned > 0) addCurrency('gem', gemsEarned);
 
     let expGainedThisWave = isBoss ? (100 * waveManager.wave) : (15 * waveManager.wave * packSize);
@@ -1338,15 +1489,26 @@ function packDefeated() {
 
     updateCombatStatsPanel();
 
-    let shopPool = []; window.currentShopPool = shopPool;
+    if (isBoss) { 
+        // Unlock next stage permanently
+        if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
+        if (waveManager.currentStageIndex >= player.highestStageUnlocked && waveManager.currentStageIndex < STAGE_DATA.length - 1) {
+            player.highestStageUnlocked = waveManager.currentStageIndex + 1;
+        }
+        showBossClearUI(); 
+        return;
+    } 
+
+    let shopPool = []; 
+    window.currentShopPool = shopPool;
 
     commonUpgradesData.forEach(u => {
-        let count = runStats.commonUpgradeCounts[u.id] || 0; let scaleMult = count + 1;
+        let count = runStats.commonUpgradeCounts[u.id] || 0;
+        let scaleMult = count + 1;
         let newEffect = {}; let newDesc = "";
-        
-        if (u.id === 'heal') { newDesc = `Heal 25% Max HP`; } 
-        else if (u.id === 'temp_atk') { newDesc = `+200% P/M.Atk (1 Wave)`; } 
-        else if (u.id === 'vitality') { newEffect.hp = 25 * scaleMult; newDesc = `+${newEffect.hp} Max HP`; }
+        if (u.id === 'heal') { newEffect.heal = 25 * scaleMult; newDesc = `Heal ${newEffect.heal} HP`; } 
+        else if (u.id === 'gold') { newEffect.gold = 50 * scaleMult; newDesc = `Gain ${newEffect.gold} Gold`; } 
+        else if (u.id === 'temp_atk') { newEffect.atk = 5 * scaleMult; newDesc = `+${newEffect.atk} Base Attack`; }
         shopPool.push({ ...u, rarity: 'common', cost: 0, effect: newEffect, desc: newDesc });
     });
 
@@ -1358,26 +1520,20 @@ function packDefeated() {
     });
 
     let hero = heroData[player.currentHero];
-    if (!runStats.hasRareUpgrade && runStats.runes >= 5 && hero.rareUpgrade) { shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'hero_rare' }); }
-    if (!runStats.hasUltimateUpgrade && runStats.runes >= 10 && hero.ultimateUpgrade) { shopPool.push({ ...hero.ultimateUpgrade, id: 'ult_upg', rarity: 'ultimate', cost: 10, type: 'hero_ultimate' }); }
-
-    if (rareUpgradesData && rareUpgradesData.length > 0 && runStats.runes >= 5) {
-        let rUpg = rareUpgradesData[Math.floor(Math.random() * rareUpgradesData.length)];
-        shopPool.push({ ...rUpg, rarity: 'rare', cost: 5, type: 'generic_rare' });
+    if (!runStats.hasRareUpgrade && runStats.runes >= 5 && hero.rareUpgrade) {
+        shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'rare' });
+    }
+    if (!runStats.hasUltimateUpgrade && runStats.runes >= 10 && hero.ultimateUpgrade) {
+        shopPool.push({ ...hero.ultimateUpgrade, id: 'ult_upg', rarity: 'ultimate', cost: 10, type: 'ultimate' });
     }
 
     let canAffordAny = shopPool.some(u => runStats.runes >= u.cost);
 
-    if (isBoss) { 
-        // --- STAGE CLEARED PROGRESSION ---
-        if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
-        if (waveManager.currentStageIndex >= player.highestStageUnlocked && waveManager.currentStageIndex < STAGE_DATA.length - 1) {
-            player.highestStageUnlocked = waveManager.currentStageIndex + 1;
-        }
-        showBossClearUI(); 
-    } 
-    else if (shopPool.length === 0 || !canAffordAny) { setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); } 
-    else { showUpgradeShop(shopPool); }
+    if (shopPool.length === 0 || !canAffordAny) { 
+        setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); 
+    } else { 
+        showUpgradeShop(shopPool); 
+    }
 }
 
 function showUpgradeShop(shopPool) {
@@ -1392,10 +1548,10 @@ function showUpgradeShop(shopPool) {
         let lvlText = u.rarity === 'uncommon' ? ` <span class="lvl-badge">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : '';
         list.innerHTML += `
             <button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
-                <div style="font-size: 2.2rem; margin-bottom: 5px;">${u.icon || '✨'}</div>
-                <h4 style="font-size: 0.75rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff; word-break: break-word;">${u.name}${lvlText}</h4>
-                <p style="font-size: 0.75rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>
-                ${u.cost > 0 ? `<div style="margin-top: auto; font-size: 0.9rem; font-weight: bold; color: #00e5ff;">${u.cost} 🌀</div>` : `<div style="margin-top: auto; font-size: 0.9rem; font-weight: bold; color: #2ecc71;">FREE</div>`}
+                <div style="font-size: 3rem; margin-bottom: 10px;">${u.icon || '✨'}</div>
+                <h4 style="font-size: 0.8rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff;">${u.name}${lvlText}</h4>
+                <p style="font-size: 0.9rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>
+                ${u.cost > 0 ? `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #00e5ff;">${u.cost} 🌀</div>` : `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #2ecc71;">FREE</div>`}
             </button>`;
     });
 }
@@ -1406,38 +1562,35 @@ function buyRunUpgrade(upgrade) {
 
     if (upgrade.rarity === 'uncommon') {
         runStats.upgradeLevels[upgrade.id]++;
-        if(upgrade.id === 'p_atk') runStats.pAtk += 20;
-        if(upgrade.id === 'm_atk') runStats.mAtk += 20;
+        if(upgrade.id === 'p_atk') runStats.pAtk += 10;
+        if(upgrade.id === 'm_atk') runStats.mAtk += 10;
+        if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; }
+        if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
+        if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
+        if(upgrade.id === 'crit') runStats.crit += 0.10;
+        if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.05;
+        if(upgrade.id === 'evasion') runStats.evasion += 0.05;
         if(upgrade.id === 'p_def') runStats.pDef += 10;
         if(upgrade.id === 'm_def') runStats.mDef += 10;
-        if(upgrade.id === 'spd') { runStats.atkSpdMulti += 0.20; runStats.spdMulti += 0.10; }
-        if(upgrade.id === 'crit') { runStats.crit += 0.05; runStats.critDmg += 0.50; }
-        
     } else if (upgrade.rarity === 'common') {
-        runStats.commonUpgradeCounts[upgrade.id] = (runStats.commonUpgradeCounts[upgrade.id] || 0) + 1;
-        if (upgrade.id === 'heal') { let maxH = player.maxHealth || 100; applyHeal(player, Math.floor(maxH * 0.25)); }
-        if (upgrade.id === 'temp_atk') { runStats.tempAtkActive = true; }
-        if (upgrade.id === 'vitality') { runStats.maxHpBonus += upgrade.effect.hp; player.currentHealth += upgrade.effect.hp; updatePlayerHealthBar(); }
-
-    } else if (upgrade.type === 'generic_rare') {
-        if (upgrade.id === 'purification') { runStats.purificationActive = true; }
-        if (upgrade.id === 'revitalize') { player.currentHealth = player.maxHealth || 100; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "FULL HEAL!", "float-heal"); }
-        if (upgrade.id === 'inner_focus') { applyStatus(player, 'focused', 5, true); }
-
-    } else if (upgrade.type === 'hero_rare' || upgrade.type === 'hero_ultimate') {
-        if (upgrade.type === 'hero_rare') runStats.hasRareUpgrade = true;
-        if (upgrade.type === 'hero_ultimate') runStats.hasUltimateUpgrade = true;
+        runStats.commonUpgradeCounts[upgrade.id]++;
+        if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
+        if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
+        if (upgrade.effect.atk) { runStats.pAtk += upgrade.effect.atk; runStats.mAtk += upgrade.effect.atk; }
+    } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
+        if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
+        if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
         for (let key in upgrade.effect) {
             if (runStats.hasOwnProperty(key)) { runStats[key] += upgrade.effect[key]; }
-            if (key === 'maxHealth') { runStats.maxHpBonus += upgrade.effect[key]; player.currentHealth += upgrade.effect[key]; updatePlayerHealthBar(); }
-            if (key === 'heal') { let maxH = player.maxHealth || 100; player.currentHealth = Math.min(maxH, player.currentHealth + upgrade.effect[key]); updatePlayerHealthBar(); }
+            if (key === 'maxHealth') { player.maxHealth += upgrade.effect[key]; player.currentHealth += upgrade.effect[key]; updatePlayerHealthBar(); }
+            if (key === 'heal') { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect[key]); updatePlayerHealthBar(); }
         }
     }
 
-    updateCombatStatsPanel(); continueToNextWave();
+    updateCombatStatsPanel();
+    continueToNextWave();
 }
 
-// --- UPDATED: CLEAN STAGE VICTORY (No Curses) ---
 function showBossClearUI() {
     document.getElementById('boss-clear-ui').style.display = 'flex';
     document.getElementById('boss-ui-gold').innerText = runStats.goldGained;
@@ -1446,98 +1599,194 @@ function showBossClearUI() {
 }
 
 function continueToNextWave() {
-    let waveUI = document.getElementById('wave-upgrade-ui');
-    let bossUI = document.getElementById('boss-clear-ui');
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
     
-    if (waveUI.style.display === 'none' && bossUI.style.display === 'none') return; 
-
-    waveUI.style.display = 'none'; bossUI.style.display = 'none';
-    waveManager.wave++; waveManager.isUpgrading = true; 
+    waveManager.wave++; 
+    waveManager.isUpgrading = true; 
     
-    spawnEnemyPack(); playBattleStartAnimation();
+    spawnEnemyPack();
+    playBattleStartAnimation();
 
-    setTimeout(() => { 
+    setTimeout(() => {
         waveManager.isUpgrading = false; 
-        waveManager.transitioning = false; 
+        waveManager.transitioning = false;
         startCombatLoop(); 
     }, 1500); 
 }
 
 function endRun(titleText, titleColor, killerText = "") {
-    isTestMode = false; document.getElementById('debug-panel').style.display = 'none';
-    clearInterval(combatTickInterval); document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
+    isTestMode = false;
+    document.getElementById('debug-panel').style.display = 'none';
 
-    let summaryUi = document.getElementById('run-summary-ui'); let titleEl = document.getElementById('run-summary-title'); let killerEl = document.getElementById('run-summary-killer');
-    titleEl.innerText = titleText; titleEl.style.color = titleColor;
-    if (killerEl) { if (killerText) { killerEl.innerText = killerText; killerEl.style.display = 'block'; } else { killerEl.style.display = 'none'; } }
+    clearInterval(combatTickInterval); 
+    document.getElementById('wave-upgrade-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
 
-    document.getElementById('summary-kills').innerText = runStats.enemiesKilled; document.getElementById('summary-gold').innerText = runStats.goldGained; document.getElementById('summary-exp').innerText = runStats.expGained;
+    let summaryUi = document.getElementById('run-summary-ui');
+    let titleEl = document.getElementById('run-summary-title');
+    let killerEl = document.getElementById('run-summary-killer');
+
+    titleEl.innerText = titleText; 
+    titleEl.style.color = titleColor;
+
+    if (killerEl) {
+        if (killerText) {
+            killerEl.innerText = killerText; 
+            killerEl.style.display = 'block';
+        } else {
+            killerEl.style.display = 'none';
+        }
+    }
+
+    document.getElementById('summary-kills').innerText = runStats.enemiesKilled;
+    document.getElementById('summary-gold').innerText = runStats.goldGained;
+    document.getElementById('summary-exp').innerText = runStats.expGained;
     summaryUi.style.display = 'flex';
     
-    waveManager.transitioning = false; waveManager.isUpgrading = false;
+    waveManager.transitioning = false;
+    waveManager.isUpgrading = false;
 }
 
-function triggerGameOver(killerText = "Slain by Unknown Forces") { player.currentHealth = 0; updatePlayerHealthBar(); endRun('DEFEATED', '#e74c3c', killerText); }
-function fleeCombat() { endRun('RETREATED', '#f39c12'); }
+function triggerGameOver(killerText = "Slain by Unknown Forces") { 
+    player.currentHealth = 0; 
+    updatePlayerHealthBar(); 
+    endRun('DEFEATED', '#e74c3c', killerText); 
+}
+
+function fleeCombat() { 
+    endRun('RETREATED', '#f39c12'); 
+}
 
 function collectRunRewards() {
-    let hStats = player.heroStats[player.currentHero];
-    if (hStats) {
-        hStats.exp += runStats.expGained; let leveledUp = false;
-        while(hStats.exp >= hStats.expNeeded) {
-            hStats.level++; hStats.exp -= hStats.expNeeded; hStats.expNeeded = Math.floor(hStats.expNeeded * 1.5); leveledUp = true;
-        }
-        if(leveledUp) showNotification(`🎉 ${heroData[player.currentHero].name} Leveled Up to ${hStats.level}!`);
+    player.exp += runStats.expGained;
+    let leveledUp = false;
+    while(player.exp >= player.expNeeded) {
+        player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
+        player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; leveledUp = true;
     }
+    if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
     
-    document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
+    document.getElementById('run-summary-ui').style.display = 'none';
+    document.getElementById('boss-clear-ui').style.display = 'none';
     
-    openMenu('home'); updateUI();
-    waveManager.transitioning = false; waveManager.isUpgrading = false;
+    openMenu('home'); 
+    updateUI();
+    
+    waveManager.transitioning = false;
+    waveManager.isUpgrading = false;
+}
+
+function updateUI() {
+    document.getElementById('gold-amount').innerText = player.gold;
+    document.getElementById('gem-amount').innerText = player.gems;
+    document.getElementById('player-level-text').innerText = player.level;
+    document.getElementById('player-exp-fill').style.width = ((player.exp / player.expNeeded) * 100) + '%';
+    document.getElementById('player-exp-text').innerText = player.exp + '/' + player.expNeeded;
+    document.getElementById('tp-amount').innerText = player.talentPoints;
+    document.getElementById('talent-lvl-damage').innerText = player.talents.damage;
+    document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
 }
 
 function generateRandomEquipment() {
     if (equipmentData && equipmentData.length > 0) {
         let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
-        let statsCopy = {}; if (baseItem.stats) { for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; } }
-        return { name: baseItem.name, type: baseItem.slot, slot: baseItem.slot, icon: baseItem.icon, stats: statsCopy, onHit: baseItem.onHit || null, onHitTaken: baseItem.onHitTaken || null };
+        
+        let statsCopy = {};
+        if (baseItem.stats) {
+            for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; }
+        }
+
+        return { 
+            name: baseItem.name, 
+            type: baseItem.slot, 
+            slot: baseItem.slot, 
+            icon: baseItem.icon, 
+            stats: statsCopy, 
+            onHit: baseItem.onHit || null, 
+            onHitTaken: baseItem.onHitTaken || null 
+        };
     }
+
     console.warn("CRITICAL: equipment.json is empty or failed to load. Using fallback generator.");
-    const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet']; const slot = slots[Math.floor(Math.random() * slots.length)];
-    const prefixes = ['Rusty', 'Iron', 'Steel']; const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const itemTypes = { 'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] }, 'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] }, 'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] }, 'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] }, 'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] }, 'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] }, 'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] }, 'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] } };
-    const itemDef = itemTypes[slot]; let fallbackStats = {}; let statName = itemDef.stats[0]; fallbackStats[statName] = 5;
-    return { name: `${prefix} ${itemDef.name}`, type: slot, slot: slot, icon: itemDef.icon, stats: fallbackStats, onHit: null, onHitTaken: null };
+    
+    const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
+    const slot = slots[Math.floor(Math.random() * slots.length)];
+    const prefixes = ['Rusty', 'Iron', 'Steel'];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    
+    const itemTypes = {
+        'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
+        'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
+        'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
+        'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] },
+        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+        'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] },
+        'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
+        'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
+    };
+
+    const itemDef = itemTypes[slot];
+    let fallbackStats = {};
+    let statName = itemDef.stats[0];
+    fallbackStats[statName] = 5;
+
+    return { 
+        name: `${prefix} ${itemDef.name}`, 
+        type: slot, 
+        slot: slot, 
+        icon: itemDef.icon, 
+        stats: fallbackStats, 
+        onHit: null, 
+        onHitTaken: null 
+    };
 }
 
 async function initGame() {
     try {
-        const heroesResponse = await fetch('heroes.json'); if (!heroesResponse.ok) throw new Error("HTTP error " + heroesResponse.status); heroData = await heroesResponse.json();
-        const itemsResponse = await fetch('items.json'); const itemsData = await itemsResponse.json();
-        const enemiesResponse = await fetch('enemies.json'); enemiesData = await enemiesResponse.json();
+        const heroesResponse = await fetch('heroes.json');
+        if (!heroesResponse.ok) throw new Error("HTTP error " + heroesResponse.status);
+        heroData = await heroesResponse.json();
 
-        try { const mutatorsResponse = await fetch('mutators.json'); if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); } } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
-        try { let biomeResponse = await fetch('biomes.json'); if (biomeResponse.ok) { biomesData = await biomeResponse.json(); } else { console.warn("Failed to read biomes.json"); } } catch (err) { console.warn("Failed to fetch biomes:", err); }
+        const itemsResponse = await fetch('items.json');
+        const itemsData = await itemsResponse.json();
+
+        const enemiesResponse = await fetch('enemies.json');
+        enemiesData = await enemiesResponse.json();
+
         try {
-            let equipResponse = await fetch('equipment.json'); if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
-            if (equipResponse.ok) { equipmentData = await equipResponse.json(); } else { alert("CRITICAL ERROR: Could not read equipment.json! Make sure the file exists and is named exactly 'equipment.json'."); }
-        } catch (err) { alert("BROWSER ERROR: Your browser is blocking the game from reading equipment.json. You must run this using a local server (like Live Server in VS Code) or upload it to the web."); console.warn("Failed to fetch equipment:", err); }
+            const mutatorsResponse = await fetch('mutators.json');
+            if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); }
+        } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
+
+        try {
+            let equipResponse = await fetch('equipment.json');
+            if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
+            
+            if (equipResponse.ok) { 
+                equipmentData = await equipResponse.json(); 
+            } else {
+                alert("CRITICAL ERROR: Could not read equipment.json! Make sure the file exists and is named exactly 'equipment.json'.");
+            }
+        } catch (err) { 
+            alert("BROWSER ERROR: Your browser is blocking the game from reading equipment.json. You must run this using a local server (like Live Server in VS Code) or upload it to the web.");
+            console.warn("Failed to fetch equipment:", err); 
+        }
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
-        rareUpgradesData = itemsData.rareUpgradesData || [];
         bossSkillsData = itemsData.bossSkillsData;
-        cursedRelicsData = itemsData.cursedRelicsData;
 
-        for (let h in heroData) { 
-            if (!player.heroStats[h]) { player.heroStats[h] = { level: 1, exp: 0, expNeeded: 100, talents: { damage: 0, gold: 0, health: 0 } }; }
-            if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } 
-        }
+        renderHeroSelection();
+        updateUI();
 
-        if (heroData.warrior) { setActiveHero('warrior'); } else { setActiveHero(Object.keys(heroData)[0]); }
+        if (heroData.warrior) { setActiveHero('warrior'); }
 
-        renderHeroSelection(); updateUI();
-    } catch (error) { console.error("Failed to load game data:", error); }
+        for (let h in heroData) { if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } }
+        renderHeroSelection();
+    } catch (error) {
+        console.error("Failed to load game data:", error);
+    }
 }
 
 initGame();
