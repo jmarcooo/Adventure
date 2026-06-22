@@ -2,7 +2,7 @@
   {
     "id": "toxic",
     "name": "Toxic Air",
-    "desc": "Everyone loses 1% Max HP per second",
+    "desc": "Everyone loses 1% Max HP every 2 seconds",
     "icon": "☣️",
     "modifiers": {
       "hpDmgPerSec": 0.01
