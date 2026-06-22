@@ -33,8 +33,15 @@
                 </div>
                 <div class="bar-container" style="height: 12px;"><div class="bar-fill exp" id="player-exp-fill"></div></div>
             </div>
-            <button class="action-btn" onclick="startGame()">PLAY</button>
+            <button class="action-btn" onclick="openMenu('stages')">PLAY</button>
             <button class="action-btn" onclick="startTestBattle()" style="background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 8px 0 #732d91, 0 15px 20px rgba(0,0,0,0.3); font-size: 1.5rem; margin-top: 15px; padding: 15px 60px;">TEST BATTLE</button>
+        </div>
+
+        <div id="screen-stages" class="screen" style="justify-content: flex-start;">
+            <h2>Select Stage</h2>
+            <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom: 10px;">Defeat Bosses to unlock new biomes.</p>
+            <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;">
+                </div>
         </div>
 
         <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
@@ -83,10 +90,18 @@
         </div>
 
         <div id="screen-talents" class="screen" style="justify-content: flex-start;">
-            <h2>Hero Talents</h2>
-            <p style="color: #3498db; font-size: 1.1rem; margin-top: 5px; font-weight: bold;">Upgrading: <span id="talent-hero-name" style="color: #f1c40f;">Hero</span></p>
-            <div class="list-container" id="talents-list-container">
+            <h2>Talent Tree</h2>
+            <p style="color: #f1c40f; font-size: 1.2rem; margin-top: 5px; font-weight: bold;">Talent Points: <span id="tp-amount">0</span></p>
+            <div class="list-container">
+                <div class="card" onclick="upgradeTalent('damage')">
+                    <div class="card-icon">💥</div>
+                    <div class="card-info"><h3 style="color: #fff;">Fierce Strike</h3><p style="color: #f1c40f;">+10% Total Damage</p><p style="font-size: 0.8rem;">Level: <span id="talent-lvl-damage">0</span></p></div>
                 </div>
+                <div class="card" onclick="upgradeTalent('gold')">
+                    <div class="card-icon">💰</div>
+                    <div class="card-info"><h3 style="color: #fff;">Bounty Hunter</h3><p style="color: #f1c40f;">+20% Gold Drops</p><p style="font-size: 0.8rem;">Level: <span id="talent-lvl-gold">0</span></p></div>
+                </div>
+            </div>
         </div>
 
         <div id="screen-shop" class="screen" style="justify-content: flex-start;">
@@ -202,21 +217,16 @@
             </div>
 
             <div id="boss-clear-ui">
-                <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 2.5rem;">BOSS SLAIN!</h1>
-                <p style="margin-bottom: 10px;">Choose 1 powerful cursed relic...</p>
+                <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 3rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
+                <p style="margin-bottom: 10px; font-size: 1.2rem;">You conquered this biome!</p>
                 
-                <div class="loot-panel" style="margin-bottom: 15px; padding: 10px;">
-                    <div class="loot-item"><span style="font-size: 1.2rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
-                    <div class="loot-item"><span style="font-size: 1.2rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
-                    <div class="loot-item"><span style="font-size: 1.2rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
+                <div class="loot-panel" style="margin-bottom: 30px; padding: 20px;">
+                    <div class="loot-item"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
+                    <div class="loot-item"><span style="font-size: 1.5rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
+                    <div class="loot-item"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
                 </div>
 
-                <div id="cursed-list" style="width: 100%; display: flex; gap: 8px; justify-content: center;"></div>
-
-                <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
-                    <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1rem; padding: 15px; flex: 1; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Escape</button>
-                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1rem; padding: 15px; flex: 1; background: #e74c3c; box-shadow: 0 5px 0 #c0392b;" id="btn-descend" disabled>Descend</button>
-                </div>
+                <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.5rem; padding: 15px; width: 100%; background: #2ecc71; box-shadow: 0 8px 0 #27ae60;">Claim & Return</button>
             </div>
 
             <div id="run-summary-ui">
