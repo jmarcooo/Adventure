@@ -301,7 +301,6 @@ function unequipItem(slot) {
 }
 
 function generateRandomEquipment() {
-    // --- 100% STRICT DATA-DRIVEN ITEM GENERATION ---
     if (equipmentData && equipmentData.length > 0) {
         let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
         
@@ -321,7 +320,6 @@ function generateRandomEquipment() {
         };
     }
 
-    // --- EMERGENCY FALLBACK ---
     console.warn("CRITICAL: equipment.json is empty or failed to load. Using fallback generator.");
     
     const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
@@ -586,6 +584,27 @@ function renderStatusEffects() {
     });
 }
 
+// --- NEW MUTATOR DEBUG FUNCTION ---
+function debugMutator(mutatorId) {
+    if (!isTestMode) return;
+    let mutatorEl = document.getElementById('mutator-display');
+
+    if (mutatorId === 'clear') {
+        activeMutator = null;
+        if (mutatorEl) mutatorEl.style.display = 'none';
+        return;
+    }
+
+    let foundMutator = mutatorsData.find(m => m.id === mutatorId);
+    if (foundMutator) {
+        activeMutator = foundMutator;
+        if (mutatorEl) {
+            mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`;
+            mutatorEl.style.display = 'block';
+        }
+    }
+}
+
 // --- DEBUG FUNCTIONS ---
 function debugApply(type, targetStr) {
     if (!isTestMode) return;
@@ -847,9 +866,9 @@ function startTestBattle() {
 
     textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
 
-    let dummyHp = 9999;
+    let dummyHp = 9999999;
     let dummy = {
-        id: 0, maxHp: dummyHp, hp: dummyHp, damage: 0, pDef: 9999, mDef: 9999,
+        id: 0, maxHp: dummyHp, hp: dummyHp, damage: 0, pDef: 0, mDef: 0,
         skill: 'dummy', attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, spd: 1, atkSpd: 0.1,
         name: "Training Dummy"
     };
@@ -863,7 +882,7 @@ function startTestBattle() {
             <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
             <div class="mini-hp-text" id="enemy-hp-text-0">${dummyHp}/${dummyHp}</div>
             <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-            <div class="boss-skill-badge" title="Immune to most damage">🛡️ 9999 DEF/MDEF</div>
+            <div class="boss-skill-badge" title="Takes raw unmitigated damage">🛡️ 0 DEF / 9.9M HP</div>
         </div>`;
 
     player.attackProgress = 95;
@@ -1707,7 +1726,6 @@ function updateUI() {
 }
 
 function generateRandomEquipment() {
-    // --- 100% STRICT DATA-DRIVEN ITEM GENERATION ---
     if (equipmentData && equipmentData.length > 0) {
         let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
         
@@ -1727,7 +1745,6 @@ function generateRandomEquipment() {
         };
     }
 
-    // --- EMERGENCY FALLBACK ---
     console.warn("CRITICAL: equipment.json is empty or failed to load. Using fallback generator.");
     
     const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
