@@ -755,7 +755,7 @@ function combatTick() {
 
     // --- NEW: Independent Global Mutator Field Timer ---
     mutatorTickTimer += (50 * gameSpeed);
-    if (mutatorTickTimer >= 1000) {
+    if (mutatorTickTimer >= 2000) {
         mutatorTickTimer = 0;
         let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
         if (hpDmgPct > 0) {
