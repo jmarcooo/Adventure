@@ -753,7 +753,6 @@ function startCombatLoop() {
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
 
-    // --- NEW: Independent Global Mutator Field Timer ---
     mutatorTickTimer += (50 * gameSpeed);
     if (mutatorTickTimer >= 2000) {
         mutatorTickTimer = 0;
@@ -1024,6 +1023,7 @@ function spawnEnemyPack() {
     
     container.innerHTML = ''; activeEnemies = [];
     activeMutator = null; 
+    mutatorTickTimer = 0;
     if(mutatorEl) mutatorEl.style.display = 'none';
 
     let stageInfo = getLevelAndWave();
@@ -1564,10 +1564,10 @@ function showUpgradeShop(shopPool) {
         let lvlText = u.rarity === 'uncommon' ? ` <span class="lvl-badge">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : '';
         list.innerHTML += `
             <button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
-                <div style="font-size: 3rem; margin-bottom: 10px;">${u.icon || '✨'}</div>
-                <h4 style="font-size: 0.8rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff;">${u.name}${lvlText}</h4>
-                <p style="font-size: 0.9rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>
-                ${u.cost > 0 ? `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #00e5ff;">${u.cost} 🌀</div>` : `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #2ecc71;">FREE</div>`}
+                <div style="font-size: 2.2rem; margin-bottom: 5px;">${u.icon || '✨'}</div>
+                <h4 style="font-size: 0.75rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff; word-break: break-word;">${u.name}${lvlText}</h4>
+                <p style="font-size: 0.75rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>
+                ${u.cost > 0 ? `<div style="margin-top: auto; font-size: 0.9rem; font-weight: bold; color: #00e5ff;">${u.cost} 🌀</div>` : `<div style="margin-top: auto; font-size: 0.9rem; font-weight: bold; color: #2ecc71;">FREE</div>`}
             </button>`;
     });
 }
@@ -1620,12 +1620,12 @@ function showBossClearUI() {
     choices.forEach(c => {
         list.innerHTML += `
             <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
-                <div class="info" style="display: flex; flex-direction: column; gap: 5px;">
-                    <h4 style="margin: 0; font-size: 0.95rem;">${c.name}</h4>
-                    <p style="font-size: 0.8rem; line-height: 1.2; margin: 0;">${c.desc}</p>
-                    <p class="curse-text" style="font-size: 0.75rem; color: #e74c3c; font-weight: bold; margin: 0;">${c.curseDesc}</p>
+                <div class="info" style="display: flex; flex-direction: column; gap: 3px;">
+                    <h4 style="margin: 0; font-size: 0.8rem; word-break: break-word;">${c.name}</h4>
+                    <p style="font-size: 0.7rem; line-height: 1.1; margin: 0;">${c.desc}</p>
+                    <p class="curse-text" style="font-size: 0.65rem; color: #e74c3c; font-weight: bold; margin: 0;">${c.curseDesc}</p>
                 </div>
-                <div class="cost" style="font-size: 3rem; margin-top: auto;">${c.icon}</div>
+                <div class="cost" style="font-size: 2.5rem; margin-top: auto;">${c.icon}</div>
             </button>`;
     });
 
@@ -1633,7 +1633,6 @@ function showBossClearUI() {
 }
 
 function selectCursedRelic(id) {
-    // Disable all other buttons so the user can only pick 1
     let buttons = document.querySelectorAll('.cursed-btn');
     buttons.forEach(btn => {
         btn.disabled = true;
@@ -1643,7 +1642,6 @@ function selectCursedRelic(id) {
         }
     });
 
-    // Stats mapped accurately to your game's data schema
     if(id === 'glass') { runStats.pAtkMulti += 0.20; runStats.mAtkMulti += 0.20; runStats.crit += 0.25; adjustMaxHp(-0.30); }
     if(id === 'berserk') { runStats.atkSpdMulti += 0.40; runStats.pAtk -= 15; runStats.mAtk -= 15; }
     if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
