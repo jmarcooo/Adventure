@@ -39,7 +39,7 @@ let activeEnemies = [];
 let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 
 let combatTickInterval;
-let mutatorTickTimer = 0; // --- NEW: Independent mutator timer ---
+let mutatorTickTimer = 0;
 let isTestMode = false;
 
 // --- MUTATOR HELPER ---
@@ -901,7 +901,7 @@ function startTestBattle() {
 
     renderStatusEffects(); 
     playBattleStartAnimation();
-    mutatorTickTimer = 0; // Reset field timer
+    mutatorTickTimer = 0;
 
     setTimeout(() => { 
         waveManager.isUpgrading = false; 
@@ -1024,7 +1024,6 @@ function spawnEnemyPack() {
     
     container.innerHTML = ''; activeEnemies = [];
     activeMutator = null; 
-    mutatorTickTimer = 0; // Reset field timer
     if(mutatorEl) mutatorEl.style.display = 'none';
 
     let stageInfo = getLevelAndWave();
@@ -1206,7 +1205,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 
-    // THE FIX: ALWAYS CHECK IF WAVE IS CLEARED
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
         setTimeout(() => packDefeated(), 400);
     }
@@ -1239,7 +1237,6 @@ function animateHit(unitId, damageDealt, isCrit) {
 function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     
-    // FAILSAFE: If ATB triggers but enemies died to poison
     if(aliveEnemies.length === 0) { 
         if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
             packDefeated(); 
@@ -1623,8 +1620,12 @@ function showBossClearUI() {
     choices.forEach(c => {
         list.innerHTML += `
             <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
-                <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
-                <div class="cost">${c.icon}</div>
+                <div class="info" style="display: flex; flex-direction: column; gap: 5px;">
+                    <h4 style="margin: 0; font-size: 0.95rem;">${c.name}</h4>
+                    <p style="font-size: 0.8rem; line-height: 1.2; margin: 0;">${c.desc}</p>
+                    <p class="curse-text" style="font-size: 0.75rem; color: #e74c3c; font-weight: bold; margin: 0;">${c.curseDesc}</p>
+                </div>
+                <div class="cost" style="font-size: 3rem; margin-top: auto;">${c.icon}</div>
             </button>`;
     });
 
@@ -1632,17 +1633,33 @@ function showBossClearUI() {
 }
 
 function selectCursedRelic(id) {
-    if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
-    if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; }
+    // Disable all other buttons so the user can only pick 1
+    let buttons = document.querySelectorAll('.cursed-btn');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        if(btn.id !== `btn-curse-${id}`) {
+            btn.style.opacity = '0.4';
+            btn.style.filter = 'grayscale(100%)';
+        }
+    });
+
+    // Stats mapped accurately to your game's data schema
+    if(id === 'glass') { runStats.pAtkMulti += 0.20; runStats.mAtkMulti += 0.20; runStats.crit += 0.25; adjustMaxHp(-0.30); }
+    if(id === 'berserk') { runStats.atkSpdMulti += 0.40; runStats.pAtk -= 15; runStats.mAtk -= 15; }
     if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
-    if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; }
-    if(id === 'blood') { runStats.lifesteal += 0.10; runStats.damageReduction -= 0.15; }
+    if(id === 'giant') { runStats.pAtk += 30; runStats.mAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpdMulti -= 0.20; }
+    if(id === 'blood') { runStats.lifesteal += 0.10; runStats.pDefMulti -= 0.15; runStats.mDefMulti -= 0.15; }
     if(id === 'midas') { runStats.goldMultiplier += 0.50; runStats.enemyHpMultiplier += 0.20; }
     if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; }
-    if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; }
+    if(id === 'spiked') { runStats.pDefMulti += 0.20; runStats.mDefMulti += 0.20; runStats.atkSpdMulti -= 0.10; }
 
     updateCombatStatsPanel();
-    document.getElementById(`btn-curse-${id}`).style.borderColor = '#2ecc71';
+    let selectedBtn = document.getElementById(`btn-curse-${id}`);
+    if(selectedBtn) {
+        selectedBtn.style.borderColor = '#2ecc71';
+        selectedBtn.style.transform = 'scale(1.05)';
+    }
+    
     document.getElementById('btn-descend').disabled = false;
 }
 
