@@ -266,6 +266,7 @@ body {
 .equip-stat-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .equip-slot { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.4); border-radius: 5px; position: absolute; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 5;}
 
+/* Perfectly spaced 8-slot layout */
 #slot-head { top: 0%; left: 50%; transform: translateX(-50%); }
 #slot-amulet { top: 15%; right: 5%; }
 #slot-weapon { top: 35%; left: 2%; }
