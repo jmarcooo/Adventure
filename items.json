@@ -1,1 +1,41 @@
-aaaa
+{
+  "commonUpgradesData": [
+    { "id": "temp_atk", "name": "Power Surge", "icon": "🔥" },
+    { "id": "heal", "name": "Bandage", "icon": "🩹" },
+    { "id": "vitality", "name": "Vitality", "icon": "❤️" }
+  ],
+  "runUpgradeData": [
+    { "id": "p_atk", "name": "Sharpen", "desc": "+20 Physical Attack", "icon": "⚔️", "maxLevel": 10 },
+    { "id": "m_atk", "name": "Empower", "desc": "+20 Magic Attack", "icon": "🪄", "maxLevel": 10 },
+    { "id": "p_def", "name": "Fortify", "desc": "+10 Physical Defense", "icon": "🛡️", "maxLevel": 10 },
+    { "id": "m_def", "name": "Ward", "desc": "+10 Magic Defense", "icon": "🔮", "maxLevel": 10 },
+    { "id": "spd", "name": "Agility", "desc": "+20% Atk Spd & +10% Spd", "icon": "💨", "maxLevel": 5 },
+    { "id": "crit", "name": "Precision", "desc": "+5% Crit & +50% Crit Dmg", "icon": "🎯", "maxLevel": 5 }
+  ],
+  "rareUpgradesData": [
+    { "id": "purification", "name": "Purification", "desc": "Immune to Magic, Debuffs & Mutators for 1 Wave", "icon": "✨" },
+    { "id": "revitalize", "name": "Revitalize", "desc": "Fully heals your Hero instantly", "icon": "💖" },
+    { "id": "inner_focus", "name": "Inner Focus", "desc": "Gain 5 stacks of Focus (Guaranteed Crits)", "icon": "🧘" }
+  ],
+  "bossSkillsData": [
+    { "id": "bash", "name": "Heavy Bash", "desc": "Chance to double damage and stun.", "icon": "🔨" },
+    { "id": "poison_aura", "name": "Toxic Aura", "desc": "Passively poisons enemies over time.", "icon": "☠️" },
+    { "id": "intimidate_revive", "name": "Undying", "desc": "Revives once at 50% HP. Reduces player attack.", "icon": "🧟" },
+    { "id": "high_armor", "name": "Iron Clad", "desc": "Reduces physical damage taken by 90%.", "icon": "🛡️" },
+    { "id": "leviathan_spawns", "name": "Swarm", "desc": "Summons smaller enemies to assist.", "icon": "🦑" },
+    { "id": "magic", "name": "Arcane Blast", "desc": "Attacks target Magic Defense.", "icon": "🔮" },
+    { "id": "crit", "name": "Precision Strike", "desc": "25% chance to deal double damage.", "icon": "🎯" },
+    { "id": "vampire", "name": "Blood Thirst", "desc": "Heals for 50% of damage dealt.", "icon": "🦇" },
+    { "id": "armor", "name": "Armored", "desc": "Reduces physical damage taken by 90%.", "icon": "🛡️" }
+  ],
+  "cursedRelicsData": [
+    { "id": "glass", "name": "Glass Cannon", "desc": "+20% P.Atk/M.Atk, +25% Crit", "curseDesc": "-30% Max HP", "icon": "🧨" },
+    { "id": "berserk", "name": "Berserker's Eye", "desc": "+40% Attack Speed", "curseDesc": "-15 Base P.Atk & M.Atk", "icon": "👁️" },
+    { "id": "phantom", "name": "Phantom Step", "desc": "+15% Dodge Chance", "curseDesc": "-20% Max HP", "icon": "👻" },
+    { "id": "giant", "name": "Giant's Belt", "desc": "+30 Base P.Atk/M.Atk, +10% Splash", "curseDesc": "-20% Attack Speed", "icon": "🥋" },
+    { "id": "blood", "name": "Blood Grail", "desc": "+10% Lifesteal", "curseDesc": "-15% Total Defense", "icon": "🍷" },
+    { "id": "midas", "name": "Midas Touch", "desc": "+50% Gold Multiplier", "curseDesc": "Enemies gain +20% HP", "icon": "🪙" },
+    { "id": "reckless", "name": "Reckless Abandon", "desc": "+15% Double Hit Chance", "curseDesc": "0% Dodge Chance", "icon": "🪓" },
+    { "id": "spiked", "name": "Spiked Armor", "desc": "+20% P.Def/M.Def Multiplier", "curseDesc": "-10% Attack Speed", "icon": "🐢" }
+  ]
+}
