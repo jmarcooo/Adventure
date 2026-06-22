@@ -17,14 +17,14 @@ let player = {
     inventory: [],
     attackProgress: 0, 
     activeEffects: [],
-    currentHealth: 100 // Dynamic
+    currentHealth: 100 
 };
 
 let runStats = {
     pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
     splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
     pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0,
-    critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0, // Fixed dynamic health scaling
+    critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0, 
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
     tempAtkActive: false, purificationActive: false,
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
@@ -36,15 +36,15 @@ let runStats = {
 let runUpgradeData = []; let commonUpgradesData = []; let rareUpgradesData = [];
 let bossSkillsData = []; let cursedRelicsData = [];
 let viewingHero = null; let activeEnemies = [];
-let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
+let waveManager = { wave: 1, isUpgrading: false, transitioning: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
 let combatTickInterval; let mutatorTickTimer = 0; let isTestMode = false;
 
-// --- FALLBACK BIOMES (Fixes the stuck in forest bug) ---
+// --- FALLBACK BIOMES (Ensures biomes exist even if JSON fails) ---
 const FALLBACK_BIOMES = [
-    { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', background: '' },
-    { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', background: '' },
-    { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive', background: '' },
-    { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor', background: '' }
+    { id: 'forest', name: 'Forest', bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', background: '' },
+    { id: 'cave', name: 'Cave', bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', background: '' },
+    { id: 'graveyard', name: 'Haunted Graveyard', bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive', background: '' },
+    { id: 'ruins', name: 'Ancient Ruins', bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor', background: '' }
 ];
 
 // --- MUTATOR HELPER ---
@@ -63,7 +63,6 @@ function getEquipmentStats() {
     return eqStats;
 }
 
-// Fixed Max HP Calculation: Only recalculates base stats. NEVER saves cursed states.
 function getMaxHealth() {
     if (!heroData[player.currentHero]) return 100;
     let base = 100; 
@@ -109,13 +108,6 @@ function getTotalDamage() {
     return { pDmg: baseP, mDmg: baseM };
 }
 
-function adjustMaxHp(percentChange) {
-    runStats.maxHpMulti += percentChange;
-    let newMax = getMaxHealth();
-    if(player.currentHealth > newMax) player.currentHealth = newMax;
-    updatePlayerHealthBar();
-}
-
 // --- NAVIGATION & UI UPDATES ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
 
@@ -128,7 +120,7 @@ function openMenu(targetScreen) {
     if(targetScreen !== 'game') { clearInterval(combatTickInterval); }
     if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
     if(targetScreen === 'gear') { renderGearMenu(); }
-    if(targetScreen === 'talents') { renderTalentsMenu(); } // NEW dynamic talents bind
+    if(targetScreen === 'talents') { renderTalentsMenu(); } 
     
     screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
     document.getElementById('screen-' + targetScreen).classList.add('active');
@@ -144,7 +136,6 @@ function updateUI() {
     document.getElementById('gold-amount').innerText = player.gold;
     document.getElementById('gem-amount').innerText = player.gems;
     
-    // Updates UI based on Active Hero Leveling
     if (player.heroStats && player.heroStats[player.currentHero]) {
         let activeH = player.heroStats[player.currentHero];
         document.getElementById('player-level-text').innerText = activeH.level;
@@ -153,7 +144,7 @@ function updateUI() {
     }
 }
 
-// --- NEW TALENT LOGIC (Gold Based & Per-Hero) ---
+// --- TALENT LOGIC (Gold Based & Per-Hero) ---
 function renderTalentsMenu() {
     let container = document.getElementById('talents-list-container');
     if (!heroData[player.currentHero] || !player.heroStats[player.currentHero]) return;
@@ -333,6 +324,13 @@ function updateGearStatsPanel() {
     panel.innerHTML = html;
 }
 
+function addCurrency(type, amount) {
+    if (amount <= 0) return;
+    if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
+    else if (type === 'gem') { player.gems += amount; runStats.gemsGained += amount; spawnFloatingText('gem-container', `+${amount}`, 'float-gem'); }
+    updateUI();
+}
+
 function buyPremium(item) {
     if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
     else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
@@ -365,8 +363,12 @@ function consumeCharge(unit, type) {
 
 function applyHeal(unit, amount) {
     if (hasStatus(unit, 'decay')) {
-        if (unit === player) { player.currentHealth -= amount; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "DECAY -" + amount, "float-enemy-dmg"); if (player.currentHealth <= 0) triggerGameOver("Rotted away from Decay"); } 
-        else { unit.hp -= amount; animateHit(unit.id, amount, false); spawnFloatingText(`enemy-${unit.id}`, "DECAY!", "float-enemy-dmg"); }
+        if (unit === player) {
+            player.currentHealth -= amount; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "DECAY -" + amount, "float-enemy-dmg");
+            if (player.currentHealth <= 0) triggerGameOver("Rotted away from Decay");
+        } else {
+            unit.hp -= amount; animateHit(unit.id, amount, false); spawnFloatingText(`enemy-${unit.id}`, "DECAY!", "float-enemy-dmg");
+        }
     } else {
         if (unit === player) {
             let maxH = getMaxHealth(); player.currentHealth = Math.min(maxH, player.currentHealth + amount); updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "+" + amount, "float-heal");
@@ -452,8 +454,7 @@ function renderStatusEffects() {
 }
 
 function debugMutator(mutatorId) {
-    if (!isTestMode) return;
-    let mutatorEl = document.getElementById('mutator-display');
+    if (!isTestMode) return; let mutatorEl = document.getElementById('mutator-display');
     if (mutatorId === 'clear') { activeMutator = null; if (mutatorEl) mutatorEl.style.display = 'none'; return; }
     let foundMutator = mutatorsData.find(m => m.id === mutatorId);
     if (foundMutator) { activeMutator = foundMutator; if (mutatorEl) { mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`; mutatorEl.style.display = 'block'; } }
@@ -485,6 +486,8 @@ function debugApply(type, targetStr) {
     
     updateCombatStatsPanel();
 }
+
+// --- COMBAT CORE & MATH ENGINE ---
 
 function updateCombatStatsPanel() {
     let panel = document.getElementById('combat-stats-panel');
@@ -532,6 +535,7 @@ function spawnLootDrop(targetId, type) {
     targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
+// --- ATB LOOP ENGINE ---
 function startCombatLoop() {
     clearInterval(combatTickInterval); combatTickInterval = setInterval(combatTick, 50); 
 }
@@ -594,7 +598,6 @@ function startTestBattle() {
     if (!heroData || Object.keys(heroData).length === 0) { alert("ERROR: Game data failed to load."); return; }
     isTestMode = true; player.activeEffects = []; 
     
-    // STRICT RESET FOR TEST BATTLE
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
         pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0, critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0,
@@ -644,7 +647,6 @@ function startGame() {
     if (!heroData || Object.keys(heroData).length === 0) { alert("ERROR: Game data failed to load."); return; }
     isTestMode = false; document.getElementById('debug-panel').style.display = 'none'; player.activeEffects = [];
 
-    // --- NEW: STRICT RESET FOR ACTUAL RUN (Fixes stats carrying over bug) ---
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
         pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0, critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0,
@@ -658,8 +660,7 @@ function startGame() {
         let innate = heroData[player.currentHero].innate; for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
     
-    waveManager.wave = 1; 
-    player.currentHealth = getMaxHealth();
+    waveManager.wave = 1; player.currentHealth = getMaxHealth();
 
     document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
     waveManager.isUpgrading = true; 
@@ -667,24 +668,24 @@ function startGame() {
     setTimeout(() => { waveManager.isUpgrading = false; startCombatLoop(); }, 1500); 
 }
 
+// --- BUG FIX: THE 15 WAVE BIOME LOGIC ---
 function getLevelAndWave() {
+    // Math logic fixed: Exactly 15 waves per Biome chunk.
     let totalLevel = Math.floor((waveManager.wave - 1) / 15) + 1;
     let stageWave = ((waveManager.wave - 1) % 15) + 1;
 
-    // --- NEW: FALLBACK BIOMES (Fixes the stuck in forest bug) ---
     let bData = (biomesData && biomesData.length > 0) ? biomesData : FALLBACK_BIOMES;
 
-    let biomeIndex = 0; let levelsAccumulated = 0;
-    for (let i = 0; i < bData.length; i++) {
-        if (totalLevel <= levelsAccumulated + bData[i].levels) { biomeIndex = i; break; }
-        levelsAccumulated += bData[i].levels;
-    }
-    if (biomeIndex >= bData.length) biomeIndex = bData.length - 1;
+    // We simply cycle through the array based on totalLevel. 
+    // Level 1 = Forest, Level 2 = Cave, etc. 
+    let biomeIndex = (totalLevel - 1) % bData.length;
+    let biome = bData[biomeIndex];
+    
+    let isGenericBoss = stageWave === 15;
+    let isBiomeBoss = stageWave === 15; // In this system, every 15th wave is the biome boss.
+    let isMiniBoss = stageWave === 8;
 
-    let biome = bData[biomeIndex]; let levelInBiome = totalLevel - levelsAccumulated;
-    let isGenericBoss = stageWave === 15; let isBiomeBoss = isGenericBoss && (totalLevel === levelsAccumulated + biome.levels); let isMiniBoss = stageWave === 8;
-
-    return { totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss, isMiniBoss, biome };
+    return { totalLevel, level: totalLevel, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, isMiniBoss, biome };
 }
 
 function renderBossUI(id, name, emoji, hp, bSkill) {
@@ -735,7 +736,7 @@ function spawnEnemyPack() {
 
     let biomeEnemies = enemiesData[stageInfo.biome.id] || [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
 
-    if (stageInfo.wave >= 6 && stageInfo.wave <= 9 && Math.random() < 0.25 && mutatorsData && mutatorsData.length > 0) {
+    if (stageInfo.wave >= 6 && stageInfo.wave <= 14 && Math.random() < 0.25 && mutatorsData && mutatorsData.length > 0) {
         activeMutator = mutatorsData[Math.floor(Math.random() * mutatorsData.length)];
         if(mutatorEl) {
             mutatorEl.innerHTML = `${activeMutator.icon} MUTATOR ACTIVE: ${activeMutator.name} <br><span style="font-size:0.75rem; color:#bdc3c7;">${activeMutator.desc}</span>`;
@@ -759,15 +760,6 @@ function spawnEnemyPack() {
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS ⚠️</span>`;
         renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
         if (stageInfo.biome.skill === 'leviathan_spawns') { for(let i=1; i<=4; i++) { renderNormalEnemyUI(i, activeEnemies[i], '🦑', true); } }
-
-    } else if (stageInfo.isBoss) {
-        let bossHp = Math.floor((150 + (waveManager.wave * 25)) * runStats.enemyHpMultiplier);
-        let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
-        let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
-
-        activeEnemies.push({ id: 0, name: "Level Boss", maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Floor 15 ⚠️</span>`;
-        renderBossUI(0, "Level Boss", waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)], bossHp, bSkill);
 
     } else if (stageInfo.isMiniBoss) {
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ MINI-BOSS Floor 8 ⚔️</span>`;
@@ -800,12 +792,9 @@ function spawnEnemyPack() {
         let enemyCount = Math.min(5, Math.max(1, baseCount + variance));
 
         let sortedByHp = [...availableEnemies].sort((a, b) => b.baseHp - a.baseHp);
-        let tankT = sortedByHp[0];
-        let squishyT = sortedByHp[sortedByHp.length - 1];
-        let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
+        let tankT = sortedByHp[0]; let squishyT = sortedByHp[sortedByHp.length - 1]; let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
         
-        let formationRoll = Math.random();
-        let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
+        let formationRoll = Math.random(); let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
         let formationType = formationRoll < 0.2 ? 'wall' : (formationRoll < 0.4 ? 'ambush' : 'coven');
 
         let spawnList = [];
@@ -890,7 +879,10 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 
-    if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) { setTimeout(() => packDefeated(), 400); }
+    if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
+        waveManager.isUpgrading = true; // Lock combat instantly
+        setTimeout(() => packDefeated(), 400);
+    }
 }
 
 function animateHit(unitId, damageDealt, isCrit) {
@@ -1091,6 +1083,7 @@ function updatePlayerHealthBar() {
 }
 
 function packDefeated() {
+    if(player.currentHealth <= 0) return; // SAFETY: Don't shop if dead.
     if(waveManager.isUpgrading) return;
     waveManager.isUpgrading = true;
 
@@ -1107,6 +1100,7 @@ function packDefeated() {
     runStats.expGained += expGainedThisWave;
 
     updateCombatStatsPanel();
+
     let shopPool = []; window.currentShopPool = shopPool;
 
     commonUpgradesData.forEach(u => {
@@ -1175,7 +1169,7 @@ function buyRunUpgrade(upgrade) {
         if(upgrade.id === 'crit') { runStats.crit += 0.05; runStats.critDmg += 0.50; }
         
     } else if (upgrade.rarity === 'common') {
-        runStats.commonUpgradeCounts[upgrade.id]++;
+        runStats.commonUpgradeCounts[upgrade.id] = (runStats.commonUpgradeCounts[upgrade.id] || 0) + 1;
         if (upgrade.id === 'heal') { let maxH = getMaxHealth(); applyHeal(player, Math.floor(maxH * 0.25)); }
         if (upgrade.id === 'temp_atk') { runStats.tempAtkActive = true; }
         if (upgrade.id === 'vitality') { runStats.maxHpBonus += upgrade.effect.hp; player.currentHealth += upgrade.effect.hp; updatePlayerHealthBar(); }
@@ -1244,11 +1238,21 @@ function selectCursedRelic(id) {
     document.getElementById('btn-descend').disabled = false;
 }
 
+function adjustMaxHp(percentChange) {
+    runStats.maxHpMulti += percentChange;
+    let newMax = getMaxHealth();
+    if(player.currentHealth > newMax) player.currentHealth = newMax;
+    updatePlayerHealthBar();
+}
+
 function continueToNextWave() {
+    if (waveManager.transitioning) return; // SAFETY: Stop spam clicks
+    waveManager.transitioning = true;
+    
     document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none';
     waveManager.wave++; waveManager.isUpgrading = true; 
     spawnEnemyPack(); playBattleStartAnimation();
-    setTimeout(() => { waveManager.isUpgrading = false; startCombatLoop(); }, 1500); 
+    setTimeout(() => { waveManager.isUpgrading = false; waveManager.transitioning = false; startCombatLoop(); }, 1500); 
 }
 
 function endRun(titleText, titleColor, killerText = "") {
@@ -1311,7 +1315,6 @@ async function initGame() {
         bossSkillsData = itemsData.bossSkillsData;
         cursedRelicsData = itemsData.cursedRelicsData;
 
-        // --- NEW: INITIALIZE PER-HERO STATS ---
         for (let h in heroData) { 
             if (!player.heroStats[h]) { player.heroStats[h] = { level: 1, exp: 0, expNeeded: 100, talents: { damage: 0, gold: 0, health: 0 } }; }
             if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } 
