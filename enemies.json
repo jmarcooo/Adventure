@@ -1,4 +1,12 @@
 {
+  "training": [
+    { "id": "chicken", "name": "Chicken", "emoji": "🐔", "baseHp": 1, "baseDmg": 2, "skill": null },
+    { "id": "frog", "name": "Frog", "emoji": "🐸", "baseHp": 5, "baseDmg": 4, "skill": "crit" },
+    { "id": "cockroach", "name": "Cockroach", "emoji": "🪳", "baseHp": 10, "baseDmg": 3, "skill": "magic" },
+    { "id": "fish", "name": "Cute Fish", "emoji": "🐟", "baseHp": 15, "baseDmg": 2, "skill": "armor" },
+    { "id": "grasshopper", "name": "Grasshopper", "emoji": "🦗", "baseHp": 20, "baseDmg": 5, "skill": "crit" },
+    { "id": "butterfly", "name": "Butterfly", "emoji": "🦋", "baseHp": 25, "baseDmg": 6, "skill": "crit" }
+  ],
   "forest": [
     { "id": "slime", "name": "Slime", "emoji": "👾", "baseHp": 20, "baseDmg": 2, "skill": null },
     { "id": "wolf", "name": "Dire Wolf", "emoji": "🐺", "baseHp": 15, "baseDmg": 4, "skill": "crit" },
