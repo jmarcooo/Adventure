@@ -167,8 +167,8 @@
       "icon": "\ud83d\udc96"
     },
     {
-      "id": "Vitality",
-      "name": "Potion",
+      "id": "hpup",
+      "name": "Vitality",
       "desc": "Increase HP by 25",
       "effect": {
         "hp": 25
