@@ -201,29 +201,29 @@
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
                 <p style="margin-bottom: 10px;">Spend your Runes for this run.</p>
                 
-                <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 20px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">
+                <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 15px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">
                     🌀 <span id="shop-runes-display">0</span>
                 </div>
 
-                <div id="upgrade-list" style="width: 100%; display: flex; gap: 15px; justify-content: center; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px;"></div>
-                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
+                <div id="upgrade-list" style="width: 100%; display: flex; gap: 8px; justify-content: center;"></div>
+                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 15px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
             <div id="boss-clear-ui">
                 <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 2.5rem;">BOSS SLAIN!</h1>
-                <p style="margin-bottom: 15px;">Choose 1 powerful cursed relic...</p>
+                <p style="margin-bottom: 10px;">Choose 1 powerful cursed relic...</p>
                 
-                <div class="loot-panel">
-                    <div class="loot-item"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
-                    <div class="loot-item"><span style="font-size: 1.5rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
-                    <div class="loot-item"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
+                <div class="loot-panel" style="margin-bottom: 15px; padding: 10px;">
+                    <div class="loot-item"><span style="font-size: 1.2rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
+                    <div class="loot-item"><span style="font-size: 1.2rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
+                    <div class="loot-item"><span style="font-size: 1.2rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
                 </div>
 
-                <div id="cursed-list" style="width: 100%; display: flex; gap: 15px; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px;"></div>
+                <div id="cursed-list" style="width: 100%; display: flex; gap: 8px; justify-content: center;"></div>
 
-                <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
-                    <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Escape & Claim</button>
-                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.1rem; padding: 15px; flex: 1; background: #e74c3c; box-shadow: 0 5px 0 #c0392b;" id="btn-descend" disabled>Descend Deeper</button>
+                <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
+                    <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1rem; padding: 15px; flex: 1; background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d;">Escape</button>
+                    <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1rem; padding: 15px; flex: 1; background: #e74c3c; box-shadow: 0 5px 0 #c0392b;" id="btn-descend" disabled>Descend</button>
                 </div>
             </div>
 
