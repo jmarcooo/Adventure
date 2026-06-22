@@ -155,8 +155,9 @@
                         <button class="hud-btn" style="background: #e67e22; font-size: 0.65rem;" onclick="debugApply('berserk', 'player')">Berserk</button>
                         <button class="hud-btn" style="background: #1abc9c; font-size: 0.65rem;" onclick="debugApply('block', 'player')">Block</button>
                         <button class="hud-btn" style="background: #9b59b6; font-size: 0.65rem;" onclick="debugApply('focused', 'player')">Focus</button>
-                        <button class="hud-btn" style="background: #000; font-size: 0.65rem;" onclick="debugApply('doom', 'player')">Doom(10s)</button>
+                        <button class="hud-btn" style="background: #000; font-size: 0.65rem;" onclick="debugApply('doom', 'player')">Doom</button>
                     </div>
+                    
                     <div style="font-size: 0.8rem; font-weight: bold; color: #e74c3c; text-align: left; margin-top: 5px;">Target Dummy Setup:</div>
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                         <button class="hud-btn" style="background: #e74c3c; font-size: 0.65rem;" onclick="debugApply('stun', 'enemy')">Stun</button>
@@ -167,6 +168,15 @@
                         <button class="hud-btn" style="background: #3498db; font-size: 0.65rem;" onclick="debugApply('slow', 'enemy')">Slow</button>
                         <button class="hud-btn" style="background: #34495e; font-size: 0.65rem;" onclick="debugApply('blind', 'enemy')">Blind</button>
                         <button class="hud-btn" style="background: #bdc3c7; font-size: 0.65rem; color:#333;" onclick="debugApply('marked', 'enemy')">Marked</button>
+                    </div>
+
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #f1c40f; text-align: left; margin-top: 5px;">Mutator Overrides:</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button class="hud-btn" style="background: #2ecc71; font-size: 0.65rem;" onclick="debugMutator('toxic')">Toxic Air</button>
+                        <button class="hud-btn" style="background: #9b59b6; font-size: 0.65rem;" onclick="debugMutator('leyline')">Leyline Surge</button>
+                        <button class="hud-btn" style="background: #e67e22; font-size: 0.65rem;" onclick="debugMutator('sluggish')">Sluggish</button>
+                        <button class="hud-btn" style="background: #e74c3c; font-size: 0.65rem;" onclick="debugMutator('nullify')">Nullify Field</button>
+                        <button class="hud-btn" style="background: #7f8c8d; font-size: 0.65rem;" onclick="debugMutator('clear')">Clear Mutator</button>
                     </div>
                 </div>
 
