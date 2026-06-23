@@ -17,24 +17,26 @@ let player = {
     inventory: [],
     attackProgress: 0, 
     activeEffects: [],
-    highestStageUnlocked: 0 // NEW: Tracks your stage progress
+    highestStageUnlocked: 0 // Tracks your stage progress
 };
 
 let runStats = {
     pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
     splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
-    pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+    pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0,
+    critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0, 
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+    tempAtkActive: false, purificationActive: false,
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
     upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
     hasRareUpgrade: false, hasUltimateUpgrade: false,
-    commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+    commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }
 };
 
 let runUpgradeData = [];
 let commonUpgradesData = [];
 let bossSkillsData = [];
-let cursedRelicsData = []; // Not used in this version but kept for safety
+let cursedRelicsData = []; 
 
 let viewingHero = null;
 let activeEnemies = [];
@@ -58,7 +60,6 @@ const STAGE_DATA = [
     { id: 'celestial', name: "Celestial Palace", bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash' }
 ];
 
-// --- MUTATOR HELPER ---
 function getMutatorMod(key, defaultValue) {
     if (activeMutator && activeMutator.modifiers && activeMutator.modifiers[key] !== undefined) {
         return activeMutator.modifiers[key];
@@ -101,7 +102,6 @@ function openMenu(targetScreen) {
         if(targetScreen !== 'stages') { 
             document.getElementById('btn-' + targetScreen).classList.add('active');
         } else {
-            // If on Stages menu, keep Home highlighted
             document.getElementById('btn-home').classList.add('active'); 
         }
     } else {
@@ -109,7 +109,6 @@ function openMenu(targetScreen) {
     }
 }
 
-// --- NEW STAGE MENU LOGIC ---
 function renderStagesMenu() {
     let container = document.getElementById('stages-list-container');
     container.innerHTML = '';
@@ -223,11 +222,6 @@ function renderHeroDetails(heroId) {
         <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
 
         <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
-
-        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-        <p style="font-size: 0.9rem; color: #95a5a6;">Shop Exclusives (Unlock in Run):</p>
-        <p style="font-size: 0.85rem; margin-top: 5px;">🟩 <b>${hero.rareUpgrade ? hero.rareUpgrade.name : 'N/A'}:</b> ${hero.rareUpgrade ? hero.rareUpgrade.desc : ''}</p>
-        <p style="font-size: 0.85rem; margin-top: 5px;">🟥 <b>${hero.ultimateUpgrade ? hero.ultimateUpgrade.name : 'N/A'}:</b> ${hero.ultimateUpgrade ? hero.ultimateUpgrade.desc : ''}</p>
     `;
 
     let btnActive = document.getElementById('btn-set-active');
@@ -369,7 +363,9 @@ function updateGearStatsPanel() {
         panel.innerHTML = '<div style="text-align:center; padding: 20px;">No Hero Active</div>'; return;
     }
     let stats = getPlayerStats();
+    let maxH = player.maxHealth + (runStats.maxHpBonus || 0); // Correctly calculate max health
     let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${heroData[player.currentHero].name}</h4>`;
+    html += `<div class="equip-stat-row"><span>Max HP</span> <span>${maxH}</span></div>`;
     html += `<div class="equip-stat-row"><span>P.Atk</span> <span>${stats.pAtk}</span></div>`;
     html += `<div class="equip-stat-row"><span>M.Atk</span> <span>${stats.mAtk}</span></div>`;
     html += `<div class="equip-stat-row"><span>P.Def</span> <span>${stats.pDef}</span></div>`;
@@ -402,7 +398,9 @@ function toggleGameSpeed() {
 // --- HYBRID STATUS ENGINE ---
 
 function applyStatus(unit, type, value, isCharge = false) {
-    if (getMutatorMod('nullifyStatuses', false)) { return; }
+    if (getMutatorMod('nullifyStatuses', false)) {
+        return; 
+    }
 
     if (!unit.activeEffects) unit.activeEffects = [];
     let existing = unit.activeEffects.find(eff => eff.type === type);
@@ -450,7 +448,8 @@ function applyHeal(unit, amount) {
         }
     } else {
         if (unit === player) {
-            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + amount);
+            let maxH = player.maxHealth + (runStats.maxHpBonus || 0); // Include Vitality HP
+            player.currentHealth = Math.min(maxH, player.currentHealth + amount);
             updatePlayerHealthBar();
             spawnFloatingText('player-combat-area', "+" + amount, "float-heal");
         } else {
@@ -479,7 +478,8 @@ function processTimeEffects(unit) {
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
-                let maxH = unit.maxHealth || unit.maxHp;
+                // Correctly assess Max HP for players vs enemies
+                let maxH = unit === player ? (player.maxHealth + (runStats.maxHpBonus || 0)) : unit.maxHp;
 
                 let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
                 if (hpDmgPct > 0) {
@@ -820,7 +820,8 @@ function startTestBattle() {
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
         upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
         hasRareUpgrade: false, hasUltimateUpgrade: false,
-        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 },
+        maxHpBonus: 0
     };
 
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -830,7 +831,8 @@ function startTestBattle() {
     
     waveManager.wave = 1;
     waveManager.currentStageIndex = 0;
-    player.currentHealth = player.maxHealth;
+    
+    player.currentHealth = player.maxHealth + (runStats.maxHpBonus || 0); // Reset HP safely
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
@@ -841,6 +843,8 @@ function startTestBattle() {
     waveManager.transitioning = false; 
 
     updateCombatStatsPanel();
+    updatePlayerHealthBar(); // VISUAL UPDATE TO PREVENT 0% BUG
+    
     openMenu('game');
 
     let container = document.getElementById('enemy-container');
@@ -896,6 +900,7 @@ function startGame() {
     document.getElementById('debug-panel').style.display = 'none';
     player.activeEffects = [];
 
+    // --- STRICT RESET FOR ACTUAL RUN ---
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
         splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
@@ -904,7 +909,8 @@ function startGame() {
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
         upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
         hasRareUpgrade: false, hasUltimateUpgrade: false,
-        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 },
+        maxHpBonus: 0
     };
 
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -912,9 +918,9 @@ function startGame() {
         for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
     
-    // Always start at wave 1 of the selected stage
+    // Game starts at Wave 1 of the selected stage
     waveManager.wave = 1; 
-    player.currentHealth = player.maxHealth;
+    player.currentHealth = player.maxHealth + (runStats.maxHpBonus || 0); // Sets health to 100% correctly
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
@@ -924,6 +930,8 @@ function startGame() {
     waveManager.transitioning = false; 
 
     updateCombatStatsPanel();
+    updatePlayerHealthBar(); // VISUAL UPDATE TO PREVENT 0% BUG
+    
     openMenu('game');
     
     spawnEnemyPack();
@@ -935,12 +943,10 @@ function startGame() {
     }, 1500); 
 }
 
-// --- CHANGED: NEW EXACT STAGE LOGIC ---
 function getLevelAndWave() {
     let stageWave = waveManager.wave;
     let biome = STAGE_DATA[waveManager.currentStageIndex] || STAGE_DATA[0];
     
-    // Exactly 10 waves per stage. Wave 10 is the Boss. Wave 5 is Elite.
     let isGenericBoss = stageWave === 10;
     let isBiomeBoss = stageWave === 10;
     let isMiniBoss = stageWave === 5;
@@ -995,7 +1001,7 @@ function spawnEnemyPack() {
 
     let stageInfo = getLevelAndWave();
     
-    // Make sure we have a fallback if enemiesData fails to load or biome is missing
+    // Fallback if enemiesData fails to load
     let biomeEnemies = enemiesData[stageInfo.biome.id];
     if (!biomeEnemies || biomeEnemies.length === 0) {
         biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null, spd: 10, atkSpd: 1.0 }];
@@ -1086,7 +1092,6 @@ function spawnEnemyPack() {
             let finalDmg = isElite ? normDmg * 2 : normDmg;
             let eName = (isElite ? 'Elite ' : '') + eTemp.name; 
 
-            // Ensure spd and atkSpd are passed so combat loop doesn't fail
             let finalSpd = eTemp.spd || (isElite ? 12 : 10);
             let finalAtkSpd = eTemp.atkSpd || 1.0;
 
@@ -1164,7 +1169,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
 
-    // Use transitioning lock to prevent spam calls
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
         if (!waveManager.transitioning) {
             waveManager.transitioning = true;
@@ -1210,8 +1214,10 @@ function executePlayerAttack() {
         return; 
     }
 
+    let maxH = player.maxHealth + (runStats.maxHpBonus || 0);
+
     if (hasStatus(player, 'bleed')) {
-        let bDmg = Math.floor(player.maxHealth * 0.05);
+        let bDmg = Math.floor(maxH * 0.05);
         player.currentHealth -= bDmg;
         updatePlayerHealthBar();
         spawnFloatingText('player-combat-area', "BLEED -" + bDmg, "float-enemy-dmg");
@@ -1281,7 +1287,7 @@ function executePlayerAttack() {
                     dmg = dmg * 2;
                 } else if (hero.innateSkill.type === 'warlock_curse') {
                     dmg = dmg * 3;
-                    player.currentHealth -= Math.floor(player.maxHealth * 0.05);
+                    player.currentHealth -= Math.floor(maxH * 0.05);
                     updatePlayerHealthBar();
                     if (player.currentHealth <= 0) { triggerGameOver("Consumed by Dark Magic"); return; }
                 }
@@ -1317,7 +1323,7 @@ function executePlayerAttack() {
                 } else if (hero.innateSkill.type === 'mage_arcane') {
                     activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= dmg; animateHit(e.id, dmg, false); } });
                 } else if (hero.innateSkill.type === 'paladin_heal') {
-                    applyHeal(player, Math.floor(player.maxHealth * 0.20));
+                    applyHeal(player, Math.floor(maxH * 0.20));
                 } else if (hero.innateSkill.type === 'rogue_steal') {
                     addCurrency('gold', 5); spawnLootDrop(`enemy-${target.id}`, 'gold');
                 } else if (hero.innateSkill.type === 'necro_summon') {
@@ -1394,10 +1400,6 @@ function executeEnemyAttack(e) {
     }
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
-        if (runStats.purificationActive) {
-            spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
-            return; 
-        }
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
         if (getMutatorMod('nullifyMagic', false)) {
             spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
@@ -1453,12 +1455,14 @@ function executeEnemyAttack(e) {
 }
 
 function updatePlayerHealthBar() {
-    let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
+    let maxH = player.maxHealth + (runStats.maxHpBonus || 0); // Correctly calculate max health including Vitality
+    let pPercent = Math.max(0, (player.currentHealth / maxH) * 100);
+    
     let pBar = document.getElementById('player-health');
     let pText = document.getElementById('player-hp-text');
 
     if (pBar) pBar.style.width = pPercent + '%';
-    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
+    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + maxH;
 
     if (pBar) {
         if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
@@ -1506,9 +1510,14 @@ function packDefeated() {
         let count = runStats.commonUpgradeCounts[u.id] || 0;
         let scaleMult = count + 1;
         let newEffect = {}; let newDesc = "";
-        if (u.id === 'heal') { newEffect.heal = 25 * scaleMult; newDesc = `Heal ${newEffect.heal} HP`; } 
-        else if (u.id === 'gold') { newEffect.gold = 50 * scaleMult; newDesc = `Gain ${newEffect.gold} Gold`; } 
-        else if (u.id === 'temp_atk') { newEffect.atk = 5 * scaleMult; newDesc = `+${newEffect.atk} Base Attack`; }
+        
+        if (u.id === 'heal') { newDesc = `Heal 25% Max HP`; } 
+        else if (u.id === 'temp_atk') { newDesc = `+200% P/M.Atk (1 Wave)`; } 
+        else if (u.id === 'vitality') { 
+            newEffect.hp = 25 * scaleMult; 
+            newDesc = `+${newEffect.hp} Max HP`; 
+        }
+        
         shopPool.push({ ...u, rarity: 'common', cost: 0, effect: newEffect, desc: newDesc });
     });
 
@@ -1573,17 +1582,32 @@ function buyRunUpgrade(upgrade) {
         if(upgrade.id === 'p_def') runStats.pDef += 10;
         if(upgrade.id === 'm_def') runStats.mDef += 10;
     } else if (upgrade.rarity === 'common') {
-        runStats.commonUpgradeCounts[upgrade.id]++;
-        if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
-        if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
-        if (upgrade.effect.atk) { runStats.pAtk += upgrade.effect.atk; runStats.mAtk += upgrade.effect.atk; }
+        runStats.commonUpgradeCounts[upgrade.id] = (runStats.commonUpgradeCounts[upgrade.id] || 0) + 1;
+        if (upgrade.id === 'heal') { 
+            let maxH = player.maxHealth + (runStats.maxHpBonus || 0); 
+            applyHeal(player, Math.floor(maxH * 0.25)); 
+        }
+        if (upgrade.id === 'temp_atk') { runStats.tempAtkActive = true; }
+        if (upgrade.id === 'vitality') { 
+            runStats.maxHpBonus += upgrade.effect.hp; 
+            player.currentHealth += upgrade.effect.hp; 
+            updatePlayerHealthBar(); 
+        }
     } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
         if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
         if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
         for (let key in upgrade.effect) {
             if (runStats.hasOwnProperty(key)) { runStats[key] += upgrade.effect[key]; }
-            if (key === 'maxHealth') { player.maxHealth += upgrade.effect[key]; player.currentHealth += upgrade.effect[key]; updatePlayerHealthBar(); }
-            if (key === 'heal') { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect[key]); updatePlayerHealthBar(); }
+            if (key === 'maxHealth') { 
+                runStats.maxHpBonus += upgrade.effect[key]; 
+                player.currentHealth += upgrade.effect[key]; 
+                updatePlayerHealthBar(); 
+            }
+            if (key === 'heal') { 
+                let maxH = player.maxHealth + (runStats.maxHpBonus || 0); 
+                player.currentHealth = Math.min(maxH, player.currentHealth + upgrade.effect[key]); 
+                updatePlayerHealthBar(); 
+            }
         }
     }
 
@@ -1663,7 +1687,9 @@ function collectRunRewards() {
     let leveledUp = false;
     while(player.exp >= player.expNeeded) {
         player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
-        player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; leveledUp = true;
+        player.talentPoints++; player.maxHealth += 25; 
+        player.currentHealth = player.maxHealth; // Full heal meta-progression
+        leveledUp = true;
     }
     if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
     
