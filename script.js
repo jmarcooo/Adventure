@@ -7,7 +7,6 @@ let equipmentData = [];
 let mutatorsData = []; 
 let activeMutator = null;
 
-// --- DYNAMIC PER-HERO PROGRESSION SYSTEM ---
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
     gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
@@ -67,7 +66,6 @@ const STAGE_DATA = [
 
 const SUBSTAGE_NAMES = ['Outskirts', 'Trail', 'Depths', 'Ruins', 'Gauntlet', 'Lair'];
 
-// --- MUTATOR HELPER ---
 function getMutatorMod(key, defaultValue) {
     if (activeMutator && activeMutator.modifiers && activeMutator.modifiers[key] !== undefined) {
         return activeMutator.modifiers[key];
@@ -75,7 +73,7 @@ function getMutatorMod(key, defaultValue) {
     return defaultValue;
 }
 
-// --- NAVIGATION & GENERAL LOGIC ---
+// --- NAVIGATION & STAGE SELECT ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game', 'stages'];
 
 function showNotification(msg) {
@@ -92,7 +90,7 @@ function openMenu(targetScreen) {
     if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
     if(targetScreen === 'gear') { renderGearMenu(); }
     if(targetScreen === 'stages') { 
-        showBiomeList(); // Ensure it resets to the main biome list view
+        showBiomeList(); 
         renderStagesMenu(); 
     } 
     
@@ -120,7 +118,6 @@ function openMenu(targetScreen) {
     }
 }
 
-// --- NEW STAGE MENU LOGIC (Biomes & Sub-stages) ---
 function renderStagesMenu() {
     let container = document.getElementById('stages-list-container');
     container.innerHTML = '';
@@ -128,6 +125,7 @@ function renderStagesMenu() {
     if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
 
     STAGE_DATA.forEach((stage, index) => {
+        // Unlocked if player reached at least the first stage of this biome
         let isUnlocked = player.highestStageUnlocked >= (index * 6);
         let stateClass = isUnlocked ? '' : 'locked';
         let icon = isUnlocked ? '🔓' : '🔒';
@@ -676,6 +674,57 @@ function debugApply(type, targetStr) {
 
 // --- COMBAT CORE & MATH ENGINE ---
 
+function getEquipmentStats() {
+    let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
+    for (let slot in player.equipment) {
+        let item = player.equipment[slot];
+        if (item && item.stats) { for (let key in eqStats) { if (item.stats[key]) eqStats[key] += item.stats[key]; } }
+    }
+    return eqStats;
+}
+
+function getPlayerStats() {
+    if (!heroData || !heroData[player.currentHero]) return { pAtk:1, mAtk:1, pDef:0, mDef:0, atkSpd:1, spd:1, evasion:0, crit:0, luck:0 };
+    let hero = heroData[player.currentHero];
+    let eq = getEquipmentStats();
+
+    let stats = {
+        pAtk: Math.floor((hero.pAtk + runStats.pAtk + eq.pAtk) * runStats.pAtkMulti),
+        mAtk: Math.floor((hero.mAtk + runStats.mAtk + eq.mAtk) * runStats.mAtkMulti),
+        pDef: Math.floor((hero.pDef + runStats.pDef + eq.pDef) * runStats.pDefMulti),
+        mDef: Math.floor((hero.mDef + runStats.mDef + eq.mDef) * runStats.mDefMulti),
+        atkSpd: (hero.atkSpd + runStats.atkSpd + eq.atkSpd) * runStats.atkSpdMulti,
+        spd: hero.spd + runStats.spd + eq.spd,
+        evasion: hero.evasion + runStats.evasion + eq.evasion,
+        crit: hero.crit + runStats.crit + eq.crit,
+        luck: hero.luck + runStats.luck + eq.luck
+    };
+
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+        stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
+    }
+    
+    if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
+    if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
+    if (hasStatus(player, 'berserk')) { stats.pDef = 0; stats.mDef = 0; }
+
+    return stats;
+}
+
+function getTotalDamage() {
+    let stats = getPlayerStats();
+    let baseP = stats.pAtk;
+    let baseM = stats.mAtk;
+    baseP = Math.floor(baseP * (1 + (player.talents.damage * 0.10)));
+    baseM = Math.floor(baseM * (1 + (player.talents.damage * 0.10)));
+    baseP += player.bonusDamage;
+
+    baseP = Math.floor(baseP * getMutatorMod('pAtkMult', 1.0));
+    baseM = Math.floor(baseM * getMutatorMod('mAtkMult', 1.0));
+
+    return { pDmg: baseP, mDmg: baseM };
+}
+
 function addCurrency(type, amount) {
     if (amount <= 0) return;
     if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
@@ -920,7 +969,6 @@ function startGame() {
         for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
     
-    // Game starts at Wave 1 of the selected stage
     waveManager.wave = 1; 
     player.currentHealth = player.maxHealth;
 
@@ -945,7 +993,7 @@ function startGame() {
     }, 1500); 
 }
 
-// --- UPDATED: 60-STAGE LOGIC SCALING ---
+// --- UPDATED: EXACT STAGE MATH ---
 function getLevelAndWave() {
     let bIndex = waveManager.currentBiomeIndex;
     let sIndex = waveManager.currentSubstageIndex;
@@ -953,7 +1001,7 @@ function getLevelAndWave() {
     
     let biome = STAGE_DATA[bIndex] || STAGE_DATA[0];
     
-    // Calculate the absolute level (1 to 60) for steady power scaling
+    // Absolute scaling from 1 to 60 based on node position
     let absoluteLevel = (bIndex * 6) + sIndex + 1;
 
     let isGenericBoss = stageWave === 10;
@@ -1011,6 +1059,7 @@ function spawnEnemyPack() {
 
     let stageInfo = getLevelAndWave();
     
+    // Safety check for enemiesData
     let biomeEnemies = enemiesData[stageInfo.biome.id];
     if (!biomeEnemies || biomeEnemies.length === 0) {
         biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null, spd: 10, atkSpd: 1.0 }];
@@ -1025,7 +1074,6 @@ function spawnEnemyPack() {
     }
 
     if (stageInfo.isBiomeBoss) {
-        // True Biome Boss
         let bossHp = Math.floor((300 + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier);
         let bossDmg = 10 + Math.floor(stageInfo.absoluteLevel * 1.5);
         let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
@@ -1047,7 +1095,6 @@ function spawnEnemyPack() {
         }
 
     } else if (stageInfo.isBoss) {
-        // Standard Level 10 Sub-stage Boss
         let bossHp = Math.floor((200 + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier);
         let bossDmg = 8 + Math.floor(stageInfo.absoluteLevel * 1.2);
         let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
@@ -1431,10 +1478,6 @@ function executeEnemyAttack(e) {
     }
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
-        if (runStats.purificationActive) {
-            spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
-            return; 
-        }
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
         if (getMutatorMod('nullifyMagic', false)) {
             spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
@@ -1527,9 +1570,8 @@ function packDefeated() {
     updateCombatStatsPanel();
 
     if (isBoss) { 
-        // --- NEW UNLOCK LOGIC (0 to 59 flat scale) ---
-        let flatIndex = (waveManager.currentBiomeIndex * 6) + waveManager.currentSubstageIndex;
         if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
+        let flatIndex = (waveManager.currentBiomeIndex * 6) + waveManager.currentSubstageIndex;
         
         if (flatIndex >= player.highestStageUnlocked && flatIndex < 59) {
             player.highestStageUnlocked = flatIndex + 1;
@@ -1546,9 +1588,11 @@ function packDefeated() {
         let count = runStats.commonUpgradeCounts[u.id] || 0;
         let scaleMult = count + 1;
         let newEffect = {}; let newDesc = "";
-        if (u.id === 'heal') { newEffect.heal = 25 * scaleMult; newDesc = `Heal ${newEffect.heal} HP`; } 
-        else if (u.id === 'gold') { newEffect.gold = 50 * scaleMult; newDesc = `Gain ${newEffect.gold} Gold`; } 
-        else if (u.id === 'temp_atk') { newEffect.atk = 5 * scaleMult; newDesc = `+${newEffect.atk} Base Attack`; }
+        
+        if (u.id === 'heal') { newDesc = `Heal 25% Max HP`; } 
+        else if (u.id === 'temp_atk') { newDesc = `+200% P/M.Atk (1 Wave)`; } 
+        else if (u.id === 'vitality') { newEffect.hp = 25 * scaleMult; newDesc = `+${newEffect.hp} Max HP`; }
+        
         shopPool.push({ ...u, rarity: 'common', cost: 0, effect: newEffect, desc: newDesc });
     });
 
@@ -1558,14 +1602,6 @@ function packDefeated() {
             shopPool.push({ ...u, rarity: 'uncommon', cost: cost, currentLvl: runStats.upgradeLevels[u.id] });
         }
     });
-
-    let hero = heroData[player.currentHero];
-    if (!runStats.hasRareUpgrade && runStats.runes >= 5 && hero.rareUpgrade) {
-        shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'rare' });
-    }
-    if (!runStats.hasUltimateUpgrade && runStats.runes >= 10 && hero.ultimateUpgrade) {
-        shopPool.push({ ...hero.ultimateUpgrade, id: 'ult_upg', rarity: 'ultimate', cost: 10, type: 'ultimate' });
-    }
 
     let canAffordAny = shopPool.some(u => runStats.runes >= u.cost);
 
@@ -1617,15 +1653,7 @@ function buyRunUpgrade(upgrade) {
         if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
         if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
         if (upgrade.effect.atk) { runStats.pAtk += upgrade.effect.atk; runStats.mAtk += upgrade.effect.atk; }
-    } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
-        if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
-        if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
-        for (let key in upgrade.effect) {
-            if (runStats.hasOwnProperty(key)) { runStats[key] += upgrade.effect[key]; }
-            if (key === 'maxHealth') { player.maxHealth += upgrade.effect[key]; player.currentHealth += upgrade.effect[key]; updatePlayerHealthBar(); }
-            if (key === 'heal') { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect[key]); updatePlayerHealthBar(); }
-        }
-    }
+    } 
 
     updateCombatStatsPanel();
     continueToNextWave();
@@ -1731,53 +1759,15 @@ function updateUI() {
 function generateRandomEquipment() {
     if (equipmentData && equipmentData.length > 0) {
         let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
-        
         let statsCopy = {};
         if (baseItem.stats) {
             for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; }
         }
-
-        return { 
-            name: baseItem.name, 
-            type: baseItem.slot, 
-            slot: baseItem.slot, 
-            icon: baseItem.icon, 
-            stats: statsCopy, 
-            onHit: baseItem.onHit || null, 
-            onHitTaken: baseItem.onHitTaken || null 
-        };
+        return { name: baseItem.name, type: baseItem.slot, slot: baseItem.slot, icon: baseItem.icon, stats: statsCopy, onHit: baseItem.onHit || null, onHitTaken: baseItem.onHitTaken || null };
     }
-
     const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
     const slot = slots[Math.floor(Math.random() * slots.length)];
-    const prefixes = ['Rusty', 'Iron', 'Steel'];
-    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    
-    const itemTypes = {
-        'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
-        'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
-        'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
-        'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] },
-        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
-        'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] },
-        'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
-        'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
-    };
-
-    const itemDef = itemTypes[slot];
-    let fallbackStats = {};
-    let statName = itemDef.stats[0];
-    fallbackStats[statName] = 5;
-
-    return { 
-        name: `${prefix} ${itemDef.name}`, 
-        type: slot, 
-        slot: slot, 
-        icon: itemDef.icon, 
-        stats: fallbackStats, 
-        onHit: null, 
-        onHitTaken: null 
-    };
+    return { name: `Iron ${slot}`, type: slot, slot: slot, icon: '🛡️', stats: {pDef: 5}, onHit: null, onHitTaken: null };
 }
 
 async function initGame() {
@@ -1793,22 +1783,10 @@ async function initGame() {
         enemiesData = await enemiesResponse.json();
 
         try {
-            const mutatorsResponse = await fetch('mutators.json');
-            if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); }
-        } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
-
-        try {
             let equipResponse = await fetch('equipment.json');
             if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
-            
-            if (equipResponse.ok) { 
-                equipmentData = await equipResponse.json(); 
-            } else {
-                console.warn("Could not read equipment.json");
-            }
-        } catch (err) { 
-            console.warn("Failed to fetch equipment:", err); 
-        }
+            if (equipResponse.ok) { equipmentData = await equipResponse.json(); } 
+        } catch (err) { console.warn("Failed to fetch equipment:", err); }
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
@@ -1818,7 +1796,6 @@ async function initGame() {
         updateUI();
 
         if (heroData.warrior) { setActiveHero('warrior'); }
-
         for (let h in heroData) { if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } }
         renderHeroSelection();
     } catch (error) {
