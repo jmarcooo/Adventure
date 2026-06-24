@@ -335,3 +335,32 @@ body {
 }
 /* --- STAGE LOCK STYLING --- */
 .card.locked { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
+
+/* --- STAGE & SUB-STAGE STYLING --- */
+.card.locked { 
+    opacity: 0.5; 
+    filter: grayscale(100%); 
+    cursor: not-allowed; 
+}
+.substage-card {
+    background: rgba(255, 255, 255, 0.1); 
+    border: 2px solid rgba(255, 255, 255, 0.2); 
+    border-radius: 10px; 
+    padding: 15px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    cursor: pointer; 
+    transition: transform 0.1s, background 0.2s;
+    width: 100%;
+}
+.substage-card:active { transform: scale(0.98); }
+.substage-card.locked { 
+    opacity: 0.5; 
+    filter: grayscale(100%); 
+    cursor: not-allowed; 
+    background: rgba(0, 0, 0, 0.3);
+}
+.substage-info { display: flex; flex-direction: column; text-align: left; }
+.substage-info h4 { margin: 0; font-size: 1.1rem; color: #fff; }
+.substage-info p { margin: 2px 0 0 0; font-size: 0.8rem; color: #bdc3c7; }
