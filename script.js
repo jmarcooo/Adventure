@@ -22,12 +22,14 @@ let player = {
 let runStats = {
     pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
     splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
-    pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
+    pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, spdMulti: 1.0,
+    critDmg: 0.0, maxHpBonus: 0, maxHpMulti: 0.0, 
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
+    tempAtkActive: false, purificationActive: false,
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
     upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
     hasRareUpgrade: false, hasUltimateUpgrade: false,
-    commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+    commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }
 };
 
 let runUpgradeData = [];
@@ -66,6 +68,7 @@ const STAGE_DATA = [
 
 const SUBSTAGE_NAMES = ['Outskirts', 'Trail', 'Depths', 'Ruins', 'Gauntlet', 'Lair'];
 
+// --- MUTATOR HELPER ---
 function getMutatorMod(key, defaultValue) {
     if (activeMutator && activeMutator.modifiers && activeMutator.modifiers[key] !== undefined) {
         return activeMutator.modifiers[key];
@@ -73,7 +76,7 @@ function getMutatorMod(key, defaultValue) {
     return defaultValue;
 }
 
-// --- NAVIGATION & STAGE SELECT ---
+// --- NAVIGATION & GENERAL LOGIC ---
 const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game', 'stages'];
 
 function showNotification(msg) {
@@ -118,6 +121,7 @@ function openMenu(targetScreen) {
     }
 }
 
+// --- NEW STAGE MENU LOGIC (Biomes & Sub-stages) ---
 function renderStagesMenu() {
     let container = document.getElementById('stages-list-container');
     container.innerHTML = '';
@@ -125,7 +129,6 @@ function renderStagesMenu() {
     if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
 
     STAGE_DATA.forEach((stage, index) => {
-        // Unlocked if player reached at least the first stage of this biome
         let isUnlocked = player.highestStageUnlocked >= (index * 6);
         let stateClass = isUnlocked ? '' : 'locked';
         let icon = isUnlocked ? '🔓' : '🔒';
@@ -278,6 +281,11 @@ function renderHeroDetails(heroId) {
         <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
 
         <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
+
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+        <p style="font-size: 0.9rem; color: #95a5a6;">Shop Exclusives (Unlock in Run):</p>
+        <p style="font-size: 0.85rem; margin-top: 5px;">🟩 <b>${hero.rareUpgrade ? hero.rareUpgrade.name : 'N/A'}:</b> ${hero.rareUpgrade ? hero.rareUpgrade.desc : ''}</p>
+        <p style="font-size: 0.85rem; margin-top: 5px;">🟥 <b>${hero.ultimateUpgrade ? hero.ultimateUpgrade.name : 'N/A'}:</b> ${hero.ultimateUpgrade ? hero.ultimateUpgrade.desc : ''}</p>
     `;
 
     let btnActive = document.getElementById('btn-set-active');
@@ -419,7 +427,9 @@ function updateGearStatsPanel() {
         panel.innerHTML = '<div style="text-align:center; padding: 20px;">No Hero Active</div>'; return;
     }
     let stats = getPlayerStats();
+    let maxH = player.maxHealth + (runStats.maxHpBonus || 0); 
     let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${heroData[player.currentHero].name}</h4>`;
+    html += `<div class="equip-stat-row"><span>Max HP</span> <span>${maxH}</span></div>`;
     html += `<div class="equip-stat-row"><span>P.Atk</span> <span>${stats.pAtk}</span></div>`;
     html += `<div class="equip-stat-row"><span>M.Atk</span> <span>${stats.mAtk}</span></div>`;
     html += `<div class="equip-stat-row"><span>P.Def</span> <span>${stats.pDef}</span></div>`;
@@ -450,11 +460,8 @@ function toggleGameSpeed() {
 }
 
 // --- HYBRID STATUS ENGINE ---
-
 function applyStatus(unit, type, value, isCharge = false) {
-    if (getMutatorMod('nullifyStatuses', false)) {
-        return; 
-    }
+    if (getMutatorMod('nullifyStatuses', false)) return; 
 
     if (!unit.activeEffects) unit.activeEffects = [];
     let existing = unit.activeEffects.find(eff => eff.type === type);
@@ -502,7 +509,8 @@ function applyHeal(unit, amount) {
         }
     } else {
         if (unit === player) {
-            player.currentHealth = Math.min(player.maxHealth, player.currentHealth + amount);
+            let maxH = player.maxHealth + (runStats.maxHpBonus || 0); 
+            player.currentHealth = Math.min(maxH, player.currentHealth + amount);
             updatePlayerHealthBar();
             spawnFloatingText('player-combat-area', "+" + amount, "float-heal");
         } else {
@@ -531,7 +539,7 @@ function processTimeEffects(unit) {
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
-                let maxH = unit.maxHealth || unit.maxHp;
+                let maxH = unit === player ? (player.maxHealth + (runStats.maxHpBonus || 0)) : unit.maxHp;
 
                 let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
                 if (hpDmgPct > 0) {
@@ -872,7 +880,8 @@ function startTestBattle() {
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
         upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
         hasRareUpgrade: false, hasUltimateUpgrade: false,
-        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 },
+        maxHpBonus: 0
     };
 
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -884,7 +893,7 @@ function startTestBattle() {
     waveManager.currentBiomeIndex = 0;
     waveManager.currentSubstageIndex = 0;
     
-    player.currentHealth = player.maxHealth;
+    player.currentHealth = player.maxHealth + (runStats.maxHpBonus || 0);
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
@@ -961,7 +970,8 @@ function startGame() {
         runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
         upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
         hasRareUpgrade: false, hasUltimateUpgrade: false,
-        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0 }
+        commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 },
+        maxHpBonus: 0
     };
 
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) {
@@ -969,8 +979,9 @@ function startGame() {
         for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
     
+    // Game starts at Wave 1 of the selected stage
     waveManager.wave = 1; 
-    player.currentHealth = player.maxHealth;
+    player.currentHealth = player.maxHealth + (runStats.maxHpBonus || 0);
 
     document.getElementById('run-summary-ui').style.display = 'none';
     document.getElementById('wave-upgrade-ui').style.display = 'none';
@@ -1533,12 +1544,14 @@ function executeEnemyAttack(e) {
 }
 
 function updatePlayerHealthBar() {
-    let pPercent = Math.max(0, (player.currentHealth / player.maxHealth) * 100);
+    let maxH = player.maxHealth + (runStats.maxHpBonus || 0); // Correctly calculate max health including Vitality
+    let pPercent = Math.max(0, (player.currentHealth / maxH) * 100);
+    
     let pBar = document.getElementById('player-health');
     let pText = document.getElementById('player-hp-text');
 
     if (pBar) pBar.style.width = pPercent + '%';
-    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + player.maxHealth;
+    if (pText) pText.innerText = Math.max(0, Math.floor(player.currentHealth)) + '/' + maxH;
 
     if (pBar) {
         if (pPercent <= 30) pBar.style.backgroundColor = '#e74c3c';
@@ -1570,8 +1583,9 @@ function packDefeated() {
     updateCombatStatsPanel();
 
     if (isBoss) { 
-        if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
+        // --- NEW UNLOCK LOGIC (0 to 59 flat scale) ---
         let flatIndex = (waveManager.currentBiomeIndex * 6) + waveManager.currentSubstageIndex;
+        if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
         
         if (flatIndex >= player.highestStageUnlocked && flatIndex < 59) {
             player.highestStageUnlocked = flatIndex + 1;
@@ -1588,11 +1602,9 @@ function packDefeated() {
         let count = runStats.commonUpgradeCounts[u.id] || 0;
         let scaleMult = count + 1;
         let newEffect = {}; let newDesc = "";
-        
-        if (u.id === 'heal') { newDesc = `Heal 25% Max HP`; } 
-        else if (u.id === 'temp_atk') { newDesc = `+200% P/M.Atk (1 Wave)`; } 
-        else if (u.id === 'vitality') { newEffect.hp = 25 * scaleMult; newDesc = `+${newEffect.hp} Max HP`; }
-        
+        if (u.id === 'heal') { newEffect.heal = 25 * scaleMult; newDesc = `Heal ${newEffect.heal} HP`; } 
+        else if (u.id === 'gold') { newEffect.gold = 50 * scaleMult; newDesc = `Gain ${newEffect.gold} Gold`; } 
+        else if (u.id === 'temp_atk') { newEffect.atk = 5 * scaleMult; newDesc = `+${newEffect.atk} Base Attack`; }
         shopPool.push({ ...u, rarity: 'common', cost: 0, effect: newEffect, desc: newDesc });
     });
 
@@ -1602,6 +1614,14 @@ function packDefeated() {
             shopPool.push({ ...u, rarity: 'uncommon', cost: cost, currentLvl: runStats.upgradeLevels[u.id] });
         }
     });
+
+    let hero = heroData[player.currentHero];
+    if (!runStats.hasRareUpgrade && runStats.runes >= 5 && hero.rareUpgrade) {
+        shopPool.push({ ...hero.rareUpgrade, id: 'rare_upg', rarity: 'rare', cost: 5, type: 'rare' });
+    }
+    if (!runStats.hasUltimateUpgrade && runStats.runes >= 10 && hero.ultimateUpgrade) {
+        shopPool.push({ ...hero.ultimateUpgrade, id: 'ult_upg', rarity: 'ultimate', cost: 10, type: 'ultimate' });
+    }
 
     let canAffordAny = shopPool.some(u => runStats.runes >= u.cost);
 
@@ -1638,22 +1658,50 @@ function buyRunUpgrade(upgrade) {
 
     if (upgrade.rarity === 'uncommon') {
         runStats.upgradeLevels[upgrade.id]++;
-        if(upgrade.id === 'p_atk') runStats.pAtk += 10;
-        if(upgrade.id === 'm_atk') runStats.mAtk += 10;
-        if(upgrade.id === 'spd') { runStats.atkSpd += 0.10; }
-        if(upgrade.id === 'splash') runStats.splashDmg += 0.10;
-        if(upgrade.id === 'double') runStats.doubleHitChance += 0.10;
-        if(upgrade.id === 'crit') runStats.crit += 0.10;
-        if(upgrade.id === 'lifesteal') runStats.lifesteal += 0.05;
-        if(upgrade.id === 'evasion') runStats.evasion += 0.05;
+        
+        // FIXED: Values now match the items.json descriptions exactly
+        if(upgrade.id === 'p_atk') runStats.pAtk += 20;
+        if(upgrade.id === 'm_atk') runStats.mAtk += 20;
         if(upgrade.id === 'p_def') runStats.pDef += 10;
         if(upgrade.id === 'm_def') runStats.mDef += 10;
+        if(upgrade.id === 'spd') { runStats.atkSpdMulti += 0.20; runStats.spdMulti += 0.10; }
+        if(upgrade.id === 'crit') { runStats.crit += 0.05; runStats.critDmg += 0.50; }
+        
     } else if (upgrade.rarity === 'common') {
-        runStats.commonUpgradeCounts[upgrade.id]++;
-        if (upgrade.effect.heal) { player.currentHealth = Math.min(player.maxHealth, player.currentHealth + upgrade.effect.heal); updatePlayerHealthBar(); }
-        if (upgrade.effect.gold) addCurrency('gold', upgrade.effect.gold);
-        if (upgrade.effect.atk) { runStats.pAtk += upgrade.effect.atk; runStats.mAtk += upgrade.effect.atk; }
-    } 
+        runStats.commonUpgradeCounts[upgrade.id] = (runStats.commonUpgradeCounts[upgrade.id] || 0) + 1;
+        
+        // FIXED: Vitality and Heal are now properly processed
+        if (upgrade.id === 'heal') { 
+            let maxH = player.maxHealth + (runStats.maxHpBonus || 0); 
+            applyHeal(player, Math.floor(maxH * 0.25)); 
+        }
+        if (upgrade.id === 'temp_atk') { 
+            runStats.tempAtkActive = true; 
+        }
+        if (upgrade.id === 'vitality') { 
+            runStats.maxHpBonus += upgrade.effect.hp; 
+            player.currentHealth += upgrade.effect.hp; 
+            updatePlayerHealthBar(); 
+        }
+
+    } else if (upgrade.rarity === 'rare' || upgrade.rarity === 'ultimate') {
+        if (upgrade.rarity === 'rare') runStats.hasRareUpgrade = true;
+        if (upgrade.rarity === 'ultimate') runStats.hasUltimateUpgrade = true;
+        
+        for (let key in upgrade.effect) {
+            if (runStats.hasOwnProperty(key)) { runStats[key] += upgrade.effect[key]; }
+            if (key === 'maxHealth') { 
+                runStats.maxHpBonus += upgrade.effect[key]; 
+                player.currentHealth += upgrade.effect[key]; 
+                updatePlayerHealthBar(); 
+            }
+            if (key === 'heal') { 
+                let maxH = player.maxHealth + (runStats.maxHpBonus || 0); 
+                player.currentHealth = Math.min(maxH, player.currentHealth + upgrade.effect[key]); 
+                updatePlayerHealthBar(); 
+            }
+        }
+    }
 
     updateCombatStatsPanel();
     continueToNextWave();
@@ -1731,7 +1779,9 @@ function collectRunRewards() {
     let leveledUp = false;
     while(player.exp >= player.expNeeded) {
         player.level++; player.exp -= player.expNeeded; player.expNeeded = Math.floor(player.expNeeded * 1.5);
-        player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; leveledUp = true;
+        player.talentPoints++; player.maxHealth += 25; 
+        player.currentHealth = player.maxHealth; // Full heal meta-progression
+        leveledUp = true;
     }
     if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
     
@@ -1759,15 +1809,53 @@ function updateUI() {
 function generateRandomEquipment() {
     if (equipmentData && equipmentData.length > 0) {
         let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
+        
         let statsCopy = {};
         if (baseItem.stats) {
             for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; }
         }
-        return { name: baseItem.name, type: baseItem.slot, slot: baseItem.slot, icon: baseItem.icon, stats: statsCopy, onHit: baseItem.onHit || null, onHitTaken: baseItem.onHitTaken || null };
+
+        return { 
+            name: baseItem.name, 
+            type: baseItem.slot, 
+            slot: baseItem.slot, 
+            icon: baseItem.icon, 
+            stats: statsCopy, 
+            onHit: baseItem.onHit || null, 
+            onHitTaken: baseItem.onHitTaken || null 
+        };
     }
+
     const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
     const slot = slots[Math.floor(Math.random() * slots.length)];
-    return { name: `Iron ${slot}`, type: slot, slot: slot, icon: '🛡️', stats: {pDef: 5}, onHit: null, onHitTaken: null };
+    const prefixes = ['Rusty', 'Iron', 'Steel'];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    
+    const itemTypes = {
+        'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
+        'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
+        'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
+        'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] },
+        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+        'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] },
+        'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
+        'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
+    };
+
+    const itemDef = itemTypes[slot];
+    let fallbackStats = {};
+    let statName = itemDef.stats[0];
+    fallbackStats[statName] = 5;
+
+    return { 
+        name: `${prefix} ${itemDef.name}`, 
+        type: slot, 
+        slot: slot, 
+        icon: itemDef.icon, 
+        stats: fallbackStats, 
+        onHit: null, 
+        onHitTaken: null 
+    };
 }
 
 async function initGame() {
@@ -1785,8 +1873,13 @@ async function initGame() {
         try {
             let equipResponse = await fetch('equipment.json');
             if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
-            if (equipResponse.ok) { equipmentData = await equipResponse.json(); } 
-        } catch (err) { console.warn("Failed to fetch equipment:", err); }
+            
+            if (equipResponse.ok) { 
+                equipmentData = await equipResponse.json(); 
+            }
+        } catch (err) { 
+            console.warn("Failed to fetch equipment:", err); 
+        }
 
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
@@ -1796,6 +1889,7 @@ async function initGame() {
         updateUI();
 
         if (heroData.warrior) { setActiveHero('warrior'); }
+
         for (let h in heroData) { if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } }
         renderHeroSelection();
     } catch (error) {
