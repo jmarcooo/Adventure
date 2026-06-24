@@ -1,18 +1,23 @@
-// --- GAME DATA ---
+// --- GAME DATA & GLOBALS ---
 let gameSpeed = 1; 
 
 let heroData = {};
 let enemiesData = {}; 
+let equipmentData = []; 
+let mutatorsData = []; 
+let activeMutator = null;
 
+// --- DYNAMIC PER-HERO PROGRESSION SYSTEM ---
 let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
     gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
     talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
     heroSkillLevels: {},
-    equipment: { head: null, body: null, legs: null, weapon: null, shield: null, ring: null, amulet: null },
+    equipment: { head: null, body: null, legs: null, boots: null, weapon: null, leftHand: null, ring: null, amulet: null },
     inventory: [],
     attackProgress: 0, 
-    activeEffects: [] 
+    activeEffects: [],
+    highestStageUnlocked: 0 // Tracks overall game progression (0 to 59)
 };
 
 let runStats = {
@@ -29,17 +34,49 @@ let runStats = {
 let runUpgradeData = [];
 let commonUpgradesData = [];
 let bossSkillsData = [];
-let cursedRelicsData = [];
 
 let viewingHero = null;
 let activeEnemies = [];
-let waveManager = { wave: 1, isUpgrading: false, normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], bossEmojis: ['🐉', '👹', '🦑', '🦖'] };
+let waveManager = { 
+    wave: 1, 
+    currentBiomeIndex: 0, 
+    currentSubstageIndex: 0, 
+    isUpgrading: false, 
+    transitioning: false, 
+    normalEmojis: ['👾', '🧟', '🦇', '💀', '🕷️', '🦂'], 
+    bossEmojis: ['🐉', '👹', '🦑', '🦖'] 
+};
 
 let combatTickInterval;
+let mutatorTickTimer = 0;
 let isTestMode = false;
 
+// --- STAGE DEFINITIONS ---
+const STAGE_DATA = [
+    { id: 'forest', name: 'Forest', bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash' },
+    { id: 'cave', name: 'Cave', bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura' },
+    { id: 'graveyard', name: 'Haunted Graveyard', bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive' },
+    { id: 'ruins', name: 'Ancient Ruins', bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor' },
+    { id: 'coast', name: 'Forbidden Coast', bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns' },
+    { id: 'volcano', name: 'Volcanic Crag', bossName: 'Infernal Dragon', bossEmoji: '🐉', skill: 'high_armor' },
+    { id: 'tundra', name: 'Frozen Tundra', bossName: 'Frost Lich', bossEmoji: '🥶', skill: 'intimidate_revive' },
+    { id: 'desert', name: 'Scorched Desert', bossName: 'Giant Sandworm', bossEmoji: '🐛', skill: 'poison_aura' },
+    { id: 'void', name: 'Shadow Realm', bossName: 'Void Lord', bossEmoji: '👁️‍🗨️', skill: 'leviathan_spawns' },
+    { id: 'celestial', name: "Celestial Palace", bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash' }
+];
+
+const SUBSTAGE_NAMES = ['Outskirts', 'Trail', 'Depths', 'Ruins', 'Gauntlet', 'Lair'];
+
+// --- MUTATOR HELPER ---
+function getMutatorMod(key, defaultValue) {
+    if (activeMutator && activeMutator.modifiers && activeMutator.modifiers[key] !== undefined) {
+        return activeMutator.modifiers[key];
+    }
+    return defaultValue;
+}
+
 // --- NAVIGATION & GENERAL LOGIC ---
-const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game'];
+const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game', 'stages'];
 
 function showNotification(msg) {
     let el = document.getElementById('in-app-notification');
@@ -54,19 +91,112 @@ function openMenu(targetScreen) {
     if(targetScreen !== 'game') { clearInterval(combatTickInterval); }
     if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
     if(targetScreen === 'gear') { renderGearMenu(); }
-    screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
-    document.getElementById('screen-' + targetScreen).classList.add('active');
+    if(targetScreen === 'stages') { 
+        showBiomeList(); // Ensure it resets to the main biome list view
+        renderStagesMenu(); 
+    } 
+    
+    screens.forEach(s => {
+        let el = document.getElementById('screen-' + s);
+        if(el) el.classList.remove('active');
+    });
+    
+    let tEl = document.getElementById('screen-' + targetScreen);
+    if(tEl) tEl.classList.add('active');
 
     if(targetScreen !== 'game') {
         document.getElementById('bottom-nav-bar').style.display = 'flex';
-        screens.forEach(s => { if(document.getElementById('btn-' + s)) document.getElementById('btn-' + s).classList.remove('active'); });
-        document.getElementById('btn-' + targetScreen).classList.add('active');
+        screens.forEach(s => { 
+            let btn = document.getElementById('btn-' + s);
+            if(btn) btn.classList.remove('active'); 
+        });
+        if(targetScreen !== 'stages') { 
+            document.getElementById('btn-' + targetScreen).classList.add('active');
+        } else {
+            document.getElementById('btn-home').classList.add('active'); 
+        }
     } else {
         document.getElementById('bottom-nav-bar').style.display = 'none';
     }
 }
 
-// --- HIDDEN DEVELOPER CHEAT MODE ---
+// --- NEW STAGE MENU LOGIC (Biomes & Sub-stages) ---
+function renderStagesMenu() {
+    let container = document.getElementById('stages-list-container');
+    container.innerHTML = '';
+    
+    if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
+
+    STAGE_DATA.forEach((stage, index) => {
+        let isUnlocked = player.highestStageUnlocked >= (index * 6);
+        let stateClass = isUnlocked ? '' : 'locked';
+        let icon = isUnlocked ? '🔓' : '🔒';
+        let clickAction = isUnlocked ? `onclick="showSubstageList(${index})"` : '';
+        
+        let progressInsideBiome = 0;
+        if (player.highestStageUnlocked >= (index * 6) + 6) progressInsideBiome = 6;
+        else if (player.highestStageUnlocked >= index * 6) progressInsideBiome = player.highestStageUnlocked - (index * 6);
+
+        container.innerHTML += `
+            <div class="card ${stateClass}" ${clickAction}>
+                <div class="card-icon" style="font-size: 2.5rem;">${icon}</div>
+                <div class="card-info">
+                    <h3 style="color: #fff; font-size: 1.1rem;">Region ${index + 1}: ${stage.name}</h3>
+                    <p style="color: ${isUnlocked ? '#f1c40f' : '#7f8c8d'}; font-size: 0.8rem;">
+                        ${isUnlocked ? `Progress: ${progressInsideBiome}/6 Cleared` : 'Complete previous region'}
+                    </p>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function showBiomeList() {
+    document.getElementById('substage-list-view').style.display = 'none';
+    document.getElementById('biome-list-view').style.display = 'block';
+}
+
+function showSubstageList(biomeIndex) {
+    document.getElementById('biome-list-view').style.display = 'none';
+    document.getElementById('substage-list-view').style.display = 'flex';
+    
+    let biome = STAGE_DATA[biomeIndex];
+    document.getElementById('selected-biome-title').innerText = biome.name;
+
+    let container = document.getElementById('substages-container');
+    container.innerHTML = '';
+
+    for (let i = 0; i < 6; i++) {
+        let flatIndex = (biomeIndex * 6) + i;
+        let isUnlocked = player.highestStageUnlocked >= flatIndex;
+        let stateClass = isUnlocked ? '' : 'locked';
+        let clickAction = isUnlocked ? `onclick="startStage(${biomeIndex}, ${i})"` : '';
+        
+        let nodeName = SUBSTAGE_NAMES[i];
+        let isBossNode = (i === 5);
+        let icon = isBossNode ? '☠️' : '⚔️';
+
+        container.innerHTML += `
+            <div class="substage-card ${stateClass}" ${clickAction} style="margin-bottom: 10px;">
+                <div class="substage-info">
+                    <h4>Stage ${biomeIndex + 1}-${i + 1}: ${nodeName}</h4>
+                    <p>${isUnlocked ? (isBossNode ? 'Biome Boss Encounter' : '10 Waves') : 'Locked'}</p>
+                </div>
+                <div style="font-size: 1.5rem;">${isUnlocked ? icon : '🔒'}</div>
+            </div>
+        `;
+    }
+}
+
+function startStage(bIndex, sIndex) {
+    let flatIndex = (bIndex * 6) + sIndex;
+    if (flatIndex > player.highestStageUnlocked) return;
+    
+    waveManager.currentBiomeIndex = bIndex;
+    waveManager.currentSubstageIndex = sIndex;
+    startGame();
+}
+
 let secretGemClickCount = 0;
 let secretGemClickTimer = null;
 
@@ -150,11 +280,6 @@ function renderHeroDetails(heroId) {
         <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
 
         <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>
-
-        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-        <p style="font-size: 0.9rem; color: #95a5a6;">Shop Exclusives (Unlock in Run):</p>
-        <p style="font-size: 0.85rem; margin-top: 5px;">🟩 <b>${hero.rareUpgrade ? hero.rareUpgrade.name : 'N/A'}:</b> ${hero.rareUpgrade ? hero.rareUpgrade.desc : ''}</p>
-        <p style="font-size: 0.85rem; margin-top: 5px;">🟥 <b>${hero.ultimateUpgrade ? hero.ultimateUpgrade.name : 'N/A'}:</b> ${hero.ultimateUpgrade ? hero.ultimateUpgrade.desc : ''}</p>
     `;
 
     let btnActive = document.getElementById('btn-set-active');
@@ -194,7 +319,7 @@ function upgradeTalent(type) {
 }
 
 function renderGearMenu() {
-    let slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
+    let slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
     slots.forEach(slot => {
         let el = document.getElementById(`slot-${slot}`);
         if (el) {
@@ -247,6 +372,22 @@ function showGearModal(item, source, key) {
         }
     }
 
+    if (item.onHit) {
+        statsDiv.innerHTML += `
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
+        <div style="display: flex; justify-content: space-between; color: #e74c3c;">
+            <span>On Hit:</span><span><b>${Math.round(item.onHit.chance * 100)}%</b> chance to <b>${item.onHit.type.toUpperCase()}</b></span>
+        </div>`;
+    }
+
+    if (item.onHitTaken) {
+        statsDiv.innerHTML += `
+        <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
+        <div style="display: flex; justify-content: space-between; color: #3498db;">
+            <span>When Hit:</span><span><b>${Math.round(item.onHitTaken.chance * 100)}%</b> chance to <b>${item.onHitTaken.type.toUpperCase()}</b> attacker</span>
+        </div>`;
+    }
+
     let actionBtn = document.getElementById('gear-modal-action-btn');
     if (source === 'inventory') {
         actionBtn.innerText = 'EQUIP';
@@ -273,40 +414,6 @@ function unequipItem(slot) {
     renderGearMenu();
 }
 
-function generateRandomEquipment() {
-    const slots = ['head', 'body', 'legs', 'weapon', 'shield', 'ring', 'amulet'];
-    const slot = slots[Math.floor(Math.random() * slots.length)];
-    const prefixes = ['Rusty', 'Iron', 'Steel', 'Mithril', 'Adamant', 'Divine'];
-    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const itemTypes = {
-        'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
-        'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
-        'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
-        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
-        'shield': { name: 'Shield', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp'] },
-        'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
-        'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
-    };
-
-    const itemDef = itemTypes[slot];
-    const name = `${prefix} ${itemDef.name}`;
-
-    let stats = {};
-    let numStats = Math.floor(Math.random() * 3) + 1;
-    for(let i=0; i<numStats; i++) {
-        let statName = itemDef.stats[Math.floor(Math.random() * itemDef.stats.length)];
-        let val = 0;
-        if (statName === 'atkSpd') val = parseFloat((Math.random() * 0.2 + 0.05).toFixed(2));
-        else if (statName === 'crit' || statName === 'evasion') val = parseFloat((Math.random() * 0.1 + 0.02).toFixed(2));
-        else if (statName === 'maxHp') val = Math.floor(Math.random() * 50) + 10;
-        else if (statName === 'luck') val = Math.floor(Math.random() * 3) + 1;
-        else val = Math.floor(Math.random() * 10) + 2; 
-        if(!stats[statName]) stats[statName] = val;
-        else stats[statName] += val;
-    }
-    return { name: name, type: slot, slot: slot, icon: itemDef.icon, stats: stats };
-}
-
 function updateGearStatsPanel() {
     let panel = document.getElementById('gear-hero-stats');
     if (!panel) return;
@@ -331,7 +438,11 @@ function buyPremium(item) {
     if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
     else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
     else if (item === 'chest' && player.gems >= 20) {
-        player.gems -= 20; let newGear = generateRandomEquipment(); player.inventory.push(newGear); updateUI(); showNotification(`You got a ${newGear.name}!`);
+        player.gems -= 20; 
+        let newGear = generateRandomEquipment(); 
+        player.inventory.push(newGear); 
+        updateUI(); 
+        showNotification(`You got a ${newGear.name}!`);
     } else { showNotification("Not enough Gems!"); }
 }
 
@@ -343,6 +454,10 @@ function toggleGameSpeed() {
 // --- HYBRID STATUS ENGINE ---
 
 function applyStatus(unit, type, value, isCharge = false) {
+    if (getMutatorMod('nullifyStatuses', false)) {
+        return; 
+    }
+
     if (!unit.activeEffects) unit.activeEffects = [];
     let existing = unit.activeEffects.find(eff => eff.type === type);
     
@@ -375,7 +490,6 @@ function consumeCharge(unit, type) {
     return false;
 }
 
-// --- UNIVERSAL HEALING HELPER ---
 function applyHeal(unit, amount) {
     if (hasStatus(unit, 'decay')) {
         if (unit === player) {
@@ -413,15 +527,24 @@ function processTimeEffects(unit) {
         
         if (eff.duration !== undefined) {
             let oldSec = Math.ceil(eff.duration / 1000); 
-
             eff.duration -= (50 * gameSpeed);
-
             let newSec = Math.ceil(eff.duration / 1000); 
 
             eff.tickTimer = (eff.tickTimer || 0) + (50 * gameSpeed);
             if (eff.tickTimer >= 1000) {
                 eff.tickTimer = 0;
                 let maxH = unit.maxHealth || unit.maxHp;
+
+                let hpDmgPct = getMutatorMod('hpDmgPerSec', 0);
+                if (hpDmgPct > 0) {
+                    let mutatorDmg = Math.max(1, Math.floor(maxH * hpDmgPct));
+                    if (unit === player) {
+                        player.currentHealth -= mutatorDmg; updatePlayerHealthBar();
+                        if (player.currentHealth <= 0) triggerGameOver("Choked by Toxic Air");
+                    } else {
+                        unit.hp -= mutatorDmg; animateHit(unit.id, mutatorDmg, false);
+                    }
+                }
 
                 if (eff.type === 'poison') {
                     let dmg = Math.max(1, Math.floor(maxH * 0.05));
@@ -553,53 +676,6 @@ function debugApply(type, targetStr) {
 
 // --- COMBAT CORE & MATH ENGINE ---
 
-function getEquipmentStats() {
-    let eqStats = { pAtk: 0, mAtk: 0, pDef: 0, mDef: 0, atkSpd: 0, spd: 0, evasion: 0, crit: 0, luck: 0 };
-    for (let slot in player.equipment) {
-        let item = player.equipment[slot];
-        if (item && item.stats) { for (let key in eqStats) { if (item.stats[key]) eqStats[key] += item.stats[key]; } }
-    }
-    return eqStats;
-}
-
-function getPlayerStats() {
-    if (!heroData || !heroData[player.currentHero]) return { pAtk:1, mAtk:1, pDef:0, mDef:0, atkSpd:1, spd:1, evasion:0, crit:0, luck:0 };
-    let hero = heroData[player.currentHero];
-    let eq = getEquipmentStats();
-
-    let stats = {
-        pAtk: Math.floor((hero.pAtk + runStats.pAtk + eq.pAtk) * runStats.pAtkMulti),
-        mAtk: Math.floor((hero.mAtk + runStats.mAtk + eq.mAtk) * runStats.mAtkMulti),
-        pDef: Math.floor((hero.pDef + runStats.pDef + eq.pDef) * runStats.pDefMulti),
-        mDef: Math.floor((hero.mDef + runStats.mDef + eq.mDef) * runStats.mDefMulti),
-        atkSpd: (hero.atkSpd + runStats.atkSpd + eq.atkSpd) * runStats.atkSpdMulti,
-        spd: hero.spd + runStats.spd + eq.spd,
-        evasion: hero.evasion + runStats.evasion + eq.evasion,
-        crit: hero.crit + runStats.crit + eq.crit,
-        luck: hero.luck + runStats.luck + eq.luck
-    };
-
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
-        stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
-    }
-    
-    if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
-    if (hasStatus(player, 'slow')) stats.atkSpd *= 0.5;
-    if (hasStatus(player, 'berserk')) { stats.pDef = 0; stats.mDef = 0; }
-
-    return stats;
-}
-
-function getTotalDamage() {
-    let stats = getPlayerStats();
-    let baseP = stats.pAtk;
-    let baseM = stats.mAtk;
-    baseP = Math.floor(baseP * (1 + (player.talents.damage * 0.10)));
-    baseM = Math.floor(baseM * (1 + (player.talents.damage * 0.10)));
-    baseP += player.bonusDamage;
-    return { pDmg: baseP, mDmg: baseM };
-}
-
 function addCurrency(type, amount) {
     if (amount <= 0) return;
     if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
@@ -683,9 +759,10 @@ function combatTick() {
 
     let stats = getPlayerStats();
     let actionQueue = []; 
+    let atbMult = getMutatorMod('atbSpeedMult', 1.0);
 
     if (!hasStatus(player, 'stun')) {
-        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5);
+        player.attackProgress += (Math.max(0.1, stats.atkSpd) * gameSpeed * 2.5 * atbMult);
         if (player.attackProgress >= 100) {
             player.attackProgress = 100;
             actionQueue.push({ type: 'player', spd: stats.spd }); 
@@ -700,7 +777,7 @@ function combatTick() {
             if (hasStatus(e, 'haste')) eAtkSpd *= 1.5;
             if (hasStatus(e, 'slow')) eAtkSpd *= 0.5;
 
-            e.attackProgress += (eAtkSpd * gameSpeed * 2.5);
+            e.attackProgress += (eAtkSpd * gameSpeed * 2.5 * atbMult);
             if (e.attackProgress >= 100) {
                 e.attackProgress = 100;
                 actionQueue.push({ type: 'enemy', entity: e, spd: e.spd }); 
@@ -755,6 +832,9 @@ function startTestBattle() {
     }
     
     waveManager.wave = 1;
+    waveManager.currentBiomeIndex = 0;
+    waveManager.currentSubstageIndex = 0;
+    
     player.currentHealth = player.maxHealth;
 
     document.getElementById('run-summary-ui').style.display = 'none';
@@ -763,12 +843,19 @@ function startTestBattle() {
     
     document.getElementById('debug-panel').style.display = 'flex'; 
     waveManager.isUpgrading = true; 
+    waveManager.transitioning = false; 
 
     updateCombatStatsPanel();
+    updatePlayerHealthBar();
+    
     openMenu('game');
 
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
+    let mutatorEl = document.getElementById('mutator-display');
+    if(mutatorEl) mutatorEl.style.display = 'none';
+    activeMutator = null;
+
     container.innerHTML = ''; activeEnemies = [];
 
     textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
@@ -816,6 +903,7 @@ function startGame() {
     document.getElementById('debug-panel').style.display = 'none';
     player.activeEffects = [];
 
+    // --- STRICT RESET FOR ACTUAL RUN ---
     runStats = {
         pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0,
         splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0,
@@ -831,7 +919,9 @@ function startGame() {
         let innate = heroData[player.currentHero].innate;
         for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; }
     }
-    waveManager.wave = 1;
+    
+    // Game starts at Wave 1 of the selected stage
+    waveManager.wave = 1; 
     player.currentHealth = player.maxHealth;
 
     document.getElementById('run-summary-ui').style.display = 'none';
@@ -839,8 +929,11 @@ function startGame() {
     document.getElementById('boss-clear-ui').style.display = 'none';
     
     waveManager.isUpgrading = true; 
+    waveManager.transitioning = false; 
 
     updateCombatStatsPanel();
+    updatePlayerHealthBar(); 
+    
     openMenu('game');
     
     spawnEnemyPack();
@@ -852,48 +945,89 @@ function startGame() {
     }, 1500); 
 }
 
-const BIOMES = [
-    { id: 'forest', name: 'Forest', levels: 3, bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', normalEmojis: ['👾', '🐺', '🦇', '🕷️', '🌳', '🐻'] },
-    { id: 'cave', name: 'Cave', levels: 4, bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', normalEmojis: ['🦇', '🪨', '🦂', '🐀', '💎', '🐍'] },
-    { id: 'graveyard', name: 'Haunted Graveyard', levels: 5, bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive', normalEmojis: ['💀', '👻', '🧟', '👹', '🧙‍♂️', '🐕‍🦺'] },
-    { id: 'ruins', name: 'Ancient Ruins', levels: 5, bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor', normalEmojis: ['🦅', '🧞', '🏺', '🤕', '🦁', '🪲'] },
-    { id: 'coast', name: 'Forbidden Coast', levels: 5, bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns', normalEmojis: ['🦀', '🦈', '🧜‍♀️', '🪼', '🏴‍☠️', '🐉'] },
-    { id: 'volcano', name: 'Volcanic Crag', levels: 5, bossName: 'Infernal Dragon', bossEmoji: '🐉', skill: 'high_armor', normalEmojis: ['🌋', '🔥', '☄️', '👺', '🦇', '🐺'] },
-    { id: 'tundra', name: 'Frozen Tundra', levels: 5, bossName: 'Frost Lich', bossEmoji: '🥶', skill: 'intimidate_revive', normalEmojis: ['❄️', '🐺', '🐻‍❄️', '🧟‍♂️', '🧊', '👻'] },
-    { id: 'desert', name: 'Scorched Desert', levels: 5, bossName: 'Giant Sandworm', bossEmoji: '🐛', skill: 'poison_aura', normalEmojis: ['🦂', '🐍', '🐪', '🌵', '🦅', '🏺'] },
-    { id: 'void', name: 'Shadow Realm', levels: 5, bossName: 'Void Lord', bossEmoji: '👁️‍🗨️', skill: 'leviathan_spawns', normalEmojis: ['👁️', '🌑', '🕷️', '🦇', '🌌', '👾'] },
-    { id: 'celestial', name: "Celestial Palace", levels: 5, bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash', normalEmojis: ['🕊️', '☁️', '⚡', '👁️', '✨', '🦅'] }
-];
-
+// --- UPDATED: 60-STAGE LOGIC SCALING ---
 function getLevelAndWave() {
-    let totalLevel = Math.floor((waveManager.wave - 1) / 15) + 1;
-    let stageWave = ((waveManager.wave - 1) % 15) + 1;
+    let bIndex = waveManager.currentBiomeIndex;
+    let sIndex = waveManager.currentSubstageIndex;
+    let stageWave = waveManager.wave;
+    
+    let biome = STAGE_DATA[bIndex] || STAGE_DATA[0];
+    
+    // Calculate the absolute level (1 to 60) for steady power scaling
+    let absoluteLevel = (bIndex * 6) + sIndex + 1;
 
-    let biomeIndex = 0; let levelsAccumulated = 0;
-    for (let i = 0; i < BIOMES.length; i++) {
-        if (totalLevel <= levelsAccumulated + BIOMES[i].levels) { biomeIndex = i; break; }
-        levelsAccumulated += BIOMES[i].levels;
-    }
-    if (biomeIndex >= BIOMES.length) biomeIndex = BIOMES.length - 1;
+    let isGenericBoss = stageWave === 10;
+    let isBiomeBoss = stageWave === 10 && sIndex === 5; 
+    let isMiniBoss = stageWave === 5;
 
-    let biome = BIOMES[biomeIndex];
-    let levelInBiome = totalLevel - levelsAccumulated;
-    let isGenericBoss = stageWave === 15;
-    let isBiomeBoss = isGenericBoss && (totalLevel === levelsAccumulated + biome.levels);
+    return { 
+        absoluteLevel: absoluteLevel,
+        biomeIndex: bIndex,
+        substageIndex: sIndex,
+        wave: stageWave, 
+        isBoss: isGenericBoss, 
+        isBiomeBoss: isBiomeBoss, 
+        isMiniBoss: isMiniBoss, 
+        biome: biome 
+    };
+}
 
-    return { totalLevel: totalLevel, level: levelInBiome, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, biome: biome };
+function renderBossUI(id, name, emoji, hp, bSkill) {
+    let container = document.getElementById('enemy-container');
+    container.innerHTML += `
+        <div class="enemy-unit boss" id="enemy-${id}">
+            <div class="emoji" style="font-size: 4rem;">${emoji}</div>
+            <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${name}</div>
+            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div>
+            <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
+            <div class="mini-hp-text" id="enemy-hp-text-${id}">${hp}/${hp}</div>
+            <div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
+            ${bSkill ? `<div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>` : ''}
+        </div>`;
+}
+
+function renderNormalEnemyUI(id, enemyData, emoji, isElite) {
+    let container = document.getElementById('enemy-container');
+    let eliteClass = isElite ? 'elite' : '';
+    container.innerHTML += `
+        <div class="enemy-unit ${eliteClass}" id="enemy-${id}">
+            <div class="emoji">${emoji}</div>
+            <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${enemyData.name}</div>
+            <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div>
+            <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
+            <div class="mini-hp-text" id="enemy-hp-text-${id}">${enemyData.hp}/${enemyData.hp}</div>
+            <div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
+        </div>`;
 }
 
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
+    let mutatorEl = document.getElementById('mutator-display'); 
+    
     container.innerHTML = ''; activeEnemies = [];
+    activeMutator = null; 
+    if(mutatorEl) mutatorEl.style.display = 'none';
 
     let stageInfo = getLevelAndWave();
+    
+    let biomeEnemies = enemiesData[stageInfo.biome.id];
+    if (!biomeEnemies || biomeEnemies.length === 0) {
+        biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null, spd: 10, atkSpd: 1.0 }];
+    }
+
+    let gameScreen = document.getElementById('screen-game');
+    if (stageInfo.biome && stageInfo.biome.background) {
+        gameScreen.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.7), rgba(44, 62, 80, 0.9)), url('${stageInfo.biome.background}')`;
+        gameScreen.style.backgroundSize = 'cover'; gameScreen.style.backgroundPosition = 'center'; gameScreen.style.backgroundRepeat = 'no-repeat';
+    } else {
+        gameScreen.style.backgroundImage = 'none'; gameScreen.style.backgroundColor = '#2c3e50';
+    }
 
     if (stageInfo.isBiomeBoss) {
-        let bossHp = Math.floor((300 + (waveManager.wave * 35)) * runStats.enemyHpMultiplier);
-        let bossDmg = 10 + Math.floor(waveManager.wave * 1.5);
+        // True Biome Boss
+        let bossHp = Math.floor((300 + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier);
+        let bossDmg = 10 + Math.floor(stageInfo.absoluteLevel * 1.5);
         let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
 
         activeEnemies.push({ id: 0, name: stageInfo.biome.bossName, maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, isBiomeBoss: true });
@@ -905,84 +1039,97 @@ function spawnEnemyPack() {
             }
         }
 
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BIOME BOSS ⚠️</span>`;
-        let html = `
-            <div class="enemy-unit boss" id="enemy-0">
-                <div class="emoji" style="font-size: 4rem;">${stageInfo.biome.bossEmoji}</div>
-                <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${stageInfo.biome.bossName}</div>
-                <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
-                <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
-                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
-            </div>`;
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ REGION BOSS ⚠️</span>`;
+        renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
 
         if (stageInfo.biome.skill === 'leviathan_spawns') {
-            for(let i=1; i<=4; i++) {
-                html += `
-                <div class="enemy-unit elite" id="enemy-${i}">
-                    <div class="emoji">🦑</div>
-                    <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">Leviathan Spawn</div>
-                    <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
-                    <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                    <div class="mini-hp-text" id="enemy-hp-text-${i}">${activeEnemies[i].hp}/${activeEnemies[i].hp}</div>
-                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                </div>`;
-            }
+            for(let i=1; i<=4; i++) { renderNormalEnemyUI(i, activeEnemies[i], '🦑', true); }
         }
-        container.innerHTML = html;
 
     } else if (stageInfo.isBoss) {
-        let bossHp = Math.floor((150 + (waveManager.wave * 25)) * runStats.enemyHpMultiplier);
-        let bossDmg = 5 + Math.floor(waveManager.wave * 1.2);
+        // Standard Level 10 Sub-stage Boss
+        let bossHp = Math.floor((200 + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier);
+        let bossDmg = 8 + Math.floor(stageInfo.absoluteLevel * 1.2);
         let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
 
-        activeEnemies.push({ id: 0, name: "Level Boss", maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
-
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS Level ${stageInfo.level} - Wave ${stageInfo.wave} ⚠️</span>`;
-        container.innerHTML = `
-            <div class="enemy-unit boss" id="enemy-0">
-                <div class="emoji">${waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)]}</div>
-                <div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Level Boss</div>
-                <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div>
-                <div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                <div class="mini-hp-text" id="enemy-hp-text-0">${bossHp}/${bossHp}</div>
-                <div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                <div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>
-            </div>`;
-    } else {
-        let enemyCount = Math.min(5, Math.floor(((waveManager.wave - 1) % 15) / 3) + 1);
-        let biomeEnemies = enemiesData[stageInfo.biome.id];
+        activeEnemies.push({ id: 0, name: "Area Guardian", maxHp: bossHp, hp: bossHp, damage: bossDmg, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
         
-        if (!biomeEnemies || biomeEnemies.length === 0) {
-            biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, baseDmg: 2, skill: null }];
+        let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex];
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS: ${nodeName} ⚠️</span>`;
+        
+        renderBossUI(0, "Area Guardian", waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)], bossHp, bSkill);
+
+    } else if (stageInfo.isMiniBoss) {
+        let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex];
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ ${nodeName} Elite ⚔️</span>`;
+        
+        let strongestTemplate = [...biomeEnemies].sort((a, b) => b.baseHp - a.baseHp)[0];
+        let mbHp = Math.floor((strongestTemplate.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier * 2.5); 
+        let mbDmg = Math.max(1, Math.floor(strongestTemplate.baseDmg + (stageInfo.absoluteLevel * 0.8)) * 1.5); 
+        
+        activeEnemies.push({ id: 0, name: `Elite ${strongestTemplate.name}`, maxHp: mbHp, hp: mbHp, damage: mbDmg, skill: strongestTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: true });
+        renderNormalEnemyUI(0, activeEnemies[0], strongestTemplate.emoji, true);
+
+        let minionTemplate = [...biomeEnemies].sort((a, b) => a.baseHp - b.baseHp)[0];
+        for(let i=1; i<=2; i++) {
+            let mHp = Math.floor((minionTemplate.baseHp + (stageInfo.absoluteLevel * 10)) * runStats.enemyHpMultiplier);
+            let mDmg = Math.max(1, Math.floor(minionTemplate.baseDmg + (stageInfo.absoluteLevel * 0.5)));
+            activeEnemies.push({ id: i, name: minionTemplate.name, maxHp: mHp, hp: mHp, damage: mDmg, skill: minionTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: false });
+            renderNormalEnemyUI(i, activeEnemies[i], minionTemplate.emoji, false);
         }
 
-        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Level ${stageInfo.level} - Wave ${stageInfo.wave}`;
+    } else {
+        let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex];
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Stage ${stageInfo.biomeIndex + 1}-${stageInfo.substageIndex + 1} (${nodeName})<br><span style="font-size: 0.8rem">Wave ${stageInfo.wave}</span>`;
 
-        for(let i = 0; i < enemyCount; i++) {
-            let isElite = Math.random() < 0.20;
-            let enemyTemplate = biomeEnemies[Math.floor(Math.random() * biomeEnemies.length)];
-            
-            let normHp = Math.floor((enemyTemplate.baseHp + (waveManager.wave * 15)) * runStats.enemyHpMultiplier);
-            let normDmg = Math.max(1, Math.floor(enemyTemplate.baseDmg + (waveManager.wave * 0.8)));
+        let waveProgress = stageInfo.wave / 10;
+        let poolSize = Math.max(2, Math.ceil(biomeEnemies.length * (waveProgress + 0.3))); 
+        if (poolSize > biomeEnemies.length) poolSize = biomeEnemies.length;
+        let availableEnemies = biomeEnemies.slice(0, poolSize);
+
+        let baseCount = Math.floor(stageInfo.wave / 3) + 2; 
+        let variance = Math.floor(Math.random() * 3) - 1; 
+        let enemyCount = Math.min(5, Math.max(1, baseCount + variance));
+
+        let sortedByHp = [...availableEnemies].sort((a, b) => b.baseHp - a.baseHp);
+        let tankT = sortedByHp[0];
+        let squishyT = sortedByHp[sortedByHp.length - 1];
+        let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
+        
+        let formationRoll = Math.random();
+        let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
+        let formationType = formationRoll < 0.2 ? 'wall' : (formationRoll < 0.4 ? 'ambush' : 'coven');
+
+        let spawnList = [];
+
+        if (useFormation) {
+            if (formationType === 'wall') { spawnList = [tankT, tankT, squishyT]; } 
+            else if (formationType === 'ambush') { spawnList = [squishyT, squishyT, squishyT, squishyT]; } 
+            else if (formationType === 'coven') { spawnList = [tankT, magicT, magicT]; }
+        } else {
+            for(let i=0; i<enemyCount; i++) {
+                spawnList.push(availableEnemies[Math.floor(Math.random() * availableEnemies.length)]);
+            }
+        }
+
+        for(let i = 0; i < spawnList.length; i++) {
+            let eTemp = spawnList[i];
+            let dynamicEliteChance = 0.05 + (0.25 * (stageInfo.wave / 10));
+            let isElite = Math.random() < dynamicEliteChance;
+            if (stageInfo.wave >= 8 && i === 0 && !useFormation) isElite = true; 
+
+            let normHp = Math.floor((eTemp.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier);
+            let normDmg = Math.max(1, Math.floor(eTemp.baseDmg + (stageInfo.absoluteLevel * 0.8)));
             
             let finalHp = isElite ? normHp * 2 : normHp;
             let finalDmg = isElite ? normDmg * 2 : normDmg;
-            let eliteClass = isElite ? 'elite' : '';
-            let eName = (isElite ? 'Elite ' : '') + enemyTemplate.name; 
+            let eName = (isElite ? 'Elite ' : '') + eTemp.name; 
 
-            activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: enemyTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite });
-            
-            container.innerHTML += `
-                <div class="enemy-unit ${eliteClass}" id="enemy-${i}">
-                    <div class="emoji">${enemyTemplate.emoji}</div>
-                    <div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${eName}</div>
-                    <div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${i}"></div></div>
-                    <div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${i}" style="background: #f1c40f; width: 0%; transition: none;"></div></div>
-                    <div class="mini-hp-text" id="enemy-hp-text-${i}">${finalHp}/${finalHp}</div>
-                    <div id="enemy-status-${i}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>
-                </div>`;
+            let finalSpd = eTemp.spd || (isElite ? 12 : 10);
+            let finalAtkSpd = eTemp.atkSpd || 1.0;
+
+            activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, damage: finalDmg, skill: eTemp.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite, spd: finalSpd, atkSpd: finalAtkSpd });
+            renderNormalEnemyUI(i, activeEnemies[i], eTemp.emoji, isElite);
         }
     }
     
@@ -1054,6 +1201,13 @@ function handleEnemyDeath(target, unitId, unitDiv) {
 
     document.getElementById('run-runes-text').innerText = runStats.runes;
     if(unitDiv) { unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); }
+
+    if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
+        if (!waveManager.transitioning) {
+            waveManager.transitioning = true;
+            setTimeout(() => packDefeated(), 400);
+        }
+    }
 }
 
 function animateHit(unitId, damageDealt, isCrit) {
@@ -1081,8 +1235,17 @@ function animateHit(unitId, damageDealt, isCrit) {
 }
 
 function executePlayerAttack() {
-    let aliveEnemies = activeEnemies.filter(e => e.hp > 0);
-    if(aliveEnemies.length === 0) return;
+    let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
+    
+    if(aliveEnemies.length === 0) { 
+        if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
+            if (!waveManager.transitioning) {
+                waveManager.transitioning = true;
+                packDefeated(); 
+            }
+        }
+        return; 
+    }
 
     if (hasStatus(player, 'bleed')) {
         let bDmg = Math.floor(player.maxHealth * 0.05);
@@ -1106,7 +1269,7 @@ function executePlayerAttack() {
 
     for (let s = 0; s < strikes; s++) {
         setTimeout(() => {
-            let target = activeEnemies.find(e => e.hp > 0);
+            let target = activeEnemies.find(e => e.hp > 0 && !e.isDead);
             if (!target) return;
 
             let damages = getTotalDamage();
@@ -1123,6 +1286,10 @@ function executePlayerAttack() {
 
             let pDmg = Math.max(1, damages.pDmg - eDefP);
             let mDmg = Math.max(0, damages.mDmg - eDefM);
+
+            if (getMutatorMod('nullifyMagic', false)) {
+                mDmg = 0; 
+            }
 
             if (target.skill === 'high_armor' || target.skill === 'armor') {
                 pDmg = Math.floor(pDmg * 0.1); 
@@ -1163,6 +1330,14 @@ function executePlayerAttack() {
             } else {
                 target.hp -= dmg;
                 animateHit(target.id, dmg, isCrit);
+
+                if (player.equipment && player.equipment.weapon && player.equipment.weapon.onHit) {
+                    let hitEff = player.equipment.weapon.onHit;
+                    if (Math.random() < hitEff.chance) {
+                        applyStatus(target, hitEff.type, hitEff.duration);
+                        spawnFloatingText(`enemy-${target.id}`, `${hitEff.type.toUpperCase()}!`, "float-enemy-dmg");
+                    }
+                }
 
                 if (hasStatus(target, 'thorns') && dmg > 0) {
                     let tDmg = Math.floor(dmg * 0.2);
@@ -1207,8 +1382,6 @@ function executePlayerAttack() {
             }
         }, s * 150);
     }
-
-    setTimeout(() => { if (activeEnemies.every(e => e.hp <= 0)) packDefeated(); }, 400);
 }
 
 function executeEnemyAttack(e) {
@@ -1258,7 +1431,15 @@ function executeEnemyAttack(e) {
     }
 
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
+        if (runStats.purificationActive) {
+            spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
+            return; 
+        }
         incomingDmg = Math.max(1, incomingDmg - stats.mDef);
+        if (getMutatorMod('nullifyMagic', false)) {
+            spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
+            return; 
+        }
     } else {
         incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
@@ -1277,6 +1458,19 @@ function executeEnemyAttack(e) {
     player.currentHealth -= incomingDmg;
     updatePlayerHealthBar();
     spawnFloatingText('player-combat-area', "-" + incomingDmg, "float-enemy-dmg");
+
+    if (incomingDmg > 0) {
+        for (let slotKey in player.equipment) {
+            let equippedItem = player.equipment[slotKey];
+            if (equippedItem && equippedItem.onHitTaken) {
+                let proc = equippedItem.onHitTaken;
+                if (Math.random() < proc.chance) {
+                    applyStatus(e, proc.type, proc.duration, proc.type === 'blind'); 
+                    spawnFloatingText(`enemy-${e.id}`, `${proc.type.toUpperCase()}!`, "float-enemy-dmg");
+                }
+            }
+        }
+    }
 
     if (hasStatus(player, 'thorns') && incomingDmg > 0) {
         let tDmg = Math.floor(incomingDmg * 0.2);
@@ -1332,7 +1526,21 @@ function packDefeated() {
 
     updateCombatStatsPanel();
 
-    let shopPool = []; window.currentShopPool = shopPool;
+    if (isBoss) { 
+        // --- NEW UNLOCK LOGIC (0 to 59 flat scale) ---
+        let flatIndex = (waveManager.currentBiomeIndex * 6) + waveManager.currentSubstageIndex;
+        if (player.highestStageUnlocked === undefined) player.highestStageUnlocked = 0;
+        
+        if (flatIndex >= player.highestStageUnlocked && flatIndex < 59) {
+            player.highestStageUnlocked = flatIndex + 1;
+        }
+        
+        showBossClearUI(); 
+        return;
+    } 
+
+    let shopPool = []; 
+    window.currentShopPool = shopPool;
 
     commonUpgradesData.forEach(u => {
         let count = runStats.commonUpgradeCounts[u.id] || 0;
@@ -1360,9 +1568,12 @@ function packDefeated() {
     }
 
     let canAffordAny = shopPool.some(u => runStats.runes >= u.cost);
-    if(isBoss) { showBossClearUI(); } 
-    else if (shopPool.length === 0 || !canAffordAny) { setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); } 
-    else { showUpgradeShop(shopPool); }
+
+    if (shopPool.length === 0 || !canAffordAny) { 
+        setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); 
+    } else { 
+        showUpgradeShop(shopPool); 
+    }
 }
 
 function showUpgradeShop(shopPool) {
@@ -1425,49 +1636,13 @@ function showBossClearUI() {
     document.getElementById('boss-ui-gold').innerText = runStats.goldGained;
     document.getElementById('boss-ui-gems').innerText = runStats.gemsGained;
     document.getElementById('boss-ui-exp').innerText = runStats.expGained;
-
-    let list = document.getElementById('cursed-list'); list.innerHTML = '';
-    let shuffledCurses = cursedRelicsData.sort(() => 0.5 - Math.random());
-    let choices = shuffledCurses.slice(0, 3);
-
-    choices.forEach(c => {
-        list.innerHTML += `
-            <button class="upgrade-btn cursed-btn" onclick="selectCursedRelic('${c.id}')" id="btn-curse-${c.id}">
-                <div class="info"><h4>${c.name}</h4><p>${c.desc}</p><p class="curse-text">${c.curseDesc}</p></div>
-                <div class="cost">${c.icon}</div>
-            </button>`;
-    });
-
-    document.getElementById('btn-descend').disabled = true;
-}
-
-function selectCursedRelic(id) {
-    if(id === 'glass') { runStats.dmgMultiplier += 0.20; runStats.critChance += 0.25; adjustMaxHp(-0.30); }
-    if(id === 'berserk') { runStats.atkSpeedBonus += 0.40; runStats.bonusAtk -= 15; }
-    if(id === 'phantom') { runStats.evasion += 0.15; adjustMaxHp(-0.20); }
-    if(id === 'giant') { runStats.bonusAtk += 30; runStats.splashDmg += 0.10; runStats.atkSpeedBonus -= 0.20; }
-    if(id === 'blood') { runStats.lifesteal += 0.10; runStats.damageReduction -= 0.15; }
-    if(id === 'midas') { runStats.goldMultiplier += 0.50; runStats.enemyHpMultiplier += 0.20; }
-    if(id === 'reckless') { runStats.doubleHitChance += 0.15; runStats.evasion = -999; }
-    if(id === 'spiked') { runStats.damageReduction += 0.20; runStats.atkSpeedBonus -= 0.10; }
-
-    updateCombatStatsPanel();
-    document.getElementById(`btn-curse-${id}`).style.borderColor = '#2ecc71';
-    document.getElementById('btn-descend').disabled = false;
-}
-
-function adjustMaxHp(percentChange) {
-    let changeAmount = Math.floor(player.maxHealth * percentChange);
-    player.maxHealth += changeAmount;
-    if(player.currentHealth > player.maxHealth) player.currentHealth = player.maxHealth;
-    updatePlayerHealthBar();
 }
 
 function continueToNextWave() {
     document.getElementById('wave-upgrade-ui').style.display = 'none';
     document.getElementById('boss-clear-ui').style.display = 'none';
-    waveManager.wave++; 
     
+    waveManager.wave++; 
     waveManager.isUpgrading = true; 
     
     spawnEnemyPack();
@@ -1475,6 +1650,7 @@ function continueToNextWave() {
 
     setTimeout(() => {
         waveManager.isUpgrading = false; 
+        waveManager.transitioning = false;
         startCombatLoop(); 
     }, 1500); 
 }
@@ -1507,6 +1683,9 @@ function endRun(titleText, titleColor, killerText = "") {
     document.getElementById('summary-gold').innerText = runStats.goldGained;
     document.getElementById('summary-exp').innerText = runStats.expGained;
     summaryUi.style.display = 'flex';
+    
+    waveManager.transitioning = false;
+    waveManager.isUpgrading = false;
 }
 
 function triggerGameOver(killerText = "Slain by Unknown Forces") { 
@@ -1527,8 +1706,15 @@ function collectRunRewards() {
         player.talentPoints++; player.maxHealth += 25; player.currentHealth = player.maxHealth; leveledUp = true;
     }
     if(leveledUp) showNotification("🎉 You Leveled Up from that run!");
+    
     document.getElementById('run-summary-ui').style.display = 'none';
-    openMenu('home'); updateUI();
+    document.getElementById('boss-clear-ui').style.display = 'none';
+    
+    openMenu('stages'); 
+    updateUI();
+    
+    waveManager.transitioning = false;
+    waveManager.isUpgrading = false;
 }
 
 function updateUI() {
@@ -1540,6 +1726,58 @@ function updateUI() {
     document.getElementById('tp-amount').innerText = player.talentPoints;
     document.getElementById('talent-lvl-damage').innerText = player.talents.damage;
     document.getElementById('talent-lvl-gold').innerText = player.talents.gold;
+}
+
+function generateRandomEquipment() {
+    if (equipmentData && equipmentData.length > 0) {
+        let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)];
+        
+        let statsCopy = {};
+        if (baseItem.stats) {
+            for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; }
+        }
+
+        return { 
+            name: baseItem.name, 
+            type: baseItem.slot, 
+            slot: baseItem.slot, 
+            icon: baseItem.icon, 
+            stats: statsCopy, 
+            onHit: baseItem.onHit || null, 
+            onHitTaken: baseItem.onHitTaken || null 
+        };
+    }
+
+    const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet'];
+    const slot = slots[Math.floor(Math.random() * slots.length)];
+    const prefixes = ['Rusty', 'Iron', 'Steel'];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    
+    const itemTypes = {
+        'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] },
+        'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] },
+        'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] },
+        'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] },
+        'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] },
+        'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] },
+        'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] },
+        'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] }
+    };
+
+    const itemDef = itemTypes[slot];
+    let fallbackStats = {};
+    let statName = itemDef.stats[0];
+    fallbackStats[statName] = 5;
+
+    return { 
+        name: `${prefix} ${itemDef.name}`, 
+        type: slot, 
+        slot: slot, 
+        icon: itemDef.icon, 
+        stats: fallbackStats, 
+        onHit: null, 
+        onHitTaken: null 
+    };
 }
 
 async function initGame() {
@@ -1554,10 +1792,27 @@ async function initGame() {
         const enemiesResponse = await fetch('enemies.json');
         enemiesData = await enemiesResponse.json();
 
+        try {
+            const mutatorsResponse = await fetch('mutators.json');
+            if (mutatorsResponse.ok) { mutatorsData = await mutatorsResponse.json(); }
+        } catch (mErr) { console.warn("Failed to fetch mutators:", mErr); }
+
+        try {
+            let equipResponse = await fetch('equipment.json');
+            if (!equipResponse.ok) equipResponse = await fetch('equipments.json');
+            
+            if (equipResponse.ok) { 
+                equipmentData = await equipResponse.json(); 
+            } else {
+                console.warn("Could not read equipment.json");
+            }
+        } catch (err) { 
+            console.warn("Failed to fetch equipment:", err); 
+        }
+
         runUpgradeData = itemsData.runUpgradeData;
         commonUpgradesData = itemsData.commonUpgradesData;
         bossSkillsData = itemsData.bossSkillsData;
-        cursedRelicsData = itemsData.cursedRelicsData;
 
         renderHeroSelection();
         updateUI();
