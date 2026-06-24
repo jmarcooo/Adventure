@@ -37,11 +37,31 @@
             <button class="action-btn" onclick="startTestBattle()" style="background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 8px 0 #732d91, 0 15px 20px rgba(0,0,0,0.3); font-size: 1.5rem; margin-top: 15px; padding: 15px 60px;">TEST BATTLE</button>
         </div>
 
+        <!-- UPDATED: STAGE SELECT SCREEN (Now with 2 Views) -->
         <div id="screen-stages" class="screen" style="justify-content: flex-start;">
-            <h2>Select Stage</h2>
-            <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom: 10px;">Defeat Bosses to unlock new biomes.</p>
-            <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;">
+            
+            <!-- VIEW 1: The 10 Biomes -->
+            <div id="biome-list-view" style="width: 100%;">
+                <h2>Select Region</h2>
+                <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom: 10px;">Conquer regions to unlock new areas.</p>
+                <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;">
+                    <!-- Biomes Injected via JavaScript -->
                 </div>
+            </div>
+
+            <!-- VIEW 2: The 6 Sub-Stages inside a Biome -->
+            <div id="substage-list-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                <div style="width: 100%; display: flex; align-items: center; margin-bottom: 15px;">
+                    <button class="hud-btn" onclick="showBiomeList()" style="padding: 10px 15px;">🔙 Back</button>
+                    <h2 id="selected-biome-title" style="flex-grow: 1; margin: 0; text-align: center; color: #f1c40f;">Biome Name</h2>
+                    <div style="width: 75px;"></div> <!-- Invisible spacer to keep title centered -->
+                </div>
+                
+                <div class="list-container" id="substages-container" style="width: 100%; padding-bottom: 20px;">
+                    <!-- Sub-Stages Injected via JavaScript -->
+                </div>
+            </div>
+            
         </div>
 
         <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
@@ -89,18 +109,13 @@
             </div>
         </div>
 
-        <div id="screen-talents" class="screen" style="justify-content: flex-start;">
-            <h2>Talent Tree</h2>
-            <p style="color: #f1c40f; font-size: 1.2rem; margin-top: 5px; font-weight: bold;">Talent Points: <span id="tp-amount">0</span></p>
-            <div class="list-container">
-                <div class="card" onclick="upgradeTalent('damage')">
-                    <div class="card-icon">💥</div>
-                    <div class="card-info"><h3 style="color: #fff;">Fierce Strike</h3><p style="color: #f1c40f;">+10% Total Damage</p><p style="font-size: 0.8rem;">Level: <span id="talent-lvl-damage">0</span></p></div>
-                </div>
-                <div class="card" onclick="upgradeTalent('gold')">
-                    <div class="card-icon">💰</div>
-                    <div class="card-info"><h3 style="color: #fff;">Bounty Hunter</h3><p style="color: #f1c40f;">+20% Gold Drops</p><p style="font-size: 0.8rem;">Level: <span id="talent-lvl-gold">0</span></p></div>
-                </div>
+        <div id="screen-talents" class="screen" style="justify-content: flex-start; padding: 10px;">
+            <h2 style="margin-bottom: 5px;">Hero Talents</h2>
+            <p style="color: #3498db; font-size: 1rem; margin-top: 0; font-weight: bold;">
+                <span id="talent-hero-name" style="color: #f1c40f;">Hero</span> - Level <span id="talent-hero-level" style="color: #fff;">1</span>/20
+            </p>
+            <div id="talents-tree-container" style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-top: 15px; padding-bottom: 30px;">
+                <!-- Injected via JavaScript -->
             </div>
         </div>
 
@@ -218,7 +233,7 @@
 
             <div id="boss-clear-ui">
                 <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 3rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
-                <p style="margin-bottom: 10px; font-size: 1.2rem;">You conquered this biome!</p>
+                <p style="margin-bottom: 10px; font-size: 1.2rem;">You conquered this area!</p>
                 
                 <div class="loot-panel" style="margin-bottom: 30px; padding: 20px;">
                     <div class="loot-item"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
