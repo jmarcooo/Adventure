@@ -11,13 +11,13 @@ let player = {
     level: 1, exp: 0, expNeeded: 100, talentPoints: 0,
     gold: 0, gems: 0, currentHero: 'warrior', bonusDamage: 0,
     talents: { damage: 0, gold: 0 }, maxHealth: 100, currentHealth: 100,
-    heroStats: {}, // Stores per-hero levels
+    heroStats: {}, 
     heroSkillLevels: {},
     equipment: { head: null, body: null, legs: null, boots: null, weapon: null, leftHand: null, ring: null, amulet: null },
     inventory: [],
     attackProgress: 0, 
     activeEffects: [],
-    highestStageUnlocked: 0 // Tracks overall game progression (0 to 59)
+    highestStageUnlocked: 0 
 };
 
 let runStats = {
@@ -73,6 +73,48 @@ function getMutatorMod(key, defaultValue) {
         return activeMutator.modifiers[key];
     }
     return defaultValue;
+}
+
+// --- CHEATS & SECRETS ---
+let secretGemClickCount = 0;
+let secretGemClickTimer = null;
+
+function checkSecretCheat() {
+    secretGemClickCount++;
+    clearTimeout(secretGemClickTimer);
+
+    if (secretGemClickCount >= 10) {
+        player.gems += 10000;
+        updateUI();
+        showNotification("🛠️ DEV MODE: +10,000 Gems Added!");
+        secretGemClickCount = 0; 
+    } else {
+        secretGemClickTimer = setTimeout(() => { secretGemClickCount = 0; }, 1000);
+    }
+}
+
+let homeClickCount = 0;
+let homeClickTimer = null;
+
+function handleHomeClick() {
+    openMenu('home');
+    homeClickCount++;
+    clearTimeout(homeClickTimer);
+    
+    if (homeClickCount >= 10) {
+        let testBtn = document.getElementById('test-battle-btn');
+        if (testBtn) testBtn.style.display = 'block';
+        showNotification("🛠️ DEV MODE: Test Battle Unlocked!");
+        homeClickCount = 0; 
+    } else {
+        homeClickTimer = setTimeout(() => { homeClickCount = 0; }, 500);
+    }
+}
+
+function unlockAllStagesCheat() {
+    player.highestStageUnlocked = 59; 
+    renderStagesMenu();
+    showNotification("🛠️ DEV MODE: All Regions Unlocked!");
 }
 
 // --- NAVIGATION & GENERAL LOGIC ---
@@ -143,7 +185,7 @@ function renderStagesMenu() {
                 <div class="card-info">
                     <h3 style="color: #fff; font-size: 1.1rem;">Region ${index + 1}: ${stage.name}</h3>
                     <p style="color: ${isUnlocked ? '#f1c40f' : '#7f8c8d'}; font-size: 0.8rem;">
-                        ${isUnlocked ? `Progress: ${progressInsideBiome}/6 Cleared` : 'Complete previous region'}
+                        Progress: ${progressInsideBiome}/6 Cleared
                     </p>
                 </div>
             </div>
@@ -195,23 +237,6 @@ function startStage(bIndex, sIndex) {
     waveManager.currentBiomeIndex = bIndex;
     waveManager.currentSubstageIndex = sIndex;
     startGame();
-}
-
-let secretGemClickCount = 0;
-let secretGemClickTimer = null;
-
-function checkSecretCheat() {
-    secretGemClickCount++;
-    clearTimeout(secretGemClickTimer);
-
-    if (secretGemClickCount >= 10) {
-        player.gems += 10000;
-        updateUI();
-        showNotification("🛠️ DEV MODE: +10,000 Gems Added!");
-        secretGemClickCount = 0; 
-    } else {
-        secretGemClickTimer = setTimeout(() => { secretGemClickCount = 0; }, 1000);
-    }
 }
 
 function renderHeroSelection() {
@@ -1291,7 +1316,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     if (target.isDead) return;
     target.isDead = true; runStats.enemiesKilled++;
 
-    // --- ACCURATE EXP HARVEST FROM NEW ENEMY JSON STATS ---
     let expReward = target.exp || 10;
     runStats.expGained += expReward;
 
@@ -1528,7 +1552,6 @@ function executeEnemyAttack(e) {
         spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; 
     }
 
-    // --- ACCURATELY USES PATK OR MATK ---
     if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
         incomingDmg = e.mAtk || 0;
         if (runStats.purificationActive) {
