@@ -34,14 +34,16 @@
                 <div class="bar-container" style="height: 12px;"><div class="bar-fill exp" id="player-exp-fill"></div></div>
             </div>
             <button class="action-btn" onclick="openMenu('stages')">PLAY</button>
-            <button class="action-btn" onclick="startTestBattle()" style="background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 8px 0 #732d91, 0 15px 20px rgba(0,0,0,0.3); font-size: 1.5rem; margin-top: 15px; padding: 15px 60px;">TEST BATTLE</button>
+            
+            <!-- HIDDEN TEST BATTLE BUTTON -->
+            <button id="test-battle-btn" class="action-btn" onclick="startTestBattle()" style="display: none; background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 8px 0 #732d91, 0 15px 20px rgba(0,0,0,0.3); font-size: 1.5rem; margin-top: 15px; padding: 15px 60px;">TEST BATTLE</button>
         </div>
 
-        <!-- NEW: STAGE SELECT SCREEN (2-Views) -->
         <div id="screen-stages" class="screen" style="justify-content: flex-start;">
             
             <div id="biome-list-view" style="width: 100%;">
-                <h2>Select Region</h2>
+                <!-- TAPPABLE REGION UNLOCKER -->
+                <h2 onclick="unlockAllStagesCheat()" style="cursor: pointer;">Select Region</h2>
                 <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom: 10px;">Conquer regions to unlock new areas.</p>
                 <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;">
                     <!-- Biomes Injected via JavaScript -->
@@ -202,7 +204,6 @@
                 <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 15px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
-            <!-- CLEAN VICTORY UI -->
             <div id="boss-clear-ui">
                 <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 3rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
                 <p style="margin-bottom: 10px; font-size: 1.2rem;">You conquered this area!</p>
@@ -242,7 +243,10 @@
         <div class="bottom-nav" id="bottom-nav-bar">
             <button class="nav-btn" id="btn-heroes" onclick="openMenu('heroes')"><span class="icon">🦸‍♂️</span>Heroes</button>
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
-            <button class="nav-btn home-btn active" id="btn-home" onclick="openMenu('home')"><span class="icon">🏠</span>Home</button>
+            
+            <!-- CHANGED: Now triggers the cheat tracker -->
+            <button class="nav-btn home-btn active" id="btn-home" onclick="handleHomeClick()"><span class="icon">🏠</span>Home</button>
+            
             <button class="nav-btn" id="btn-talents" onclick="openMenu('talents')"><span class="icon">✨</span>Talents</button>
             <button class="nav-btn" id="btn-shop" onclick="openMenu('shop')"><span class="icon">🏪</span>Shop</button>
         </div>
