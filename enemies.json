@@ -5,7 +5,9 @@
     { "id": "f_bat", "name": "Bat", "emoji": "🦇", "baseHp": 15, "pAtk": 4, "mAtk": 0, "pDef": 1, "mDef": 2, "spd": 18, "atkSpd": 1.4, "exp": 10, "skill": null },
     { "id": "f_spider", "name": "Spider", "emoji": "🕷️", "baseHp": 18, "pAtk": 5, "mAtk": 0, "pDef": 2, "mDef": 2, "spd": 12, "atkSpd": 1.1, "exp": 20, "skill": "vampire" },
     { "id": "f_treant", "name": "Treant", "emoji": "🌳", "baseHp": 45, "pAtk": 4, "mAtk": 0, "pDef": 10, "mDef": 2, "spd": 5, "atkSpd": 0.6, "exp": 40, "skill": "armor" },
-    { "id": "f_bear", "name": "Bear", "emoji": "🐻", "baseHp": 40, "pAtk": 8, "mAtk": 0, "pDef": 5, "mDef": 3, "spd": 9, "atkSpd": 0.9, "exp": 45, "skill": "bash" }
+    { "id": "f_bear", "name": "Bear", "emoji": "🐻", "baseHp": 40, "pAtk": 8, "mAtk": 0, "pDef": 5, "mDef": 3, "spd": 9, "atkSpd": 0.9, "exp": 45, "skill": "bash" },
+    { "id": "f_troll", "name": "Troll Brute", "emoji": "👹", "baseHp": 55, "pAtk": 10, "mAtk": 0, "pDef": 6, "mDef": 3, "spd": 7, "atkSpd": 0.8, "exp": 60, "skill": "bash" },
+    { "id": "f_shaman", "name": "Forest Shaman", "emoji": "👺", "baseHp": 45, "pAtk": 2, "mAtk": 10, "pDef": 4, "mDef": 8, "spd": 11, "atkSpd": 1.1, "exp": 65, "skill": "magic" }
   ],
   "cave": [
     { "id": "c_bat", "name": "Cave Bat", "emoji": "🦇", "baseHp": 20, "pAtk": 5, "mAtk": 0, "pDef": 2, "mDef": 3, "spd": 17, "atkSpd": 1.4, "exp": 20, "skill": null },
@@ -13,7 +15,9 @@
     { "id": "c_scorpion", "name": "Scorpion", "emoji": "🦂", "baseHp": 30, "pAtk": 7, "mAtk": 0, "pDef": 6, "mDef": 4, "spd": 12, "atkSpd": 1.1, "exp": 35, "skill": "crit" },
     { "id": "c_rat", "name": "Dire Rat", "emoji": "🐀", "baseHp": 20, "pAtk": 4, "mAtk": 0, "pDef": 2, "mDef": 1, "spd": 15, "atkSpd": 1.3, "exp": 15, "skill": null },
     { "id": "c_crystal", "name": "Crystal Entity", "emoji": "💎", "baseHp": 40, "pAtk": 0, "mAtk": 9, "pDef": 10, "mDef": 15, "spd": 10, "atkSpd": 1.0, "exp": 55, "skill": "magic" },
-    { "id": "c_snake", "name": "Viper", "emoji": "🐍", "baseHp": 25, "pAtk": 8, "mAtk": 0, "pDef": 3, "mDef": 3, "spd": 14, "atkSpd": 1.2, "exp": 40, "skill": "poison_aura" }
+    { "id": "c_snake", "name": "Viper", "emoji": "🐍", "baseHp": 25, "pAtk": 8, "mAtk": 0, "pDef": 3, "mDef": 3, "spd": 14, "atkSpd": 1.2, "exp": 40, "skill": "poison_aura" },
+    { "id": "c_basilisk", "name": "Basilisk", "emoji": "🦎", "baseHp": 50, "pAtk": 12, "mAtk": 0, "pDef": 6, "mDef": 4, "spd": 11, "atkSpd": 1.0, "exp": 70, "skill": "poison_aura" },
+    { "id": "c_crawler", "name": "Deep Crawler", "emoji": "🐛", "baseHp": 65, "pAtk": 14, "mAtk": 0, "pDef": 8, "mDef": 6, "spd": 9, "atkSpd": 0.9, "exp": 80, "skill": "armor" }
   ],
   "graveyard": [
     { "id": "g_skel", "name": "Skeleton", "emoji": "💀", "baseHp": 30, "pAtk": 7, "mAtk": 0, "pDef": 4, "mDef": 2, "spd": 10, "atkSpd": 1.0, "exp": 25, "skill": null },
@@ -21,7 +25,9 @@
     { "id": "g_zombie", "name": "Zombie", "emoji": "🧟", "baseHp": 50, "pAtk": 9, "mAtk": 0, "pDef": 6, "mDef": 1, "spd": 6, "atkSpd": 0.7, "exp": 50, "skill": "intimidate_revive" },
     { "id": "g_demon", "name": "Lesser Demon", "emoji": "👹", "baseHp": 45, "pAtk": 10, "mAtk": 0, "pDef": 8, "mDef": 8, "spd": 11, "atkSpd": 1.0, "exp": 60, "skill": "bash" },
     { "id": "g_necro", "name": "Necromancer", "emoji": "🧙‍♂️", "baseHp": 35, "pAtk": 2, "mAtk": 12, "pDef": 4, "mDef": 10, "spd": 9, "atkSpd": 0.9, "exp": 70, "skill": "magic" },
-    { "id": "g_hound", "name": "Hellhound", "emoji": "🐕‍🦺", "baseHp": 35, "pAtk": 8, "mAtk": 0, "pDef": 5, "mDef": 5, "spd": 16, "atkSpd": 1.3, "exp": 45, "skill": "crit" }
+    { "id": "g_hound", "name": "Hellhound", "emoji": "🐕‍🦺", "baseHp": 35, "pAtk": 8, "mAtk": 0, "pDef": 5, "mDef": 5, "spd": 16, "atkSpd": 1.3, "exp": 45, "skill": "crit" },
+    { "id": "g_knight", "name": "Bone Knight", "emoji": "🤺", "baseHp": 60, "pAtk": 12, "mAtk": 0, "pDef": 12, "mDef": 5, "spd": 8, "atkSpd": 0.9, "exp": 85, "skill": "armor" },
+    { "id": "g_banshee", "name": "Banshee", "emoji": "🧝‍♀️", "baseHp": 40, "pAtk": 0, "mAtk": 15, "pDef": 3, "mDef": 12, "spd": 18, "atkSpd": 1.5, "exp": 80, "skill": "magic" }
   ],
   "ruins": [
     { "id": "r_eagle", "name": "Desert Eagle", "emoji": "🦅", "baseHp": 25, "pAtk": 8, "mAtk": 0, "pDef": 3, "mDef": 3, "spd": 19, "atkSpd": 1.5, "exp": 30, "skill": null },
@@ -29,7 +35,9 @@
     { "id": "r_urn", "name": "Cursed Urn", "emoji": "🏺", "baseHp": 55, "pAtk": 0, "mAtk": 4, "pDef": 12, "mDef": 12, "spd": 2, "atkSpd": 0.4, "exp": 40, "skill": "poison_aura" },
     { "id": "r_mummy", "name": "Mummy", "emoji": "🤕", "baseHp": 65, "pAtk": 8, "mAtk": 0, "pDef": 8, "mDef": 4, "spd": 6, "atkSpd": 0.7, "exp": 75, "skill": "intimidate_revive" },
     { "id": "r_lion", "name": "Stone Lion", "emoji": "🦁", "baseHp": 50, "pAtk": 12, "mAtk": 0, "pDef": 15, "mDef": 5, "spd": 12, "atkSpd": 1.1, "exp": 60, "skill": "bash" },
-    { "id": "r_scarab", "name": "Scarab Swarm", "emoji": "🪲", "baseHp": 30, "pAtk": 6, "mAtk": 0, "pDef": 4, "mDef": 2, "spd": 15, "atkSpd": 1.4, "exp": 35, "skill": "vampire" }
+    { "id": "r_scarab", "name": "Scarab Swarm", "emoji": "🪲", "baseHp": 30, "pAtk": 6, "mAtk": 0, "pDef": 4, "mDef": 2, "spd": 15, "atkSpd": 1.4, "exp": 35, "skill": "vampire" },
+    { "id": "r_gargoyle", "name": "Gargoyle", "emoji": "🦇", "baseHp": 65, "pAtk": 14, "mAtk": 0, "pDef": 15, "mDef": 10, "spd": 10, "atkSpd": 1.0, "exp": 90, "skill": "high_armor" },
+    { "id": "r_priest", "name": "High Priest", "emoji": "👳", "baseHp": 50, "pAtk": 0, "mAtk": 16, "pDef": 6, "mDef": 15, "spd": 12, "atkSpd": 1.1, "exp": 95, "skill": "magic" }
   ],
   "coast": [
     { "id": "co_crab", "name": "Giant Crab", "emoji": "🦀", "baseHp": 45, "pAtk": 7, "mAtk": 0, "pDef": 18, "mDef": 2, "spd": 7, "atkSpd": 0.8, "exp": 45, "skill": "armor" },
@@ -37,7 +45,9 @@
     { "id": "co_siren", "name": "Siren", "emoji": "🧜‍♀️", "baseHp": 35, "pAtk": 0, "mAtk": 12, "pDef": 4, "mDef": 10, "spd": 13, "atkSpd": 1.1, "exp": 55, "skill": "magic" },
     { "id": "co_jelly", "name": "Stinging Jelly", "emoji": "🪼", "baseHp": 30, "pAtk": 2, "mAtk": 8, "pDef": 2, "mDef": 15, "spd": 10, "atkSpd": 1.0, "exp": 40, "skill": "poison_aura" },
     { "id": "co_pirate", "name": "Undead Pirate", "emoji": "🏴‍☠️", "baseHp": 40, "pAtk": 9, "mAtk": 0, "pDef": 6, "mDef": 4, "spd": 11, "atkSpd": 1.0, "exp": 50, "skill": null },
-    { "id": "co_dragon", "name": "Sea Serpent", "emoji": "🐉", "baseHp": 80, "pAtk": 0, "mAtk": 16, "pDef": 10, "mDef": 12, "spd": 14, "atkSpd": 1.1, "exp": 100, "skill": "leviathan_spawns" }
+    { "id": "co_dragon", "name": "Sea Serpent", "emoji": "🐉", "baseHp": 80, "pAtk": 0, "mAtk": 16, "pDef": 10, "mDef": 12, "spd": 14, "atkSpd": 1.1, "exp": 100, "skill": "leviathan_spawns" },
+    { "id": "co_angler", "name": "Deep Angler", "emoji": "🐡", "baseHp": 55, "pAtk": 8, "mAtk": 12, "pDef": 6, "mDef": 8, "spd": 12, "atkSpd": 1.1, "exp": 85, "skill": "poison_aura" },
+    { "id": "co_tidehunter", "name": "Tidehunter", "emoji": "🔱", "baseHp": 70, "pAtk": 16, "mAtk": 0, "pDef": 10, "mDef": 8, "spd": 13, "atkSpd": 1.2, "exp": 105, "skill": "bash" }
   ],
   "volcano": [
     { "id": "v_slime", "name": "Magma Slime", "emoji": "🌋", "baseHp": 50, "pAtk": 8, "mAtk": 4, "pDef": 15, "mDef": 10, "spd": 6, "atkSpd": 0.7, "exp": 55, "skill": "armor" },
@@ -45,7 +55,9 @@
     { "id": "v_meteor", "name": "Meteor Fragment", "emoji": "☄️", "baseHp": 25, "pAtk": 20, "mAtk": 0, "pDef": 20, "mDef": 5, "spd": 20, "atkSpd": 0.5, "exp": 70, "skill": "bash" },
     { "id": "v_tengu", "name": "Ash Tengu", "emoji": "👺", "baseHp": 55, "pAtk": 15, "mAtk": 0, "pDef": 8, "mDef": 8, "spd": 15, "atkSpd": 1.3, "exp": 80, "skill": "crit" },
     { "id": "v_bat", "name": "Ember Bat", "emoji": "🦇", "baseHp": 25, "pAtk": 9, "mAtk": 0, "pDef": 4, "mDef": 4, "spd": 19, "atkSpd": 1.5, "exp": 35, "skill": null },
-    { "id": "v_wolf", "name": "Hellhound", "emoji": "🐺", "baseHp": 50, "pAtk": 12, "mAtk": 0, "pDef": 6, "mDef": 6, "spd": 16, "atkSpd": 1.2, "exp": 65, "skill": "vampire" }
+    { "id": "v_wolf", "name": "Hellhound", "emoji": "🐺", "baseHp": 50, "pAtk": 12, "mAtk": 0, "pDef": 6, "mDef": 6, "spd": 16, "atkSpd": 1.2, "exp": 65, "skill": "vampire" },
+    { "id": "v_drake", "name": "Fire Drake", "emoji": "🦖", "baseHp": 75, "pAtk": 18, "mAtk": 10, "pDef": 10, "mDef": 8, "spd": 16, "atkSpd": 1.3, "exp": 110, "skill": "crit" },
+    { "id": "v_golem", "name": "Magma Golem", "emoji": "🗿", "baseHp": 90, "pAtk": 12, "mAtk": 0, "pDef": 18, "mDef": 12, "spd": 6, "atkSpd": 0.7, "exp": 120, "skill": "high_armor" }
   ],
   "tundra": [
     { "id": "t_sprite", "name": "Snow Sprite", "emoji": "❄️", "baseHp": 30, "pAtk": 0, "mAtk": 10, "pDef": 3, "mDef": 15, "spd": 16, "atkSpd": 1.3, "exp": 45, "skill": "magic" },
@@ -53,7 +65,9 @@
     { "id": "t_bear", "name": "Polar Bear", "emoji": "🐻‍❄️", "baseHp": 75, "pAtk": 16, "mAtk": 0, "pDef": 12, "mDef": 6, "spd": 8, "atkSpd": 0.8, "exp": 90, "skill": "bash" },
     { "id": "t_zombie", "name": "Frozen Undead", "emoji": "🧟‍♂️", "baseHp": 65, "pAtk": 9, "mAtk": 0, "pDef": 8, "mDef": 8, "spd": 5, "atkSpd": 0.7, "exp": 75, "skill": "intimidate_revive" },
     { "id": "t_golem", "name": "Ice Golem", "emoji": "🧊", "baseHp": 85, "pAtk": 8, "mAtk": 0, "pDef": 25, "mDef": 15, "spd": 4, "atkSpd": 0.6, "exp": 100, "skill": "high_armor" },
-    { "id": "t_wraith", "name": "Frost Wraith", "emoji": "👻", "baseHp": 35, "pAtk": 0, "mAtk": 15, "pDef": 2, "mDef": 25, "spd": 14, "atkSpd": 1.1, "exp": 60, "skill": "magic" }
+    { "id": "t_wraith", "name": "Frost Wraith", "emoji": "👻", "baseHp": 35, "pAtk": 0, "mAtk": 15, "pDef": 2, "mDef": 25, "spd": 14, "atkSpd": 1.1, "exp": 60, "skill": "magic" },
+    { "id": "t_troll", "name": "Ice Troll", "emoji": "👹", "baseHp": 95, "pAtk": 16, "mAtk": 0, "pDef": 12, "mDef": 10, "spd": 9, "atkSpd": 0.9, "exp": 115, "skill": "bash" },
+    { "id": "t_sorcerer", "name": "Frostborn Mage", "emoji": "🧙", "baseHp": 55, "pAtk": 0, "mAtk": 20, "pDef": 6, "mDef": 18, "spd": 13, "atkSpd": 1.2, "exp": 110, "skill": "magic" }
   ],
   "desert": [
     { "id": "d_scorpion", "name": "Dune Scorpion", "emoji": "🦂", "baseHp": 40, "pAtk": 10, "mAtk": 0, "pDef": 15, "mDef": 5, "spd": 12, "atkSpd": 1.1, "exp": 50, "skill": "armor" },
@@ -61,7 +75,9 @@
     { "id": "d_camel", "name": "Feral Camel", "emoji": "🐪", "baseHp": 65, "pAtk": 8, "mAtk": 0, "pDef": 10, "mDef": 4, "spd": 9, "atkSpd": 0.9, "exp": 65, "skill": "bash" },
     { "id": "d_cactus", "name": "Living Cactus", "emoji": "🌵", "baseHp": 55, "pAtk": 6, "mAtk": 4, "pDef": 20, "mDef": 5, "spd": 6, "atkSpd": 0.7, "exp": 70, "skill": "high_armor" },
     { "id": "d_vulture", "name": "Vulture", "emoji": "🦅", "baseHp": 30, "pAtk": 11, "mAtk": 0, "pDef": 5, "mDef": 5, "spd": 18, "atkSpd": 1.4, "exp": 45, "skill": "vampire" },
-    { "id": "d_urn", "name": "Sand Urn", "emoji": "🏺", "baseHp": 50, "pAtk": 0, "mAtk": 8, "pDef": 15, "mDef": 15, "spd": 2, "atkSpd": 0.5, "exp": 50, "skill": "magic" }
+    { "id": "d_urn", "name": "Sand Urn", "emoji": "🏺", "baseHp": 50, "pAtk": 0, "mAtk": 8, "pDef": 15, "mDef": 15, "spd": 2, "atkSpd": 0.5, "exp": 50, "skill": "magic" },
+    { "id": "d_terror", "name": "Dune Terror", "emoji": "🕷️", "baseHp": 70, "pAtk": 18, "mAtk": 0, "pDef": 10, "mDef": 8, "spd": 15, "atkSpd": 1.3, "exp": 95, "skill": "vampire" },
+    { "id": "d_mirage", "name": "Mirage Weaver", "emoji": "🧞‍♂️", "baseHp": 60, "pAtk": 0, "mAtk": 18, "pDef": 6, "mDef": 16, "spd": 17, "atkSpd": 1.5, "exp": 100, "skill": "magic" }
   ],
   "void": [
     { "id": "vo_watcher", "name": "The Watcher", "emoji": "👁️", "baseHp": 45, "pAtk": 0, "mAtk": 16, "pDef": 5, "mDef": 20, "spd": 15, "atkSpd": 1.2, "exp": 70, "skill": "magic" },
@@ -69,7 +85,9 @@
     { "id": "vo_weaver", "name": "Void Weaver", "emoji": "🕷️", "baseHp": 50, "pAtk": 14, "mAtk": 0, "pDef": 8, "mDef": 8, "spd": 14, "atkSpd": 1.2, "exp": 75, "skill": "vampire" },
     { "id": "vo_bat", "name": "Shadow Bat", "emoji": "🦇", "baseHp": 35, "pAtk": 15, "mAtk": 0, "pDef": 5, "mDef": 5, "spd": 20, "atkSpd": 1.6, "exp": 55, "skill": "crit" },
     { "id": "vo_nebula", "name": "Nebula Entity", "emoji": "🌌", "baseHp": 60, "pAtk": 0, "mAtk": 20, "pDef": 10, "mDef": 30, "spd": 12, "atkSpd": 1.0, "exp": 85, "skill": "magic" },
-    { "id": "vo_spawn", "name": "Void Spawn", "emoji": "👾", "baseHp": 40, "pAtk": 12, "mAtk": 0, "pDef": 6, "mDef": 6, "spd": 16, "atkSpd": 1.3, "exp": 60, "skill": null }
+    { "id": "vo_spawn", "name": "Void Spawn", "emoji": "👾", "baseHp": 40, "pAtk": 12, "mAtk": 0, "pDef": 6, "mDef": 6, "spd": 16, "atkSpd": 1.3, "exp": 60, "skill": null },
+    { "id": "vo_behemoth", "name": "Void Behemoth", "emoji": "🦍", "baseHp": 110, "pAtk": 22, "mAtk": 0, "pDef": 20, "mDef": 20, "spd": 8, "atkSpd": 0.8, "exp": 140, "skill": "bash" },
+    { "id": "vo_assassin", "name": "Shadow Assassin", "emoji": "🥷", "baseHp": 55, "pAtk": 25, "mAtk": 0, "pDef": 8, "mDef": 8, "spd": 24, "atkSpd": 1.8, "exp": 130, "skill": "crit" }
   ],
   "celestial": [
     { "id": "ce_dove", "name": "Light Dove", "emoji": "🕊️", "baseHp": 35, "pAtk": 12, "mAtk": 0, "pDef": 5, "mDef": 10, "spd": 21, "atkSpd": 1.7, "exp": 55, "skill": null },
@@ -77,6 +95,8 @@
     { "id": "ce_spark", "name": "Divine Spark", "emoji": "⚡", "baseHp": 25, "pAtk": 22, "mAtk": 0, "pDef": 5, "mDef": 15, "spd": 25, "atkSpd": 0.5, "exp": 90, "skill": "crit" },
     { "id": "ce_ophanim", "name": "Ophanim", "emoji": "👁️", "baseHp": 90, "pAtk": 0, "mAtk": 20, "pDef": 15, "mDef": 30, "spd": 15, "atkSpd": 1.1, "exp": 120, "skill": "magic" },
     { "id": "ce_being", "name": "Being of Light", "emoji": "✨", "baseHp": 45, "pAtk": 0, "mAtk": 18, "pDef": 8, "mDef": 25, "spd": 17, "atkSpd": 1.3, "exp": 75, "skill": "magic" },
-    { "id": "ce_eagle", "name": "Golden Eagle", "emoji": "🦅", "baseHp": 50, "pAtk": 16, "mAtk": 0, "pDef": 10, "mDef": 10, "spd": 19, "atkSpd": 1.4, "exp": 85, "skill": "crit" }
+    { "id": "ce_eagle", "name": "Golden Eagle", "emoji": "🦅", "baseHp": 50, "pAtk": 16, "mAtk": 0, "pDef": 10, "mDef": 10, "spd": 19, "atkSpd": 1.4, "exp": 85, "skill": "crit" },
+    { "id": "ce_archangel", "name": "Archangel", "emoji": "👼", "baseHp": 100, "pAtk": 22, "mAtk": 18, "pDef": 18, "mDef": 18, "spd": 16, "atkSpd": 1.4, "exp": 160, "skill": "armor" },
+    { "id": "ce_seraphim", "name": "Seraphim", "emoji": "🧚", "baseHp": 80, "pAtk": 0, "mAtk": 28, "pDef": 12, "mDef": 24, "spd": 20, "atkSpd": 1.6, "exp": 150, "skill": "magic" }
   ]
 }
