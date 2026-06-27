@@ -1,0 +1,62 @@
+{
+  "crit": {
+    "name": "Critical Strike",
+    "trigger": "attack",
+    "chance": 0.25,
+    "floatingText": "CRIT!"
+  },
+  "bash": {
+    "name": "Heavy Bash",
+    "trigger": "attack",
+    "chance": 0.25,
+    "damageMultiplier": 2.0,
+    "applyStatus": { "type": "stun", "duration": 2000 },
+    "floatingText": "BASHED!"
+  },
+  "poison_aura": {
+    "name": "Poison Aura",
+    "trigger": "always",
+    "applyStatus": { "type": "poison", "duration": 5000 },
+    "floatingText": "POISONED!"
+  },
+  "poison_hit": {
+    "name": "Poison Hit",
+    "trigger": "always",
+    "applyStatus": { "type": "poison", "duration": 5000 },
+    "floatingText": "POISONED!"
+  },
+  "vampire": {
+    "name": "Vampiric Strike",
+    "trigger": "post_attack",
+    "lifestealFraction": 0.5
+  },
+  "armor": {
+    "name": "Thick Armor",
+    "trigger": "defend",
+    "physicalDamageMultiplier": 0.1
+  },
+  "high_armor": {
+    "name": "Impenetrable Armor",
+    "trigger": "defend",
+    "physicalDamageMultiplier": 0.1
+  },
+  "magic": {
+    "name": "Magic Attack",
+    "trigger": "attack",
+    "isMagic": true,
+    "ignoresEvasion": true
+  },
+  "leviathan_spawns": {
+    "name": "Deep Magic",
+    "trigger": "attack",
+    "isMagic": true,
+    "ignoresEvasion": true
+  },
+  "intimidate_revive": {
+    "name": "Undying Guard",
+    "trigger": "death",
+    "reviveFraction": 0.5,
+    "floatingText": "REVIVED!",
+    "aura": "intimidate"
+  }
+}
