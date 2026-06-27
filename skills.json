@@ -28,7 +28,7 @@
   "vampire": {
     "name": "Vampiric Strike",
     "trigger": "post_attack",
-    "lifestealFraction": 0.5
+    "lifestealFraction": 1
   },
   "armor": {
     "name": "Thick Armor",
