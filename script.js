@@ -1759,9 +1759,15 @@ function packDefeated() {
     waveManager.isUpgrading = true;
 
     if (isTestMode) {
+        runStats.tempAtkActive = false;
         endRun('TEST CLEARED', '#2ecc71');
         return;
     }
+
+    // --- BUG FIX: Reset temporary wave buffs & clear statuses! ---
+    runStats.tempAtkActive = false;
+    player.activeEffects = []; // Clears poison/burn so you don't die while shopping
+    renderStatusEffects();     // Removes the status icons from the UI
 
     let isBoss = getLevelAndWave().isBoss;
 
