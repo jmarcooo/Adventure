@@ -5,7 +5,7 @@ let heroData = {};
 let enemiesData = {}; 
 let equipmentData = []; 
 let mutatorsData = []; 
-let enemySkillsData = {}; // NEW: Global skills database
+let enemySkillsData = {}; 
 let activeMutator = null;
 
 let player = {
@@ -18,7 +18,7 @@ let player = {
     inventory: [],
     attackProgress: 0, 
     activeEffects: [],
-    highestStageUnlocked: 0 // Tracks overall game progression (0 to 59)
+    highestStageUnlocked: 0 
 };
 
 let runStats = {
@@ -489,7 +489,6 @@ function getPlayerStats() {
         luck: hero.luck + runStats.luck + eq.luck
     };
 
-    // AURA DYNAMIC CHECK (Reads active JSON auras on the board)
     if (activeEnemies && activeEnemies.length > 0) {
         activeEnemies.forEach(e => {
             if (e.hp > 0 && e.skill && enemySkillsData[e.skill]) {
@@ -498,7 +497,7 @@ function getPlayerStats() {
                     stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
                 }
                 if (aura === 'chill') {
-                    stats.atkSpd = stats.atkSpd * 0.50; // Frost Aura
+                    stats.atkSpd = stats.atkSpd * 0.50;
                 }
             }
         });
@@ -1152,6 +1151,7 @@ function renderNormalEnemyUI(id, enemyData, emoji, isElite) {
         </div>`;
 }
 
+// --- NEW 10-WAVE AI DIRECTOR ENGINE ---
 function spawnEnemyPack() {
     let container = document.getElementById('enemy-container');
     let textEl = document.getElementById('level-wave-text');
@@ -1163,11 +1163,25 @@ function spawnEnemyPack() {
 
     let stageInfo = getLevelAndWave();
     
-    // Safety check for enemiesData
+    // Fallback if data is missing
     let biomeEnemies = enemiesData[stageInfo.biome.id];
     if (!biomeEnemies || biomeEnemies.length === 0) {
         biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, pAtk: 2, mAtk: 0, pDef: 1, mDef: 1, spd: 10, atkSpd: 1.0, exp: 10, skill: null }];
     }
+
+    // Categorize enemies based on JSON array positioning
+    let tier1 = biomeEnemies.slice(0, 3);
+    let tier2 = biomeEnemies.length >= 6 ? biomeEnemies.slice(3, 6) : tier1;
+    let tier3 = biomeEnemies.length >= 8 ? biomeEnemies.slice(6, 8) : tier2;
+
+    // Read the current Substage (0 to 5) for Meso-level pacing
+    let isOutskirts = stageInfo.substageIndex === 0;
+    let isDepths = stageInfo.substageIndex === 2;
+    let isRuins = stageInfo.substageIndex === 3;
+    let isGauntlet = stageInfo.substageIndex === 4;
+    let isLair = stageInfo.substageIndex === 5;
+
+    let statMult = isDepths ? 1.2 : 1.0;
 
     let gameScreen = document.getElementById('screen-game');
     if (stageInfo.biome && stageInfo.biome.background) {
@@ -1178,11 +1192,11 @@ function spawnEnemyPack() {
     }
 
     if (stageInfo.isBiomeBoss) {
-        let bossHp = Math.floor((300 + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier);
-        let bPAtk = 10 + Math.floor(stageInfo.absoluteLevel * 1.5);
-        let bMAtk = 10 + Math.floor(stageInfo.absoluteLevel * 1.5);
-        let bPDef = 5 + Math.floor(stageInfo.absoluteLevel * 1.0);
-        let bMDef = 5 + Math.floor(stageInfo.absoluteLevel * 1.0);
+        let bossHp = Math.floor((300 + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier * statMult);
+        let bPAtk = Math.floor((10 + (stageInfo.absoluteLevel * 1.5)) * statMult);
+        let bMAtk = Math.floor((10 + (stageInfo.absoluteLevel * 1.5)) * statMult);
+        let bPDef = Math.floor((5 + (stageInfo.absoluteLevel * 1.0)) * statMult);
+        let bMDef = Math.floor((5 + (stageInfo.absoluteLevel * 1.0)) * statMult);
         let bExp = 100 + (stageInfo.absoluteLevel * 20);
         
         let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
@@ -1193,14 +1207,16 @@ function spawnEnemyPack() {
         renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
 
     } else if (stageInfo.isBoss) {
-        let bossHp = Math.floor((200 + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier);
-        let bPAtk = 8 + Math.floor(stageInfo.absoluteLevel * 1.2);
-        let bMAtk = 8 + Math.floor(stageInfo.absoluteLevel * 1.2);
-        let bPDef = 5 + Math.floor(stageInfo.absoluteLevel * 0.8);
-        let bMDef = 5 + Math.floor(stageInfo.absoluteLevel * 0.8);
+        let bossHp = Math.floor((200 + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier * statMult);
+        let bPAtk = Math.floor((8 + (stageInfo.absoluteLevel * 1.2)) * statMult);
+        let bMAtk = Math.floor((8 + (stageInfo.absoluteLevel * 1.2)) * statMult);
+        let bPDef = Math.floor((5 + (stageInfo.absoluteLevel * 0.8)) * statMult);
+        let bMDef = Math.floor((5 + (stageInfo.absoluteLevel * 0.8)) * statMult);
         let bExp = 50 + (stageInfo.absoluteLevel * 10);
         
         let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
+        // Ensure boss doesn't randomly get a useless skill
+        if (isOutskirts) bSkill = {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
 
         activeEnemies.push({ id: 0, name: "Area Guardian", maxHp: bossHp, hp: bossHp, pAtk: bPAtk, mAtk: bMAtk, pDef: bPDef, mDef: bMDef, exp: bExp, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
         
@@ -1213,75 +1229,106 @@ function spawnEnemyPack() {
         let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex];
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ ${nodeName} Elite ⚔️</span>`;
         
-        let strongestTemplate = [...biomeEnemies].sort((a, b) => b.baseHp - a.baseHp)[0];
-        let mbHp = Math.floor((strongestTemplate.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier * 2.5); 
-        let mbPAtk = Math.max(1, Math.floor((strongestTemplate.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * 1.5); 
-        let mbMAtk = Math.max(0, Math.floor((strongestTemplate.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * 1.5); 
-        let mbPDef = Math.floor((strongestTemplate.pDef || 0) + (stageInfo.absoluteLevel * 0.5) * 1.5);
-        let mbMDef = Math.floor((strongestTemplate.mDef || 0) + (stageInfo.absoluteLevel * 0.5) * 1.5);
+        let strongestTemplate = tier3[Math.floor(Math.random() * tier3.length)];
+        let mbHp = Math.floor((strongestTemplate.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier * 2.5 * statMult); 
+        let mbPAtk = Math.max(1, Math.floor((strongestTemplate.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * 1.5 * statMult); 
+        let mbMAtk = Math.max(0, Math.floor((strongestTemplate.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * 1.5 * statMult); 
+        let mbPDef = Math.floor((strongestTemplate.pDef || 0) + (stageInfo.absoluteLevel * 0.5) * 1.5 * statMult);
+        let mbMDef = Math.floor((strongestTemplate.mDef || 0) + (stageInfo.absoluteLevel * 0.5) * 1.5 * statMult);
         let mbExp = Math.floor((strongestTemplate.exp || 10) + (stageInfo.absoluteLevel * 2)) * 3;
 
-        activeEnemies.push({ id: 0, name: `Elite ${strongestTemplate.name}`, maxHp: mbHp, hp: mbHp, pAtk: mbPAtk, mAtk: mbMAtk, pDef: mbPDef, mDef: mbMDef, exp: mbExp, skill: strongestTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: true });
+        activeEnemies.push({ id: 0, name: `Elite ${strongestTemplate.name}`, maxHp: mbHp, hp: mbHp, pAtk: mbPAtk, mAtk: mbMAtk, pDef: mbPDef, mDef: mbMDef, exp: mbExp, skill: strongestTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: true, spd: strongestTemplate.spd || 12, atkSpd: strongestTemplate.atkSpd || 1.2 });
         renderNormalEnemyUI(0, activeEnemies[0], strongestTemplate.emoji, true);
 
-        let minionTemplate = [...biomeEnemies].sort((a, b) => a.baseHp - b.baseHp)[0];
-        for(let i=1; i<=2; i++) {
-            let mHp = Math.floor((minionTemplate.baseHp + (stageInfo.absoluteLevel * 10)) * runStats.enemyHpMultiplier);
-            let mPAtk = Math.max(1, Math.floor((minionTemplate.pAtk || 0) + (stageInfo.absoluteLevel * 0.5)));
-            let mMAtk = Math.max(0, Math.floor((minionTemplate.mAtk || 0) + (stageInfo.absoluteLevel * 0.5)));
-            let mPDef = Math.floor((minionTemplate.pDef || 0) + (stageInfo.absoluteLevel * 0.3));
-            let mMDef = Math.floor((minionTemplate.mDef || 0) + (stageInfo.absoluteLevel * 0.3));
+        let minionCount = isOutskirts ? 1 : 2;
+        for(let i=1; i<=minionCount; i++) {
+            let minionTemplate = tier1[Math.floor(Math.random() * tier1.length)];
+            let mHp = Math.floor((minionTemplate.baseHp + (stageInfo.absoluteLevel * 10)) * runStats.enemyHpMultiplier * statMult);
+            let mPAtk = Math.max(1, Math.floor((minionTemplate.pAtk || 0) + (stageInfo.absoluteLevel * 0.5)) * statMult);
+            let mMAtk = Math.max(0, Math.floor((minionTemplate.mAtk || 0) + (stageInfo.absoluteLevel * 0.5)) * statMult);
+            let mPDef = Math.floor((minionTemplate.pDef || 0) + (stageInfo.absoluteLevel * 0.3) * statMult);
+            let mMDef = Math.floor((minionTemplate.mDef || 0) + (stageInfo.absoluteLevel * 0.3) * statMult);
             let mExp = Math.floor((minionTemplate.exp || 10) + (stageInfo.absoluteLevel * 1));
 
-            activeEnemies.push({ id: i, name: minionTemplate.name, maxHp: mHp, hp: mHp, pAtk: mPAtk, mAtk: mMAtk, pDef: mPDef, mDef: mMDef, exp: mExp, skill: minionTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: false });
+            activeEnemies.push({ id: i, name: minionTemplate.name, maxHp: mHp, hp: mHp, pAtk: mPAtk, mAtk: mMAtk, pDef: mPDef, mDef: mMDef, exp: mExp, skill: minionTemplate.skill, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: false, spd: minionTemplate.spd || 10, atkSpd: minionTemplate.atkSpd || 1.0 });
             renderNormalEnemyUI(i, activeEnemies[i], minionTemplate.emoji, false);
         }
 
     } else {
+        // --- 10-WAVE MICRO PACING ENGINE ---
         let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex];
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br>Stage ${stageInfo.biomeIndex + 1}-${stageInfo.substageIndex + 1} (${nodeName})<br><span style="font-size: 0.8rem">Wave ${stageInfo.wave}</span>`;
 
-        let waveProgress = stageInfo.wave / 10;
-        let poolSize = Math.max(2, Math.ceil(biomeEnemies.length * (waveProgress + 0.3))); 
-        if (poolSize > biomeEnemies.length) poolSize = biomeEnemies.length;
-        let availableEnemies = biomeEnemies.slice(0, poolSize);
-
-        let baseCount = Math.floor(stageInfo.wave / 3) + 2; 
-        let variance = Math.floor(Math.random() * 3) - 1; 
-        let enemyCount = Math.min(5, Math.max(1, baseCount + variance));
-
-        let sortedByHp = [...availableEnemies].sort((a, b) => b.baseHp - a.baseHp);
-        let tankT = sortedByHp[0];
-        let squishyT = sortedByHp[sortedByHp.length - 1];
-        let magicT = availableEnemies.find(e => e.skill === 'magic') || squishyT;
-        
-        let formationRoll = Math.random();
-        let useFormation = (stageInfo.wave >= 6 && formationRoll < 0.6);
-        let formationType = formationRoll < 0.2 ? 'wall' : (formationRoll < 0.4 ? 'ambush' : 'coven');
-
+        let enemyCount = 1;
         let spawnList = [];
+        let guaranteedElites = 0;
 
-        if (useFormation) {
-            if (formationType === 'wall') { spawnList = [tankT, tankT, squishyT]; } 
-            else if (formationType === 'ambush') { spawnList = [squishyT, squishyT, squishyT, squishyT]; } 
-            else if (formationType === 'coven') { spawnList = [tankT, magicT, magicT]; }
-        } else {
-            for(let i=0; i<enemyCount; i++) {
-                spawnList.push(availableEnemies[Math.floor(Math.random() * availableEnemies.length)]);
-            }
+        switch(stageInfo.wave) {
+            case 1: // Scout
+                enemyCount = Math.floor(Math.random() * 2) + 1; // 1-2
+                spawnList = Array.from({length: enemyCount}, () => tier1[Math.floor(Math.random() * tier1.length)]);
+                break;
+            case 2: // Patrol
+                enemyCount = Math.floor(Math.random() * 2) + 2; // 2-3
+                spawnList = Array.from({length: enemyCount}, () => tier1[Math.floor(Math.random() * tier1.length)]);
+                break;
+            case 3: // Squad
+                enemyCount = 3;
+                let pool3 = [...tier1, ...tier2];
+                spawnList = Array.from({length: enemyCount}, () => pool3[Math.floor(Math.random() * pool3.length)]);
+                break;
+            case 4: // Vanguard
+                enemyCount = isOutskirts ? 3 : Math.floor(Math.random() * 2) + 3; // 3-4
+                let pool4 = [...tier1, ...tier2];
+                spawnList = Array.from({length: enemyCount}, () => pool4[Math.floor(Math.random() * pool4.length)]);
+                if (!isOutskirts) guaranteedElites = 1;
+                break;
+            case 6: // Formation
+                enemyCount = isOutskirts ? 3 : Math.floor(Math.random() * 2) + 3;
+                let pool6 = isGauntlet ? tier2 : [...tier1, ...tier2];
+                spawnList = Array.from({length: enemyCount}, () => pool6[Math.floor(Math.random() * pool6.length)]);
+                break;
+            case 7: // Elite Guard Intro
+                enemyCount = 3;
+                let pool7 = isGauntlet ? [...tier2, ...tier3] : [...tier2, ...tier3];
+                spawnList = Array.from({length: enemyCount}, () => pool7[Math.floor(Math.random() * pool7.length)]);
+                break;
+            case 8: // Swarm
+                enemyCount = isOutskirts ? 3 : Math.floor(Math.random() * 2) + 4; // 4-5
+                let pool8 = isGauntlet ? [...tier2, ...tier3] : [...tier1, ...tier2, ...tier3];
+                spawnList = Array.from({length: enemyCount}, () => pool8[Math.floor(Math.random() * pool8.length)]);
+                if (!isOutskirts) guaranteedElites = 1;
+                break;
+            case 9: // The Wall
+                enemyCount = isOutskirts ? 3 : 5; // Max 5
+                let pool9 = isGauntlet ? [...tier2, ...tier3] : [...tier1, ...tier2, ...tier3];
+                spawnList = Array.from({length: enemyCount}, () => pool9[Math.floor(Math.random() * pool9.length)]);
+                if (!isOutskirts) guaranteedElites = 2;
+                break;
+            default: // Failsafe
+                spawnList = [tier1[0]];
+                break;
         }
 
+        // Generate the finalized enemy data for this wave
         for(let i = 0; i < spawnList.length; i++) {
             let eTemp = spawnList[i];
-            let dynamicEliteChance = 0.05 + (0.25 * (stageInfo.wave / 10));
-            let isElite = Math.random() < dynamicEliteChance;
-            if (stageInfo.wave >= 8 && i === 0 && !useFormation) isElite = true; 
+            let isElite = false;
+            
+            if (guaranteedElites > 0) {
+                isElite = true;
+                guaranteedElites--;
+            } else {
+                let dynamicEliteChance = 0.02 * stageInfo.wave;
+                if (isRuins) dynamicEliteChance *= 2; 
+                if (Math.random() < dynamicEliteChance) isElite = true;
+            }
 
-            let normHp = Math.floor((eTemp.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier);
-            let normPAtk = Math.max(0, Math.floor((eTemp.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)));
-            let normMAtk = Math.max(0, Math.floor((eTemp.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)));
-            let normPDef = Math.floor((eTemp.pDef || 0) + (stageInfo.absoluteLevel * 0.5));
-            let normMDef = Math.floor((eTemp.mDef || 0) + (stageInfo.absoluteLevel * 0.5));
+            let normHp = Math.floor((eTemp.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier * statMult);
+            let normPAtk = Math.max(0, Math.floor((eTemp.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * statMult);
+            let normMAtk = Math.max(0, Math.floor((eTemp.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * statMult);
+            let normPDef = Math.floor((eTemp.pDef || 0) + (stageInfo.absoluteLevel * 0.5) * statMult);
+            let normMDef = Math.floor((eTemp.mDef || 0) + (stageInfo.absoluteLevel * 0.5) * statMult);
             let normExp = Math.floor((eTemp.exp || 10) + (stageInfo.absoluteLevel * 2));
             
             let finalHp = isElite ? normHp * 2 : normHp;
@@ -1464,7 +1511,6 @@ function executePlayerAttack() {
                 mDmg = 0; 
             }
 
-            // --- DEFENSIVE JSON SKILLS (Armor, Ethereal, Spell Shield, Anti-Crit) ---
             let defSkill = target.skill ? enemySkillsData[target.skill] : null;
             if (defSkill && defSkill.preventCrit) isCrit = false;
 
@@ -1509,7 +1555,6 @@ function executePlayerAttack() {
                 target.hp -= dmg;
                 animateHit(target.id, dmg, isCrit);
 
-                // --- JSON THRESHOLD TRIGGERS (Enrage, 50% HP Summons) ---
                 if (target.hp > 0 && target.hp <= target.maxHp * 0.5) {
                     let tSkill = target.skill ? enemySkillsData[target.skill] : null;
                     if (tSkill && tSkill.trigger === 'hp_threshold') {
@@ -1537,7 +1582,6 @@ function executePlayerAttack() {
                     }
                 }
 
-                // --- JSON BARBED / THORNS ---
                 if (defSkill && defSkill.trigger === 'defend' && defSkill.reflectPhysicalFraction && pDmg > 0) {
                     let tDmg = Math.floor(pDmg * defSkill.reflectPhysicalFraction);
                     player.currentHealth -= tDmg; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "REFLECT -" + tDmg, "float-enemy-dmg");
@@ -1610,7 +1654,6 @@ function executeEnemyAttack(e) {
     let stats = getPlayerStats();
     let incomingDmg = 0;
 
-    // --- OFFENSIVE JSON SKILLS (Piercing, Swarm Summons, Magic) ---
     let skillData = e.skill ? enemySkillsData[e.skill] : null;
     let isMagic = skillData && skillData.isMagic;
     let ignoresEvasion = skillData && skillData.ignoresEvasion;
@@ -1623,7 +1666,6 @@ function executeEnemyAttack(e) {
     }
 
     let isCrit = false;
-    if (e.skill === 'crit' && Math.random() < 0.25) isCrit = true; // Fallback
     if (skillTriggered && skillData.floatingText === 'CRIT!') isCrit = true;
     if (consumeCharge(e, 'focused')) isCrit = true;
     if (consumeCharge(player, 'marked')) isCrit = true;
@@ -1647,7 +1689,7 @@ function executeEnemyAttack(e) {
     }
 
     if (isMagic) {
-        incomingDmg = e.mAtk || e.damage || 0;
+        incomingDmg = e.mAtk || 0;
         if (runStats.purificationActive) {
             spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
             return; 
@@ -1658,7 +1700,7 @@ function executeEnemyAttack(e) {
             return; 
         }
     } else {
-        incomingDmg = e.pAtk || e.damage || 0;
+        incomingDmg = e.pAtk || 0;
         if (!isPiercing) incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
 
@@ -1668,17 +1710,6 @@ function executeEnemyAttack(e) {
     }
 
     incomingDmg = Math.floor(incomingDmg * skillDamageMultiplier);
-
-    if (e.skill === 'bash' && Math.random() < 0.25) { // Fallback
-        incomingDmg *= 2; 
-        applyStatus(player, 'stun', 2000); 
-        spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
-    }
-
-    if (e.skill === 'poison_aura' || e.skill === 'poison_hit') { // Fallback
-        applyStatus(player, 'poison', 5000); 
-        spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
-    }
 
     if (isEmpowered) incomingDmg *= 2;
     if (hasStatus(e, 'berserk')) incomingDmg *= 2;
@@ -1709,16 +1740,12 @@ function executeEnemyAttack(e) {
         animateHit(e.id, tDmg, false);
     }
 
-    // --- POST-ATTACK JSON SKILLS (Mana Burn, Vampire, Swarm Summons) ---
     if (skillData && skillData.trigger === 'post_attack') {
         if (skillData.lifestealFraction && incomingDmg > 0) applyHeal(e, Math.floor(incomingDmg * skillData.lifestealFraction));
         if (skillData.drainPlayerATB && incomingDmg > 0) {
             player.attackProgress = 0; let pAtb = document.getElementById('player-atb'); if(pAtb) pAtb.style.width = '0%';
             spawnFloatingText('player-combat-area', skillData.floatingText || "FATIGUED!", "float-miss");
         }
-    }
-    if (e.skill === 'vampire') { // Fallback
-        applyHeal(e, Math.floor(incomingDmg * 0.5));
     }
 
     if (skillData && skillData.summonEnemyId && skillData.trigger === 'attack') {
@@ -1759,15 +1786,9 @@ function packDefeated() {
     waveManager.isUpgrading = true;
 
     if (isTestMode) {
-        runStats.tempAtkActive = false;
         endRun('TEST CLEARED', '#2ecc71');
         return;
     }
-
-    // --- BUG FIX: Reset temporary wave buffs & clear statuses! ---
-    runStats.tempAtkActive = false;
-    player.activeEffects = []; // Clears poison/burn so you don't die while shopping
-    renderStatusEffects();     // Removes the status icons from the UI
 
     let isBoss = getLevelAndWave().isBoss;
 
