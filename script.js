@@ -489,8 +489,19 @@ function getPlayerStats() {
         luck: hero.luck + runStats.luck + eq.luck
     };
 
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && enemySkillsData[e.skill] && enemySkillsData[e.skill].aura === 'intimidate')) {
-        stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
+    // AURA DYNAMIC CHECK (Reads active JSON auras on the board)
+    if (activeEnemies && activeEnemies.length > 0) {
+        activeEnemies.forEach(e => {
+            if (e.hp > 0 && e.skill && enemySkillsData[e.skill]) {
+                let aura = enemySkillsData[e.skill].aura;
+                if (aura === 'intimidate') {
+                    stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
+                }
+                if (aura === 'chill') {
+                    stats.atkSpd = stats.atkSpd * 0.50; // Frost Aura
+                }
+            }
+        });
     }
     
     if (hasStatus(player, 'haste')) stats.atkSpd *= 1.5;
@@ -849,6 +860,38 @@ function spawnLootDrop(targetId, type) {
     setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
+// --- DYNAMIC MID-BATTLE SUMMONING ---
+function summonEnemyMidBattle(enemyId, hpOverride = null) {
+    let template = null;
+    for (let biome in enemiesData) {
+        let found = enemiesData[biome].find(en => en.id === enemyId);
+        if (found) { template = found; break; }
+    }
+    if (!template) return; 
+
+    let stageInfo = getLevelAndWave();
+    
+    let normHp = hpOverride !== null ? hpOverride : Math.floor((template.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier);
+    let normPAtk = Math.max(0, Math.floor((template.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)));
+    let normMAtk = Math.max(0, Math.floor((template.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)));
+    let normPDef = Math.floor((template.pDef || 0) + (stageInfo.absoluteLevel * 0.5));
+    let normMDef = Math.floor((template.mDef || 0) + (stageInfo.absoluteLevel * 0.5));
+    let normExp = Math.floor((template.exp || 10) + (stageInfo.absoluteLevel * 2));
+
+    let newId = 0;
+    activeEnemies.forEach(e => { if (e.id >= newId) newId = e.id + 1; });
+
+    let newEnemy = {
+        id: newId, name: template.name, maxHp: normHp, hp: normHp,
+        pAtk: normPAtk, mAtk: normMAtk, pDef: normPDef, mDef: normMDef, exp: normExp,
+        skill: template.skill, attackProgress: 0, activeEffects: [], isDead: false,
+        isBoss: false, isElite: false, spd: template.spd || 10, atkSpd: template.atkSpd || 1.0
+    };
+    
+    activeEnemies.push(newEnemy);
+    renderNormalEnemyUI(newEnemy.id, newEnemy, template.emoji, false);
+}
+
 // --- ATB LOOP ENGINE ---
 function startCombatLoop() {
     clearInterval(combatTickInterval);
@@ -1146,20 +1189,8 @@ function spawnEnemyPack() {
 
         activeEnemies.push({ id: 0, name: stageInfo.biome.bossName, maxHp: bossHp, hp: bossHp, pAtk: bPAtk, mAtk: bMAtk, pDef: bPDef, mDef: bMDef, exp: bExp, skill: bSkill.id, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, isBiomeBoss: true });
 
-        if (stageInfo.biome.skill === 'leviathan_spawns') {
-            for(let i=1; i<=4; i++) {
-                let spawnHp = Math.floor(bossHp * 0.2); 
-                let spawnDmg = Math.floor(bPAtk * 0.5);
-                activeEnemies.push({ id: i, name: "Leviathan Spawn", maxHp: spawnHp, hp: spawnHp, pAtk: spawnDmg, mAtk: spawnDmg, pDef: 5, mDef: 5, exp: 10, skill: 'magic', attackProgress: 0, activeEffects: [], isDead: false, isBoss: false });
-            }
-        }
-
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ REGION BOSS ⚠️</span>`;
         renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
-
-        if (stageInfo.biome.skill === 'leviathan_spawns') {
-            for(let i=1; i<=4; i++) { renderNormalEnemyUI(i, activeEnemies[i], '🦑', true); }
-        }
 
     } else if (stageInfo.isBoss) {
         let bossHp = Math.floor((200 + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier);
@@ -1433,9 +1464,13 @@ function executePlayerAttack() {
                 mDmg = 0; 
             }
 
+            // --- DEFENSIVE JSON SKILLS (Armor, Ethereal, Spell Shield, Anti-Crit) ---
             let defSkill = target.skill ? enemySkillsData[target.skill] : null;
-            if (defSkill && defSkill.trigger === 'defend' && defSkill.physicalDamageMultiplier) {
-                pDmg = Math.floor(pDmg * defSkill.physicalDamageMultiplier);
+            if (defSkill && defSkill.preventCrit) isCrit = false;
+
+            if (defSkill && defSkill.trigger === 'defend') {
+                if (defSkill.physicalDamageMultiplier !== undefined) pDmg = Math.floor(pDmg * defSkill.physicalDamageMultiplier);
+                if (defSkill.magicDamageMultiplier !== undefined) mDmg = Math.floor(mDmg * defSkill.magicDamageMultiplier);
             }
 
             let dmg = pDmg + mDmg;
@@ -1474,12 +1509,39 @@ function executePlayerAttack() {
                 target.hp -= dmg;
                 animateHit(target.id, dmg, isCrit);
 
+                // --- JSON THRESHOLD TRIGGERS (Enrage, 50% HP Summons) ---
+                if (target.hp > 0 && target.hp <= target.maxHp * 0.5) {
+                    let tSkill = target.skill ? enemySkillsData[target.skill] : null;
+                    if (tSkill && tSkill.trigger === 'hp_threshold') {
+                        if (tSkill.enrageMultiplier && !target.hasEnraged) {
+                            target.hasEnraged = true;
+                            spawnFloatingText(`enemy-${target.id}`, tSkill.floatingText || "ENRAGED!", "float-enemy-dmg");
+                            target.pAtk = Math.floor((target.pAtk || target.damage || 10) * tSkill.enrageMultiplier);
+                            target.mAtk = Math.floor((target.mAtk || target.damage || 10) * tSkill.enrageMultiplier);
+                            target.atkSpd = (target.atkSpd || 1) * tSkill.enrageMultiplier;
+                        }
+                        if (tSkill.summonEnemyId && !target.hasSummoned) {
+                            target.hasSummoned = true;
+                            spawnFloatingText(`enemy-${target.id}`, tSkill.floatingText || "SUMMON!", "float-enemy-dmg");
+                            let count = tSkill.summonCount || 1;
+                            for(let i=0; i<count; i++) summonEnemyMidBattle(tSkill.summonEnemyId, tSkill.summonHpOverride);
+                        }
+                    }
+                }
+
                 if (player.equipment && player.equipment.weapon && player.equipment.weapon.onHit) {
                     let hitEff = player.equipment.weapon.onHit;
                     if (Math.random() < hitEff.chance) {
                         applyStatus(target, hitEff.type, hitEff.duration);
                         spawnFloatingText(`enemy-${target.id}`, `${hitEff.type.toUpperCase()}!`, "float-enemy-dmg");
                     }
+                }
+
+                // --- JSON BARBED / THORNS ---
+                if (defSkill && defSkill.trigger === 'defend' && defSkill.reflectPhysicalFraction && pDmg > 0) {
+                    let tDmg = Math.floor(pDmg * defSkill.reflectPhysicalFraction);
+                    player.currentHealth -= tDmg; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "REFLECT -" + tDmg, "float-enemy-dmg");
+                    if (player.currentHealth <= 0) { triggerGameOver("Slain by " + target.name + "'s Thorns"); return; }
                 }
 
                 if (hasStatus(target, 'thorns') && dmg > 0) {
@@ -1548,9 +1610,11 @@ function executeEnemyAttack(e) {
     let stats = getPlayerStats();
     let incomingDmg = 0;
 
+    // --- OFFENSIVE JSON SKILLS (Piercing, Swarm Summons, Magic) ---
     let skillData = e.skill ? enemySkillsData[e.skill] : null;
     let isMagic = skillData && skillData.isMagic;
     let ignoresEvasion = skillData && skillData.ignoresEvasion;
+    let isPiercing = skillData && skillData.isPiercing;
     let skillTriggered = false;
 
     if (skillData) {
@@ -1558,7 +1622,9 @@ function executeEnemyAttack(e) {
         if (skillData.trigger === 'attack' && skillData.chance && Math.random() < skillData.chance) skillTriggered = true;
     }
 
-    let isCrit = (skillTriggered && skillData.floatingText === 'CRIT!');
+    let isCrit = false;
+    if (e.skill === 'crit' && Math.random() < 0.25) isCrit = true; // Fallback
+    if (skillTriggered && skillData.floatingText === 'CRIT!') isCrit = true;
     if (consumeCharge(e, 'focused')) isCrit = true;
     if (consumeCharge(player, 'marked')) isCrit = true;
 
@@ -1581,19 +1647,19 @@ function executeEnemyAttack(e) {
     }
 
     if (isMagic) {
-        incomingDmg = e.mAtk || 0;
+        incomingDmg = e.mAtk || e.damage || 0;
         if (runStats.purificationActive) {
             spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
             return; 
         }
-        incomingDmg = Math.max(1, incomingDmg - stats.mDef);
+        if (!isPiercing) incomingDmg = Math.max(1, incomingDmg - stats.mDef);
         if (getMutatorMod('nullifyMagic', false)) {
             spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss");
             return; 
         }
     } else {
-        incomingDmg = e.pAtk || 0;
-        incomingDmg = Math.max(1, incomingDmg - stats.pDef);
+        incomingDmg = e.pAtk || e.damage || 0;
+        if (!isPiercing) incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
 
     if (isCrit) {
@@ -1602,6 +1668,17 @@ function executeEnemyAttack(e) {
     }
 
     incomingDmg = Math.floor(incomingDmg * skillDamageMultiplier);
+
+    if (e.skill === 'bash' && Math.random() < 0.25) { // Fallback
+        incomingDmg *= 2; 
+        applyStatus(player, 'stun', 2000); 
+        spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
+    }
+
+    if (e.skill === 'poison_aura' || e.skill === 'poison_hit') { // Fallback
+        applyStatus(player, 'poison', 5000); 
+        spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
+    }
 
     if (isEmpowered) incomingDmg *= 2;
     if (hasStatus(e, 'berserk')) incomingDmg *= 2;
@@ -1632,8 +1709,24 @@ function executeEnemyAttack(e) {
         animateHit(e.id, tDmg, false);
     }
 
+    // --- POST-ATTACK JSON SKILLS (Mana Burn, Vampire, Swarm Summons) ---
     if (skillData && skillData.trigger === 'post_attack') {
         if (skillData.lifestealFraction && incomingDmg > 0) applyHeal(e, Math.floor(incomingDmg * skillData.lifestealFraction));
+        if (skillData.drainPlayerATB && incomingDmg > 0) {
+            player.attackProgress = 0; let pAtb = document.getElementById('player-atb'); if(pAtb) pAtb.style.width = '0%';
+            spawnFloatingText('player-combat-area', skillData.floatingText || "FATIGUED!", "float-miss");
+        }
+    }
+    if (e.skill === 'vampire') { // Fallback
+        applyHeal(e, Math.floor(incomingDmg * 0.5));
+    }
+
+    if (skillData && skillData.summonEnemyId && skillData.trigger === 'attack') {
+        let aliveCount = activeEnemies.filter(en => en.hp > 0 && !en.isDead).length;
+        let maxAllowed = skillData.maxMinionsOnBoard || 5;
+        if (aliveCount < maxAllowed) {
+            summonEnemyMidBattle(skillData.summonEnemyId, skillData.summonHpOverride);
+        }
     }
 
     let container = document.getElementById('game-container');
