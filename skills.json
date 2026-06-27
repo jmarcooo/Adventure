@@ -1,4 +1,66 @@
 {
+  "ethereal": {
+    "name": "Ethereal Form",
+    "trigger": "defend",
+    "physicalDamageMultiplier": 0.0,
+    "magicDamageMultiplier": 2.0
+  },
+  "spell_shield": {
+    "name": "Spell Shield",
+    "trigger": "defend",
+    "magicDamageMultiplier": 0.0
+  },
+  "barbed": {
+    "name": "Barbed Carapace",
+    "trigger": "defend",
+    "reflectPhysicalFraction": 0.2
+  },
+  "piercing_strike": {
+    "name": "Piercing Strike",
+    "trigger": "attack",
+    "isPiercing": true,
+    "floatingText": "PIERCED!"
+  },
+  "mana_burn": {
+    "name": "Fatigue",
+    "trigger": "post_attack",
+    "drainPlayerATB": 100,
+    "floatingText": "FATIGUED!"
+  },
+  "frost_aura": {
+    "name": "Chilling Aura",
+    "trigger": "aura",
+    "aura": "chill"
+  },
+  "enrage": {
+    "name": "Berserker Rage",
+    "trigger": "hp_threshold",
+    "threshold": 0.5,
+    "enrageMultiplier": 2.0,
+    "floatingText": "ENRAGED!"
+  },
+  "leviathan_spawns": {
+    "name": "Deep Awakening",
+    "trigger": "hp_threshold",
+    "threshold": 0.5,
+    "summonEnemyId": "co_jelly",
+    "summonCount": 3,
+    "floatingText": "THE SWARM AWAKENS!"
+  },
+  "summon_swarm": {
+    "name": "Raise Dead",
+    "trigger": "attack",
+    "chance": 1.0,
+    "summonEnemyId": "g_skel",
+    "summonHpOverride": 1,
+    "maxMinionsOnBoard": 5,
+    "floatingText": "ARISE!"
+  },
+  "anti_crit": {
+    "name": "Hardened Skull",
+    "trigger": "defend",
+    "preventCrit": true
+  },
   "crit": {
     "name": "Critical Strike",
     "trigger": "attack",
@@ -19,21 +81,15 @@
     "applyStatus": { "type": "poison", "duration": 5000 },
     "floatingText": "POISONED!"
   },
-  "poison_hit": {
-    "name": "Poison Hit",
-    "trigger": "always",
-    "applyStatus": { "type": "poison", "duration": 5000 },
-    "floatingText": "POISONED!"
-  },
   "vampire": {
     "name": "Vampiric Strike",
     "trigger": "post_attack",
-    "lifestealFraction": 1
+    "lifestealFraction": 0.5
   },
   "armor": {
     "name": "Thick Armor",
     "trigger": "defend",
-    "physicalDamageMultiplier": 0.1
+    "physicalDamageMultiplier": 0.5
   },
   "high_armor": {
     "name": "Impenetrable Armor",
@@ -42,12 +98,6 @@
   },
   "magic": {
     "name": "Magic Attack",
-    "trigger": "attack",
-    "isMagic": true,
-    "ignoresEvasion": true
-  },
-  "leviathan_spawns": {
-    "name": "Deep Magic",
     "trigger": "attack",
     "isMagic": true,
     "ignoresEvasion": true
