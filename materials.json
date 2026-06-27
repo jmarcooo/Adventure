@@ -1,0 +1,11 @@
+{
+  "iron_ore": { "name": "Iron Ore", "icon": "🪨", "type": "general" },
+  "monster_bone": { "name": "Monster Bone", "icon": "🦴", "type": "general" },
+  "beast_hide": { "name": "Beast Hide", "icon": "🟤", "type": "general" },
+  
+  "ancient_wood": { "name": "Ancient Wood", "icon": "🪵", "type": "biome", "biome": "forest" },
+  "troll_skull": { "name": "Troll Skull", "icon": "👹", "type": "boss", "boss": "forest" },
+  
+  "crystal_shard": { "name": "Crystal Shard", "icon": "💎", "type": "biome", "biome": "cave" },
+  "serpent_scale": { "name": "Serpent Scale", "icon": "🐍", "type": "boss", "boss": "cave" }
+}
