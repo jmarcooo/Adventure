@@ -5,6 +5,7 @@ let heroData = {};
 let enemiesData = {}; 
 let equipmentData = []; 
 let mutatorsData = []; 
+let enemySkillsData = {}; // NEW: Global skills database
 let activeMutator = null;
 
 let player = {
@@ -17,7 +18,7 @@ let player = {
     inventory: [],
     attackProgress: 0, 
     activeEffects: [],
-    highestStageUnlocked: 0 
+    highestStageUnlocked: 0 // Tracks overall game progression (0 to 59)
 };
 
 let runStats = {
@@ -488,7 +489,7 @@ function getPlayerStats() {
         luck: hero.luck + runStats.luck + eq.luck
     };
 
-    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+    if (activeEnemies && activeEnemies.find(e => e.hp > 0 && enemySkillsData[e.skill] && enemySkillsData[e.skill].aura === 'intimidate')) {
         stats.pAtk = Math.floor(stats.pAtk * 0.75); stats.mAtk = Math.floor(stats.mAtk * 0.75); stats.atkSpd = stats.atkSpd * 0.75;
     }
     
@@ -731,7 +732,7 @@ function renderStatusEffects() {
     let pCont = document.getElementById('player-status-effects');
     if (pCont) {
         pCont.innerHTML = '';
-        if (activeEnemies && activeEnemies.find(e => e.hp > 0 && e.skill === 'intimidate_revive')) {
+        if (activeEnemies && activeEnemies.find(e => e.hp > 0 && enemySkillsData[e.skill] && enemySkillsData[e.skill].aura === 'intimidate')) {
             pCont.innerHTML += `<div class="status-icon debuff" title="Intimidated">💀 Intimidated</div>`;
         }
         if (player.activeEffects) {
@@ -1302,15 +1303,18 @@ function spawnEnemyPack() {
 }
 
 function handleEnemyDeath(target, unitId, unitDiv) {
-    if (target.skill === 'intimidate_revive' && !target.hasRevived) {
-        target.hasRevived = true;
-        target.hp = Math.floor(target.maxHp * 0.5); 
-        let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
-        let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
-        if (hpBarDiv) hpBarDiv.style.width = '50%';
-        if (hpTextDiv) hpTextDiv.innerText = `${target.hp}/${target.maxHp}`;
-        spawnFloatingText(`enemy-${unitId}`, "REVIVED!", "float-heal");
-        return; 
+    let skillData = target.skill ? enemySkillsData[target.skill] : null;
+    if (skillData && skillData.trigger === 'death' && !target.hasRevived) {
+        if (skillData.reviveFraction) {
+            target.hasRevived = true;
+            target.hp = Math.floor(target.maxHp * skillData.reviveFraction); 
+            let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`);
+            let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
+            if (hpBarDiv) hpBarDiv.style.width = (target.hp / target.maxHp) * 100 + '%';
+            if (hpTextDiv) hpTextDiv.innerText = `${target.hp}/${target.maxHp}`;
+            spawnFloatingText(`enemy-${unitId}`, skillData.floatingText || "REVIVED!", "float-heal");
+            return; 
+        }
     }
 
     if (target.isDead) return;
@@ -1429,8 +1433,9 @@ function executePlayerAttack() {
                 mDmg = 0; 
             }
 
-            if (target.skill === 'high_armor' || target.skill === 'armor') {
-                pDmg = Math.floor(pDmg * 0.1); 
+            let defSkill = target.skill ? enemySkillsData[target.skill] : null;
+            if (defSkill && defSkill.trigger === 'defend' && defSkill.physicalDamageMultiplier) {
+                pDmg = Math.floor(pDmg * defSkill.physicalDamageMultiplier);
             }
 
             let dmg = pDmg + mDmg;
@@ -1543,16 +1548,39 @@ function executeEnemyAttack(e) {
     let stats = getPlayerStats();
     let incomingDmg = 0;
 
-    let isCrit = false;
-    if (e.skill === 'crit' && Math.random() < 0.25) isCrit = true;
+    let skillData = e.skill ? enemySkillsData[e.skill] : null;
+    let isMagic = skillData && skillData.isMagic;
+    let ignoresEvasion = skillData && skillData.ignoresEvasion;
+    let skillTriggered = false;
+
+    if (skillData) {
+        if (skillData.trigger === 'always') skillTriggered = true;
+        if (skillData.trigger === 'attack' && skillData.chance && Math.random() < skillData.chance) skillTriggered = true;
+    }
+
+    let isCrit = (skillTriggered && skillData.floatingText === 'CRIT!');
     if (consumeCharge(e, 'focused')) isCrit = true;
     if (consumeCharge(player, 'marked')) isCrit = true;
 
-    if (e.skill !== 'magic' && e.skill !== 'leviathan_spawns' && !isCrit && Math.random() < stats.evasion) { 
+    if (!isMagic && !isCrit && !ignoresEvasion && Math.random() < stats.evasion) { 
         spawnFloatingText('player-combat-area', "MISS!", "float-miss"); return; 
     }
 
-    if (e.skill === 'magic' || e.skill === 'leviathan_spawns') {
+    let skillDamageMultiplier = 1.0;
+    if (skillTriggered) {
+        if (skillData.damageMultiplier) skillDamageMultiplier = skillData.damageMultiplier;
+        if (skillData.applyStatus) applyStatus(player, skillData.applyStatus.type, skillData.applyStatus.duration);
+        if (skillData.floatingText && skillData.floatingText !== 'CRIT!') {
+            spawnFloatingText('player-combat-area', skillData.floatingText, "float-enemy-dmg");
+        }
+    }
+
+    if (consumeCharge(player, 'block')) {
+        spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss");
+        return; 
+    }
+
+    if (isMagic) {
         incomingDmg = e.mAtk || 0;
         if (runStats.purificationActive) {
             spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss");
@@ -1568,26 +1596,12 @@ function executeEnemyAttack(e) {
         incomingDmg = Math.max(1, incomingDmg - stats.pDef);
     }
 
-    if (e.skill === 'bash' && Math.random() < 0.25) {
-        incomingDmg *= 2; 
-        applyStatus(player, 'stun', 2000); 
-        spawnFloatingText('player-combat-area', "BASHED!", "float-enemy-dmg");
-    }
-
-    if (e.skill === 'poison_aura' || e.skill === 'poison_hit') {
-        applyStatus(player, 'poison', 5000); 
-        spawnFloatingText('player-combat-area', "POISONED!", "float-enemy-dmg");
-    }
-
-    if (consumeCharge(player, 'block')) {
-        spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss");
-        return; 
-    }
-
     if (isCrit) {
         incomingDmg = Math.floor(incomingDmg * 2);
         spawnFloatingText(`enemy-${e.id}`, "CRIT!", "float-enemy-dmg");
     }
+
+    incomingDmg = Math.floor(incomingDmg * skillDamageMultiplier);
 
     if (isEmpowered) incomingDmg *= 2;
     if (hasStatus(e, 'berserk')) incomingDmg *= 2;
@@ -1618,8 +1632,8 @@ function executeEnemyAttack(e) {
         animateHit(e.id, tDmg, false);
     }
 
-    if (e.skill === 'vampire') {
-        applyHeal(e, Math.floor(incomingDmg * 0.5));
+    if (skillData && skillData.trigger === 'post_attack') {
+        if (skillData.lifestealFraction && incomingDmg > 0) applyHeal(e, Math.floor(incomingDmg * skillData.lifestealFraction));
     }
 
     let container = document.getElementById('game-container');
@@ -1937,6 +1951,11 @@ async function initGame() {
 
         const enemiesResponse = await fetch('enemies.json');
         enemiesData = await enemiesResponse.json();
+
+        try {
+            const skillsResponse = await fetch('skills.json');
+            if (skillsResponse.ok) { enemySkillsData = await skillsResponse.json(); }
+        } catch (err) { console.warn("Failed to load skills.json - verify file exists."); }
 
         try {
             let equipResponse = await fetch('equipment.json');
