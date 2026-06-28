@@ -112,16 +112,55 @@
             </div>
         </div>
 
-        <div id="screen-forge" class="screen" style="justify-content: flex-start;">
-            <h2>The Forge</h2>
-            <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom:10px;">Craft powerful gear using Monster loot.</p>
+        <!-- NEW COMBINED SHOP UI -->
+        <div id="screen-shop" class="screen" style="justify-content: flex-start;">
             
-            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; width: 100%; margin-bottom: 15px;">
-                <h4 style="color: #bdc3c7; font-size: 0.8rem; text-align: left; margin: 0 0 5px 0; text-transform: uppercase;">Your Materials</h4>
-                <div id="forge-mats-container" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;"></div>
+            <div style="display: flex; width: 100%; gap: 10px; margin-bottom: 15px;">
+                <button id="tab-forge" class="hud-btn active" style="flex: 1; padding: 10px; font-size: 1.1rem; background: #e67e22;" onclick="switchShopTab('forge')">🔨 Forge</button>
+                <button id="tab-premium" class="hud-btn" style="flex: 1; padding: 10px; font-size: 1.1rem; background: #2c3e50;" onclick="switchShopTab('premium')">💎 Premium</button>
+            </div>
+            
+            <!-- FORGE VIEW -->
+            <div id="forge-view" style="width: 100%;">
+                <p style="color: #3498db; font-size: 1rem; margin-top: 0px; margin-bottom:10px;">Craft powerful gear using Monster loot.</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; width: 100%; margin-bottom: 15px;">
+                    <h4 style="color: #bdc3c7; font-size: 0.8rem; text-align: left; margin: 0 0 5px 0; text-transform: uppercase;">Your Materials</h4>
+                    <div id="forge-mats-container" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;"></div>
+                </div>
+                <div class="list-container" id="forge-recipes-container" style="padding-bottom: 20px;"></div>
             </div>
 
-            <div class="list-container" id="forge-recipes-container" style="padding-bottom: 20px;"></div>
+            <!-- PREMIUM VIEW -->
+            <div id="premium-view" style="display: none; width: 100%;">
+                <p style="color: #9b59b6; font-size: 1rem; margin-top: 0px; margin-bottom:10px;">Spend Gems for premium boosts.</p>
+                <div class="list-container">
+                    <div class="card" onclick="buyPremium('gold')">
+                        <div class="card-icon">💰</div>
+                        <div class="card-info">
+                            <h3 style="color: #fff; margin:0;">Pouch of Gold</h3>
+                            <p style="color: #bdc3c7; font-size: 0.8rem; margin: 2px 0;">Instantly gain 1,000 Gold.</p>
+                            <div style="margin-top: 5px; color: #00e5ff; font-weight:bold;">10 💎</div>
+                        </div>
+                    </div>
+                    <div class="card" onclick="buyPremium('damage')">
+                        <div class="card-icon">⚔️</div>
+                        <div class="card-info">
+                            <h3 style="color: #fff; margin:0;">Power Elixir</h3>
+                            <p style="color: #bdc3c7; font-size: 0.8rem; margin: 2px 0;">Permanent +50 Base Damage.</p>
+                            <div style="margin-top: 5px; color: #00e5ff; font-weight:bold;">50 💎</div>
+                        </div>
+                    </div>
+                    <div class="card" onclick="buyPremium('chest')">
+                        <div class="card-icon">🎁</div>
+                        <div class="card-info">
+                            <h3 style="color: #fff; margin:0;">Mystic Chest</h3>
+                            <p style="color: #bdc3c7; font-size: 0.8rem; margin: 2px 0;">Get 1 Random Equipment.</p>
+                            <div style="margin-top: 5px; color: #00e5ff; font-weight:bold;">20 💎</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </div>
 
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
@@ -177,7 +216,6 @@
                     <div class="loot-item"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
                 </div>
                 
-                <!-- NEW: Materials Recap for Victory -->
                 <h3 style="color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px;">Materials Found</h3>
                 <div id="boss-materials-recap" style="margin-bottom: 25px; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;"></div>
 
@@ -200,7 +238,6 @@
                     </div>
                 </div>
 
-                <!-- NEW: Materials Recap for Defeat -->
                 <h3 style="color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px;">Materials Salvaged</h3>
                 <div id="summary-materials-recap" style="margin-bottom: 25px; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;"></div>
 
@@ -213,7 +250,7 @@
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
             <button class="nav-btn home-btn active" id="btn-home" onclick="handleHomeClick()"><span class="icon">🏠</span>Home</button>
             <button class="nav-btn" id="btn-talents" onclick="openMenu('talents')"><span class="icon">✨</span>Talents</button>
-            <button class="nav-btn" id="btn-forge" onclick="openMenu('forge')"><span class="icon">🔨</span>Forge</button>
+            <button class="nav-btn" id="btn-shop" onclick="openMenu('shop')"><span class="icon">🛒</span>Shop</button>
         </div>
     </div>
 
