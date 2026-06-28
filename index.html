@@ -35,33 +35,23 @@
             </div>
             <button class="action-btn" onclick="openMenu('stages')">PLAY</button>
             
-            <!-- HIDDEN TEST BATTLE BUTTON -->
             <button id="test-battle-btn" class="action-btn" onclick="startTestBattle()" style="display: none; background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 8px 0 #732d91, 0 15px 20px rgba(0,0,0,0.3); font-size: 1.5rem; margin-top: 15px; padding: 15px 60px;">TEST BATTLE</button>
         </div>
 
         <div id="screen-stages" class="screen" style="justify-content: flex-start;">
-            
             <div id="biome-list-view" style="width: 100%;">
-                <!-- TAPPABLE REGION UNLOCKER -->
                 <h2 onclick="unlockAllStagesCheat()" style="cursor: pointer;">Select Region</h2>
                 <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom: 10px;">Conquer regions to unlock new areas.</p>
-                <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;">
-                    <!-- Biomes Injected via JavaScript -->
-                </div>
+                <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;"></div>
             </div>
-
             <div id="substage-list-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
                 <div style="width: 100%; display: flex; align-items: center; margin-bottom: 15px;">
                     <button class="hud-btn" onclick="showBiomeList()" style="padding: 10px 15px;">🔙 Back</button>
                     <h2 id="selected-biome-title" style="flex-grow: 1; margin: 0; text-align: center; color: #f1c40f;">Biome Name</h2>
                     <div style="width: 75px;"></div>
                 </div>
-                
-                <div class="list-container" id="substages-container" style="width: 100%; padding-bottom: 20px;">
-                    <!-- Sub-Stages Injected via JavaScript -->
-                </div>
+                <div class="list-container" id="substages-container" style="width: 100%; padding-bottom: 20px;"></div>
             </div>
-            
         </div>
 
         <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
@@ -92,13 +82,11 @@
                     </div>
                     <div class="equip-stats" id="gear-hero-stats"></div>
                 </div>
-
                 <div class="equip-bottom">
                     <h3 style="margin-top: 0; margin-bottom: 10px; text-align: left; font-size: 1rem; color: #f1c40f;">INVENTORY</h3>
                     <div class="inventory-grid" id="inventory-grid"></div>
                 </div>
             </div>
-
             <div id="gear-details-modal" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 350px; background: rgba(30, 40, 50, 0.95); border: 2px solid #3498db; border-radius: 15px; padding: 20px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8); flex-direction: column; align-items: center; text-align: center;">
                 <button class="hud-btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; background: #e74c3c;" onclick="document.getElementById('gear-details-modal').style.display='none'">X</button>
                 <div id="gear-modal-icon" style="font-size: 4rem; margin-bottom: 10px;"></div>
@@ -124,47 +112,33 @@
             </div>
         </div>
 
-        <div id="screen-shop" class="screen" style="justify-content: flex-start;">
-            <h2>Premium Shop</h2>
-            <p style="color: #3498db; font-size: 1.2rem; margin-top: 5px; font-weight: bold;">Spend your Gems!</p>
-            <div class="list-container">
-                <div class="card" onclick="buyPremium('gold')">
-                    <div class="card-icon">💰</div>
-                    <div class="card-info"><h3 style="color: #fff;">Pouch of Gold</h3><p style="color: #f1c40f;">Instantly get 1,000 Gold.</p></div>
-                    <div style="font-weight: bold; color: #fff; font-size: 1.2rem;">10 💎</div>
-                </div>
-                <div class="card" onclick="buyPremium('damage')">
-                    <div class="card-icon">🗡️</div>
-                    <div class="card-info"><h3 style="color: #fff;">Ancient Power</h3><p style="color: #f1c40f;">+50 Permanent DMG</p></div>
-                    <div style="font-weight: bold; color: #fff; font-size: 1.2rem;">50 💎</div>
-                </div>
-                <div class="card" onclick="buyPremium('chest')">
-                    <div class="card-icon">🧰</div>
-                    <div class="card-info"><h3 style="color: #fff;">Equipment Chest</h3><p style="color: #f1c40f;">Get 1 random piece of gear.</p></div>
-                    <div style="font-weight: bold; color: #fff; font-size: 1.2rem;">20 💎</div>
-                </div>
+        <div id="screen-forge" class="screen" style="justify-content: flex-start;">
+            <h2>The Forge</h2>
+            <p style="color: #3498db; font-size: 1rem; margin-top: 5px; margin-bottom:10px;">Craft powerful gear using Monster loot.</p>
+            
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; width: 100%; margin-bottom: 15px;">
+                <h4 style="color: #bdc3c7; font-size: 0.8rem; text-align: left; margin: 0 0 5px 0; text-transform: uppercase;">Your Materials</h4>
+                <div id="forge-mats-container" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    </div>
             </div>
+
+            <div class="list-container" id="forge-recipes-container" style="padding-bottom: 20px;">
+                </div>
         </div>
 
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
-            
             <button class="hud-btn retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
-            
             <div id="top-right-ui">
                 <button id="speed-toggle-btn" class="hud-btn" onclick="toggleGameSpeed()">▶️ x1</button>
                 <div id="in-run-currency" style="position: relative;">🌀 <span id="run-runes-text">0</span></div>
             </div>
-
             <div style="width: 100%;">
                 <h2 id="level-wave-text" style="color: #f1c40f; margin-top: 25px;">Level 1 - Wave 1</h2>
                 <div id="mutator-display" style="display: none; color: #e74c3c; font-size: 0.95rem; font-weight: bold; margin-top: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-align: center;"></div>
                 <div id="enemy-container"></div>
             </div>
-
             <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
-
             <div style="width: 100%; position: relative;" id="player-combat-area">
-                
                 <div id="debug-panel" style="display: none; flex-direction: column; gap: 5px; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px dashed #f1c40f; width: 90%; margin-left: auto; margin-right: auto;">
                     <div style="font-size: 0.8rem; font-weight: bold; color: #3498db; text-align: left;">Player Setup:</div>
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
@@ -174,16 +148,12 @@
                         <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem;" onclick="debugApply('bleed', 'player')">Bleed</button>
                     </div>
                 </div>
-
                 <div id="player-status-effects" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; min-height: 25px; margin-bottom: 10px;"></div>
-
                 <div class="combat-stats-panel" id="combat-stats-panel"></div>
-
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 0 auto; align-items: flex-end;">
                     <h3 style="margin:0;">Your Health</h3>
                     <span id="player-hp-text" style="font-weight: bold; font-size: 0.9rem;">100/100</span>
                 </div>
-                
                 <div class="bar-container" style="width: 80%; margin: 5px auto 2px auto; position: relative;">
                     <div class="bar-fill player-hp" id="player-health"></div>
                 </div>
@@ -195,11 +165,7 @@
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px;">WAVE CLEARED!</h1>
                 <p style="margin-bottom: 10px;">Spend your Runes for this run.</p>
-                
-                <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 15px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">
-                    🌀 <span id="shop-runes-display">0</span>
-                </div>
-
+                <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 15px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">🌀 <span id="shop-runes-display">0</span></div>
                 <div id="upgrade-list" style="width: 100%; display: flex; gap: 8px; justify-content: center;"></div>
                 <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 15px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
@@ -207,23 +173,18 @@
             <div id="boss-clear-ui">
                 <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 3rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
                 <p style="margin-bottom: 10px; font-size: 1.2rem;">You conquered this area!</p>
-                
                 <div class="loot-panel" style="margin-bottom: 30px; padding: 20px;">
                     <div class="loot-item"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
                     <div class="loot-item"><span style="font-size: 1.5rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
                     <div class="loot-item"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
                 </div>
-
                 <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.5rem; padding: 15px; width: 100%; background: #2ecc71; box-shadow: 0 8px 0 #27ae60;">Claim & Return</button>
             </div>
 
             <div id="run-summary-ui">
                 <h1 id="run-summary-title" style="font-family: 'Fredoka One'; font-size: 3rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
-                
                 <p id="run-summary-killer" style="color: #e74c3c; font-weight: bold; font-size: 1.2rem; margin-bottom: 5px;"></p>
-                
                 <p style="margin-bottom: 25px; font-size: 1.2rem;">Run Summary</p>
-                
                 <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; width: 80%; margin-bottom: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);">
                     <div style="font-size: 1.5rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
                         <span>💀 Kills:</span> <span id="summary-kills" style="color: #e74c3c; font-weight: bold;">0</span>
@@ -235,7 +196,6 @@
                         <span>🌟 EXP:</span> <span id="summary-exp" style="color: #9b59b6; font-weight: bold;">0</span>
                     </div>
                 </div>
-
                 <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.5rem; padding: 15px 30px;">Collect & Home</button>
             </div>
         </div>
@@ -243,12 +203,9 @@
         <div class="bottom-nav" id="bottom-nav-bar">
             <button class="nav-btn" id="btn-heroes" onclick="openMenu('heroes')"><span class="icon">🦸‍♂️</span>Heroes</button>
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
-            
-            <!-- CHANGED: Now triggers the cheat tracker -->
             <button class="nav-btn home-btn active" id="btn-home" onclick="handleHomeClick()"><span class="icon">🏠</span>Home</button>
-            
             <button class="nav-btn" id="btn-talents" onclick="openMenu('talents')"><span class="icon">✨</span>Talents</button>
-            <button class="nav-btn" id="btn-shop" onclick="openMenu('shop')"><span class="icon">🏪</span>Shop</button>
+            <button class="nav-btn" id="btn-forge" onclick="openMenu('forge')"><span class="icon">🔨</span>Forge</button>
         </div>
     </div>
 
