@@ -6,7 +6,7 @@
     <title>Pocket Heroes</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* NEW: Professional Modal Backdrops & Animations */
+        /* Professional Modal Backdrops & Animations */
         .modal-backdrop {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(3px); z-index: 99;
@@ -31,10 +31,12 @@
 <body>
 
     <div id="game-container">
+        <!-- Notifications & Overlays -->
         <div id="in-app-notification" class="notification-popup"></div>
         <div id="battle-start-overlay"><div id="crossed-swords">⚔️</div></div>
         <div id="global-modal-backdrop" class="modal-backdrop"></div>
 
+        <!-- Top Navigation Bar -->
         <div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1);">
             <div style="display: flex; gap: 15px;">
                 <div class="currency" id="gold-container" style="font-weight: bold; color: #f1c40f; text-shadow: 0 2px 2px rgba(0,0,0,0.8);">🪙 <span id="gold-amount">0</span></div>
@@ -43,6 +45,7 @@
             <div style="font-size: 1.5rem; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.8);" onclick="document.getElementById('global-modal-backdrop').style.display='block'; document.getElementById('settings-modal').style.display='flex';">⚙️</div>
         </div>
 
+        <!-- Settings Modal -->
         <div id="settings-modal" class="settings-modal">
             <button class="hud-btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; background: #7f8c8d;" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('settings-modal').style.display='none';">X</button>
             <h2 style="margin: 0 0 5px 0; color: #fff; font-size: 1.8rem;">Settings</h2>
@@ -56,6 +59,7 @@
             <button class="settings-btn btn-wipe" onclick="wipeSaveData()">⚠️ Hard Reset</button>
         </div>
 
+        <!-- SCREEN: HOME -->
         <div id="screen-home" class="screen active">
             <h1 class="game-title" style="margin-top: 10px;">POCKET<br>HEROES</h1>
             <div class="character-display">
@@ -74,6 +78,7 @@
             <button id="test-battle-btn" class="action-btn" onclick="startTestBattle()" style="display: none; background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 100%); box-shadow: 0 8px 0 #732d91, 0 15px 20px rgba(0,0,0,0.3); font-size: 1.5rem; margin-top: 20px; padding: 15px 60px;">TEST BATTLE</button>
         </div>
 
+        <!-- SCREEN: STAGES -->
         <div id="screen-stages" class="screen" style="justify-content: flex-start;">
             <div id="biome-list-view" style="width: 100%;">
                 <h2 onclick="unlockAllStagesCheat()" style="cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Select Region</h2>
@@ -90,6 +95,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: HEROES -->
         <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
             <div id="heroes-list-view" style="width: 100%;">
                 <h2 style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Hero Roster</h2>
@@ -103,6 +109,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: GEAR -->
         <div id="screen-gear" class="screen" style="justify-content: flex-start; padding-top: 10px;">
             <div class="equipment-container" style="width: 100%; padding: 0 10px;">
                 <div class="equip-top">
@@ -124,6 +131,7 @@
                     <div class="inventory-grid" id="inventory-grid"></div>
                 </div>
             </div>
+            <!-- Gear Modal -->
             <div id="gear-details-modal" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 320px; background: rgba(30, 40, 50, 0.98); border: 2px solid #3498db; border-radius: 15px; padding: 25px; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.9); flex-direction: column; align-items: center; text-align: center;">
                 <button class="hud-btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 12px; background: #e74c3c;" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('gear-details-modal').style.display='none'">X</button>
                 <div id="gear-modal-icon" style="font-size: 4.5rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);"></div>
@@ -134,6 +142,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: TALENTS -->
         <div id="screen-talents" class="screen" style="justify-content: flex-start;">
             <h2 style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Talent Tree</h2>
             <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; margin: 5px 0 20px 0; border: 1px solid rgba(255,255,255,0.1);">
@@ -152,12 +161,14 @@
             </div>
         </div>
 
+        <!-- SCREEN: SHOP (Forge + Premium) -->
         <div id="screen-shop" class="screen" style="justify-content: flex-start; padding: 10px;">
             <div style="display: flex; width: 100%; gap: 10px; margin-bottom: 20px;">
                 <button id="tab-forge" class="hud-btn active" style="flex: 1; padding: 12px; font-size: 1.1rem; background: #e67e22; font-weight: bold; border-radius: 10px;" onclick="switchShopTab('forge')">🔨 Forge</button>
                 <button id="tab-premium" class="hud-btn" style="flex: 1; padding: 12px; font-size: 1.1rem; background: #2c3e50; font-weight: bold; border-radius: 10px;" onclick="switchShopTab('premium')">💎 Premium</button>
             </div>
             
+            <!-- FORGE VIEW -->
             <div id="forge-view" style="width: 100%;">
                 <p style="color: #e67e22; font-size: 1.1rem; font-weight: bold; margin-top: 0px; margin-bottom:10px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Craft powerful gear using loot.</p>
                 <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; width: 100%; margin-bottom: 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); border: 1px solid rgba(230, 126, 34, 0.3);">
@@ -167,6 +178,7 @@
                 <div class="list-container" id="forge-recipes-container" style="padding-bottom: 20px;"></div>
             </div>
 
+            <!-- PREMIUM VIEW -->
             <div id="premium-view" style="display: none; width: 100%;">
                 <p style="color: #9b59b6; font-size: 1.1rem; font-weight: bold; margin-top: 0px; margin-bottom:20px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Spend Gems for permanent boosts.</p>
                 <div class="list-container">
@@ -198,6 +210,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: GAME (Battle) -->
         <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
             <button class="hud-btn retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
             <div id="top-right-ui">
@@ -214,15 +227,33 @@
             <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
             
             <div style="width: 100%; position: relative;" id="player-combat-area">
+                
+                <!-- FULLY UPDATED TEST BATTLE DEBUG PANEL -->
                 <div id="debug-panel" style="display: none; flex-direction: column; gap: 5px; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px dashed #f1c40f; width: 90%; margin-left: auto; margin-right: auto;">
-                    <div style="font-size: 0.8rem; font-weight: bold; color: #3498db; text-align: left;">Player Setup:</div>
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #3498db; text-align: left;">Player Debuffs:</div>
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                         <button class="hud-btn" style="background: #e74c3c; font-size: 0.65rem;" onclick="debugApply('stun', 'player')">Stun</button>
                         <button class="hud-btn" style="background: #27ae60; font-size: 0.65rem;" onclick="debugApply('poison', 'player')">Poison</button>
                         <button class="hud-btn" style="background: #d35400; font-size: 0.65rem;" onclick="debugApply('burn', 'player')">Burn</button>
                         <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem;" onclick="debugApply('bleed', 'player')">Bleed</button>
                     </div>
+
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #e74c3c; text-align: left; margin-top: 5px;">Dummy Debuffs:</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button class="hud-btn" style="background: #8e44ad; font-size: 0.65rem;" onclick="debugApply('vulnerable', 'enemy')">Vuln</button>
+                        <button class="hud-btn" style="background: #2c3e50; font-size: 0.65rem;" onclick="debugApply('marked', 'enemy')">Marked</button>
+                        <button class="hud-btn" style="background: #f39c12; font-size: 0.65rem;" onclick="debugApply('blind', 'enemy')">Blind</button>
+                        <button class="hud-btn" style="background: #16a085; font-size: 0.65rem;" onclick="debugApply('poison', 'enemy')">Poison</button>
+                    </div>
+
+                    <div style="font-size: 0.8rem; font-weight: bold; color: #f1c40f; text-align: left; margin-top: 5px;">Mutator Test:</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button class="hud-btn" style="background: #d35400; font-size: 0.65rem;" onclick="debugMutator('magic_immune')">No Magic</button>
+                        <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem;" onclick="debugMutator('toxic')">Toxic Air</button>
+                        <button class="hud-btn" style="background: #7f8c8d; font-size: 0.65rem;" onclick="debugMutator('clear')">Clear</button>
+                    </div>
                 </div>
+
                 <div id="player-status-effects" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; min-height: 25px; margin-bottom: 10px;"></div>
                 <div class="combat-stats-panel" id="combat-stats-panel"></div>
                 <div style="display: flex; justify-content: space-between; width: 80%; margin: 0 auto; align-items: flex-end;">
@@ -237,6 +268,7 @@
                 </div>
             </div>
 
+            <!-- Wave Clear Upgrade UI -->
             <div id="wave-upgrade-ui">
                 <h1 style="color: #f1c40f; font-family: 'Fredoka One'; margin-bottom: 5px; text-shadow: 0 4px 8px rgba(0,0,0,0.5);">WAVE CLEARED!</h1>
                 <p style="margin-bottom: 10px;">Spend your Runes for this run.</p>
@@ -245,6 +277,7 @@
                 <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
             </div>
 
+            <!-- Stage Victory UI -->
             <div id="boss-clear-ui">
                 <h1 style="color: #2ecc71; font-family: 'Fredoka One'; margin-bottom: 5px; font-size: 3rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
                 <p style="margin-bottom: 15px; font-size: 1.2rem; font-weight: bold;">You conquered this area!</p>
@@ -261,6 +294,7 @@
                 <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.5rem; padding: 15px; width: 100%; background: #2ecc71; box-shadow: 0 8px 0 #27ae60;">Claim Loot & Return</button>
             </div>
 
+            <!-- Run Defeat UI -->
             <div id="run-summary-ui">
                 <h1 id="run-summary-title" style="font-family: 'Fredoka One'; font-size: 3.5rem; margin-bottom: 5px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
                 <p id="run-summary-killer" style="color: #e74c3c; font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;"></p>
@@ -285,6 +319,7 @@
             </div>
         </div>
 
+        <!-- Bottom Navigation Menu -->
         <div class="bottom-nav" id="bottom-nav-bar">
             <button class="nav-btn" id="btn-heroes" onclick="openMenu('heroes')"><span class="icon">🦸‍♂️</span>Heroes</button>
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
@@ -294,10 +329,11 @@
         </div>
     </div>
 
+    <!-- The external logic script -->
     <script src="script.js"></script>
 
+    <!-- Save/Load Placeholders -->
     <script>
-        // These will be fully implemented in script.js in the next step!
         function saveGame() {
             showNotification("💾 Saving Game (Coming Soon...)");
         }
