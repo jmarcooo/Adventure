@@ -464,7 +464,6 @@ function getPlayerStats() {
     return stats;
 }
 
-// ⚠️ FIXED FUNCTION: Enforces class identity (Physical vs Magic)
 function getTotalDamage() {
     let stats = getPlayerStats(); 
     let hero = heroData[player.currentHero];
@@ -472,16 +471,13 @@ function getTotalDamage() {
     let baseP = stats.pAtk; 
     let baseM = stats.mAtk; 
     
-    // Check attackType to nullify irrelevant stats
     if (hero && hero.attackType === 'physical') { baseM = 0; }
     if (hero && hero.attackType === 'magical') { baseP = 0; }
-    // (If 'hybrid', keep both)
 
     let dmgTalent = player.talents ? (player.talents.damage || 0) : 0;
     baseP = Math.floor(baseP * (1 + (dmgTalent * 0.10))); 
     baseM = Math.floor(baseM * (1 + (dmgTalent * 0.10))); 
     
-    // Add premium shop flat bonus to the relevant stat
     if (hero && hero.attackType === 'magical') {
         baseM += player.bonusDamage;
     } else {
@@ -805,6 +801,33 @@ function renderStatusEffects() {
 function debugApply(type, targetStr) {
     if (!isTestMode) return; let target = (targetStr === 'player') ? player : activeEnemies[0]; if (!target || target.hp <= 0 && target !== player) return;
     if (type === 'stun') applyStatus(target, 'stun', 3000); else if (type === 'poison') applyStatus(target, 'poison', 5000); else if (type === 'burn') applyStatus(target, 'burn', 5000); else if (type === 'bleed') applyStatus(target, 'bleed', 5000); else if (type === 'decay') applyStatus(target, 'decay', 5000); else if (type === 'regen') applyStatus(target, 'regen', 5000); else if (type === 'haste') applyStatus(target, 'haste', 5000); else if (type === 'slow') applyStatus(target, 'slow', 5000); else if (type === 'vulnerable') applyStatus(target, 'vulnerable', 5000); else if (type === 'barrier') applyStatus(target, 'barrier', 5000); else if (type === 'thorns') applyStatus(target, 'thorns', 5000); else if (type === 'berserk') applyStatus(target, 'berserk', 5000); else if (type === 'doom') applyStatus(target, 'doom', 10000); else if (type === 'blind') applyStatus(target, 'blind', 1, true); else if (type === 'empower') applyStatus(target, 'empower', 1, true); else if (type === 'block') applyStatus(target, 'block', 1, true); else if (type === 'focused') applyStatus(target, 'focused', 1, true); else if (type === 'marked') applyStatus(target, 'marked', 1, true); 
+    updateCombatStatsPanel();
+}
+
+function debugMutator(type) {
+    if (!isTestMode) return;
+    let mutatorEl = document.getElementById('mutator-display');
+    
+    if (type === 'clear') {
+        activeMutator = null;
+        if(mutatorEl) mutatorEl.style.display = 'none';
+        showNotification("Mutators Cleared");
+    } else if (type === 'magic_immune') {
+        activeMutator = { name: "Anti-Magic Field", modifiers: { nullifyMagic: true } };
+        if(mutatorEl) { 
+            mutatorEl.style.display = 'block'; 
+            mutatorEl.innerText = "MUTATOR: Anti-Magic Field"; 
+        }
+        showNotification("Magic Damage Nullified!");
+    } else if (type === 'toxic') {
+        activeMutator = { name: "Toxic Air", modifiers: { hpDmgPerSec: 0.02 } };
+        if(mutatorEl) { 
+            mutatorEl.style.display = 'block'; 
+            mutatorEl.innerText = "MUTATOR: Toxic Air (-2% HP/sec)"; 
+        }
+        showNotification("Toxic Air Mutator Applied!");
+    }
+    
     updateCombatStatsPanel();
 }
 
@@ -1178,7 +1201,7 @@ function handleEnemyDeath(target, unitId, unitDiv) {
 
         document.getElementById('run-runes-text').innerText = runStats.runes;
     } catch (e) {
-        console.error("Loot Drop Failed, but wave will safely continue: ", e);
+        console.error("Loot system failed, continuing wave safely: ", e);
     }
 
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
