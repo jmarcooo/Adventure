@@ -1,0 +1,33 @@
+[
+  {
+    "id": "wpn_iron_sword",
+    "name": "Iron Longsword",
+    "slot": "weapon",
+    "icon": "🗡️",
+    "goldCost": 250,
+    "materials": { "iron_ore": 5, "monster_bone": 2 },
+    "stats": { "pAtk": 25, "crit": 0.05 },
+    "desc": "A sturdy basic sword."
+  },
+  {
+    "id": "arm_troll_plate",
+    "name": "Trollhide Plate",
+    "slot": "body",
+    "icon": "👕",
+    "goldCost": 1000,
+    "materials": { "beast_hide": 10, "ancient_wood": 5, "troll_skull": 1 },
+    "stats": { "pDef": 30, "mDef": 10, "maxHp": 150 },
+    "desc": "Heavy armor infused with a Troll's regenerative essence."
+  },
+  {
+    "id": "acc_serpent_ring",
+    "name": "Ring of the Viper",
+    "slot": "ring",
+    "icon": "💍",
+    "goldCost": 1500,
+    "materials": { "crystal_shard": 8, "serpent_scale": 1 },
+    "stats": { "mAtk": 20, "spd": 5 },
+    "onHit": { "type": "poison", "chance": 0.15, "duration": 5000 },
+    "desc": "A venomous ring crafted from the Cave Serpent."
+  }
+]
