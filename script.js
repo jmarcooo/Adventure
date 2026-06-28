@@ -30,7 +30,7 @@ let runStats = {
     pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
-    materialsGained: {}, // NEW: Tracks drops per run for the summary screen
+    materialsGained: {}, 
     upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
     hasRareUpgrade: false, hasUltimateUpgrade: false,
     commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 },
@@ -87,7 +87,7 @@ function handleHomeClick() {
 }
 function unlockAllStagesCheat() { player.highestStageUnlocked = 59; renderStagesMenu(); showNotification("🛠️ DEV MODE: All Regions Unlocked!"); }
 
-const screens = ['home', 'heroes', 'gear', 'talents', 'forge', 'game', 'stages'];
+const screens = ['home', 'heroes', 'gear', 'talents', 'shop', 'game', 'stages'];
 
 function showNotification(msg) {
     let el = document.getElementById('in-app-notification'); if(!el) return;
@@ -98,7 +98,7 @@ function openMenu(targetScreen) {
     if(targetScreen !== 'game') { clearInterval(combatTickInterval); }
     if(targetScreen === 'heroes') { viewingHero = null; renderHeroSelection(); }
     if(targetScreen === 'gear') { renderGearMenu(); }
-    if(targetScreen === 'forge') { renderForge(); }
+    if(targetScreen === 'shop') { renderForge(); }
     if(targetScreen === 'stages') { showBiomeList(); renderStagesMenu(); } 
     
     screens.forEach(s => { let el = document.getElementById('screen-' + s); if(el) el.classList.remove('active'); });
@@ -274,7 +274,19 @@ function updateGearStatsPanel() {
 
 function toggleGameSpeed() { gameSpeed = gameSpeed === 1 ? 2 : 1; document.getElementById('speed-toggle-btn').innerText = gameSpeed === 1 ? '▶️ x1' : '⏩ x2'; }
 
-// --- CRAFTING & FORGE ---
+// --- CRAFTING, FORGE & PREMIUM SHOP ---
+function switchShopTab(tab) {
+    document.getElementById('forge-view').style.display = tab === 'forge' ? 'block' : 'none';
+    document.getElementById('premium-view').style.display = tab === 'premium' ? 'block' : 'none';
+    
+    document.getElementById('tab-forge').classList.toggle('active', tab === 'forge');
+    document.getElementById('tab-premium').classList.toggle('active', tab === 'premium');
+
+    // UI color styling trick to mimic active state cleanly
+    document.getElementById('tab-forge').style.background = tab === 'forge' ? '#e67e22' : '#2c3e50';
+    document.getElementById('tab-premium').style.background = tab === 'premium' ? '#9b59b6' : '#2c3e50';
+}
+
 function renderForge() {
     let container = document.getElementById('forge-recipes-container');
     container.innerHTML = '';
@@ -336,25 +348,32 @@ function craftItem(recipeId) {
     player.inventory.push(newItem); updateUI(); renderForge(); showNotification(`🔨 Crafted ${recipe.name}!`);
 }
 
+function buyPremium(item) {
+    if (item === 'gold' && player.gems >= 10) { player.gems -= 10; player.gold += 1000; updateUI(); showNotification("Purchased 1,000 Gold!"); }
+    else if (item === 'damage' && player.gems >= 50) { player.gems -= 50; player.bonusDamage += 50; updateUI(); showNotification("Purchased +50 Permanent DMG!"); }
+    else if (item === 'chest' && player.gems >= 20) {
+        player.gems -= 20; 
+        let newGear = generateRandomEquipment(); 
+        player.inventory.push(newGear); 
+        updateUI(); 
+        showNotification(`You got a ${newGear.name}!`);
+    } else { showNotification("Not enough Gems!"); }
+}
+
 function dropMaterial(matId, amount, unitId) {
-    // Add to long-term player inventory
     if (!player.materials[matId]) player.materials[matId] = 0;
     player.materials[matId] += amount;
     
-    // Add to current run tracking (for the end-game summary screen)
     if (!runStats.materialsGained[matId]) runStats.materialsGained[matId] = 0;
     runStats.materialsGained[matId] += amount;
     
     let mat = materialsData[matId];
     if (mat) { 
         spawnFloatingText(`enemy-${unitId}`, `+${amount} ${mat.icon}`, "float-heal"); 
-        
-        // Show the in-game notification UI at the top of the screen
         showNotification(`Looted: ${amount}x ${mat.icon} ${mat.name}`);
     }
 }
 
-// Helper to inject the materials summary onto the victory/defeat screens
 function renderMaterialRecap(containerId) {
     let container = document.getElementById(containerId);
     if (!container) return;
@@ -471,13 +490,6 @@ function debugApply(type, targetStr) {
 }
 
 // --- COMBAT CORE & MATH ENGINE ---
-function addCurrency(type, amount) {
-    if (amount <= 0) return;
-    if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
-    else if (type === 'gem') { player.gems += amount; runStats.gemsGained += amount; spawnFloatingText('gem-container', `+${amount}`, 'float-gem'); }
-    updateUI();
-}
-
 function updateCombatStatsPanel() {
     let panel = document.getElementById('combat-stats-panel'); let stats = getPlayerStats(); let d = getTotalDamage();
     panel.innerHTML = `<div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div><div><p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p><p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p><p>🎯 ${Math.round(stats.crit * 100)}% Crit</p></div><div><p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p><p>💨 ${Math.round(stats.evasion * 100)}% Ddg</p><p>🍀 ${Math.round(stats.luck * 100)}% Lck</p></div>`;
