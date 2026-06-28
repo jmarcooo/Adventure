@@ -401,16 +401,13 @@ function unequipItem(slot) {
     renderGearMenu(); 
 }
 
-// --- FIX: PERCENTAGE DAMAGE MITIGATION ---
+// --- MATH CALCULATORS ---
 function calculateDamage(incomingAttack, defense) {
-    // Formula: Damage = Attack * (100 / (100 + Defense))
-    // Ensures defense scales beautifully without completely nullifying hits to 1.
     let multiplier = 100 / (100 + defense);
     let finalDamage = Math.floor(incomingAttack * multiplier);
-    return Math.max(1, finalDamage); // Always deal at least 1 damage
+    return Math.max(1, finalDamage);
 }
 
-// --- MATH CALCULATORS ---
 function getMaxHealth() { 
     let base = player.maxHealth || 100; 
     let eq = getEquipmentStats(); 
@@ -467,15 +464,34 @@ function getPlayerStats() {
     return stats;
 }
 
+// ⚠️ FIXED FUNCTION: Enforces class identity (Physical vs Magic)
 function getTotalDamage() {
-    let stats = getPlayerStats(); let baseP = stats.pAtk; let baseM = stats.mAtk; 
-    let dmgTalent = player.talents ? (player.talents.damage || 0) : 0;
+    let stats = getPlayerStats(); 
+    let hero = heroData[player.currentHero];
     
-    baseP = Math.floor(baseP * (1 + (dmgTalent * 0.10))); baseM = Math.floor(baseM * (1 + (dmgTalent * 0.10))); 
-    baseP += player.bonusDamage;
+    let baseP = stats.pAtk; 
+    let baseM = stats.mAtk; 
+    
+    // Check attackType to nullify irrelevant stats
+    if (hero && hero.attackType === 'physical') { baseM = 0; }
+    if (hero && hero.attackType === 'magical') { baseP = 0; }
+    // (If 'hybrid', keep both)
+
+    let dmgTalent = player.talents ? (player.talents.damage || 0) : 0;
+    baseP = Math.floor(baseP * (1 + (dmgTalent * 0.10))); 
+    baseM = Math.floor(baseM * (1 + (dmgTalent * 0.10))); 
+    
+    // Add premium shop flat bonus to the relevant stat
+    if (hero && hero.attackType === 'magical') {
+        baseM += player.bonusDamage;
+    } else {
+        baseP += player.bonusDamage;
+    }
     
     if (runStats.tempAtkActive) { baseP *= 3; baseM *= 3; } 
-    baseP = Math.floor(baseP * getMutatorMod('pAtkMult', 1.0)); baseM = Math.floor(baseM * getMutatorMod('mAtkMult', 1.0)); 
+    baseP = Math.floor(baseP * getMutatorMod('pAtkMult', 1.0)); 
+    baseM = Math.floor(baseM * getMutatorMod('mAtkMult', 1.0)); 
+    
     return { pDmg: baseP, mDmg: baseM };
 }
 
@@ -484,10 +500,14 @@ function updateGearStatsPanel() {
     if (!player.currentHero || !heroData[player.currentHero]) { panel.innerHTML = '<div style="text-align:center; padding: 20px;">No Hero Active</div>'; return; }
     
     let stats = getPlayerStats(); let maxH = getMaxHealth(); 
-    let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${heroData[player.currentHero].name}</h4>`;
+    let hero = heroData[player.currentHero];
+    
+    let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${hero.name}</h4>`;
+    html += `<div style="text-align:center; font-size:0.7rem; color:#bdc3c7; margin-bottom:10px; text-transform:uppercase;">[${hero.attackType || 'Hybrid'} Attacker]</div>`;
+    
     html += `<div class="equip-stat-row"><span>Max HP</span> <span>${maxH}</span></div>`; 
-    html += `<div class="equip-stat-row"><span>P.Atk</span> <span>${stats.pAtk}</span></div>`; 
-    html += `<div class="equip-stat-row"><span>M.Atk</span> <span>${stats.mAtk}</span></div>`; 
+    html += `<div class="equip-stat-row"><span style="color:${hero.attackType === 'magical' ? '#555' : '#fff'}">P.Atk</span> <span style="color:${hero.attackType === 'magical' ? '#555' : '#fff'}">${stats.pAtk}</span></div>`; 
+    html += `<div class="equip-stat-row"><span style="color:${hero.attackType === 'physical' ? '#555' : '#fff'}">M.Atk</span> <span style="color:${hero.attackType === 'physical' ? '#555' : '#fff'}">${stats.mAtk}</span></div>`; 
     html += `<div class="equip-stat-row"><span>P.Def</span> <span>${stats.pDef}</span></div>`; 
     html += `<div class="equip-stat-row"><span>M.Def</span> <span>${stats.mDef}</span></div>`; 
     html += `<div class="equip-stat-row"><span>Atk Spd</span> <span>${stats.atkSpd.toFixed(2)}</span></div>`; 
@@ -1092,7 +1112,6 @@ function spawnEnemyPack() {
     renderStatusEffects(); 
 }
 
-// ⚠️ FIXED FUNCTION: Protected Death Sequence
 function handleEnemyDeath(target, unitId, unitDiv) {
     let skillData = target.skill ? enemySkillsData[target.skill] : null;
 
@@ -1156,9 +1175,10 @@ function handleEnemyDeath(target, unitId, unitDiv) {
                 dropMaterial(genMats[Math.floor(Math.random() * genMats.length)], 1, unitId);
             }
         }
+
         document.getElementById('run-runes-text').innerText = runStats.runes;
     } catch (e) {
-        console.error("Loot system failed, continuing wave safely: ", e);
+        console.error("Loot Drop Failed, but wave will safely continue: ", e);
     }
 
     if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) {
@@ -1187,7 +1207,6 @@ function animateHit(unitId, damageDealt, isCrit) {
     if (target.hp <= 0 && !target.isDead) { handleEnemyDeath(target, unitId, unitDiv); }
 }
 
-// ⚠️ FIXED FUNCTION: Player Attack Formula and Lifesteal Math
 function executePlayerAttack() {
     let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
     if(aliveEnemies.length === 0) { if (activeEnemies.length > 0 && activeEnemies.every(e => e.isDead)) { if (!waveManager.transitioning) { waveManager.transitioning = true; packDefeated(); } } return; }
@@ -1216,7 +1235,6 @@ function executePlayerAttack() {
             let eDefP = target.pDef || 0; let eDefM = target.mDef || 0;
             if (hasStatus(target, 'berserk')) { eDefP = 0; eDefM = 0; }
 
-            // BUG FIX: New Percentage Mitigation Formula
             let pDmg = calculateDamage(damages.pDmg, eDefP);
             let mDmg = calculateDamage(damages.mDmg, eDefM);
 
@@ -1295,17 +1313,12 @@ function executePlayerAttack() {
                 else if (hero.innateSkill.type === 'druid_roots') { let d = Math.floor(dmg * 0.5); activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= d; animateHit(e.id, d, false); } }); }
             }
 
-            // BUG FIX: Ceiling for Lifesteal guarantees at least 1 HP stolen on tiny hits
-            if (runStats.lifesteal > 0 && dmg > 0) { 
-                applyHeal(player, Math.ceil(dmg * runStats.lifesteal)); 
-            }
-            
+            if (runStats.lifesteal > 0 && dmg > 0) { applyHeal(player, Math.ceil(dmg * runStats.lifesteal)); }
             if (runStats.splashDmg > 0 && dmg > 0) { let sDmg = Math.floor(dmg * runStats.splashDmg); activeEnemies.forEach(e => { if (e.id !== target.id && e.hp > 0) { e.hp -= sDmg; animateHit(e.id, sDmg, false); } }); }
         }, s * 150);
     }
 }
 
-// ⚠️ FIXED FUNCTION: Enemy Attack Formula
 function executeEnemyAttack(e) {
     if (hasStatus(e, 'bleed')) { let bDmg = Math.floor(e.maxHp * 0.05); e.hp -= bDmg; animateHit(e.id, bDmg, false); if (e.hp <= 0) return; }
     if (consumeCharge(e, 'blind')) { spawnFloatingText(`enemy-${e.id}`, "BLIND MISS!", "float-miss"); return; }
@@ -1336,12 +1349,10 @@ function executeEnemyAttack(e) {
 
     if (consumeCharge(player, 'block')) { spawnFloatingText('player-combat-area', "BLOCKED!", "float-miss"); return; }
 
-    // BUG FIX: New Percentage Mitigation Formula
     if (isMagic) {
         let rawDmg = e.mAtk || 0;
         if (runStats.purificationActive) { spawnFloatingText('player-combat-area', "IMMUNE!", "float-miss"); return; }
         if (getMutatorMod('nullifyMagic', false)) { spawnFloatingText(`enemy-${e.id}`, "NULLIFIED!", "float-miss"); return; }
-        
         incomingDmg = isPiercing ? rawDmg : calculateDamage(rawDmg, stats.mDef);
     } else {
         let rawDmg = e.pAtk || 0;
@@ -1369,7 +1380,7 @@ function executeEnemyAttack(e) {
     if (hasStatus(player, 'thorns') && incomingDmg > 0) { let tDmg = Math.floor(incomingDmg * 0.2); e.hp -= tDmg; animateHit(e.id, tDmg, false); }
 
     if (skillData && skillData.trigger === 'post_attack') {
-        if (skillData.lifestealFraction && incomingDmg > 0) applyHeal(e, Math.ceil(incomingDmg * skillData.lifestealFraction)); // Fixed zero heal
+        if (skillData.lifestealFraction && incomingDmg > 0) applyHeal(e, Math.ceil(incomingDmg * skillData.lifestealFraction));
         if (skillData.drainPlayerATB && incomingDmg > 0) {
             player.attackProgress = 0; let pAtb = document.getElementById('player-atb'); if(pAtb) pAtb.style.width = '0%';
             spawnFloatingText('player-combat-area', skillData.floatingText || "FATIGUED!", "float-miss");
@@ -1531,7 +1542,6 @@ function generateRandomEquipment() {
     return { name: `${prefix} ${itemDef.name}`, type: slot, slot: slot, icon: itemDef.icon, stats: fallbackStats, onHit: null, onHitTaken: null };
 }
 
-// ⚠️ FIXED FUNCTION: Now explicitly fetches materials.json and recipes.json
 async function initGame() {
     try {
         const heroesResponse = await fetch('heroes.json'); if (!heroesResponse.ok) throw new Error("HTTP error " + heroesResponse.status); heroData = await heroesResponse.json();
@@ -1540,7 +1550,6 @@ async function initGame() {
 
         try { const skillsResponse = await fetch('skills.json'); if (skillsResponse.ok) { enemySkillsData = await skillsResponse.json(); } } catch (err) { console.warn("Failed to load skills.json - verify file exists."); }
         
-        // Ensure Forge elements are loaded!
         try { const matsResponse = await fetch('materials.json'); if (matsResponse.ok) { materialsData = await matsResponse.json(); } } catch (err) { console.warn("Failed to load materials.json"); }
         try { const recResponse = await fetch('recipes.json'); if (recResponse.ok) { recipesData = await recResponse.json(); } } catch (err) { console.warn("Failed to load recipes.json"); }
 
