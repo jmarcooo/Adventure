@@ -6,8 +6,8 @@ let enemiesData = {};
 let equipmentData = []; 
 let mutatorsData = {}; 
 let enemySkillsData = {}; 
-let materialsData = {}; // NEW
-let recipesData = [];   // NEW
+let materialsData = {}; 
+let recipesData = [];   
 let activeMutator = null;
 
 let player = {
@@ -18,7 +18,7 @@ let player = {
     heroSkillLevels: {},
     equipment: { head: null, body: null, legs: null, boots: null, weapon: null, leftHand: null, ring: null, amulet: null },
     inventory: [],
-    materials: {}, // NEW: Player's material inventory
+    materials: {}, 
     attackProgress: 0, 
     activeEffects: [],
     highestStageUnlocked: 0 
@@ -30,6 +30,7 @@ let runStats = {
     pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0,
     goldMultiplier: 1.0, enemyHpMultiplier: 1.0,
     runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0,
+    materialsGained: {}, // NEW: Tracks drops per run for the summary screen
     upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 },
     hasRareUpgrade: false, hasUltimateUpgrade: false,
     commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 },
@@ -280,7 +281,6 @@ function renderForge() {
     let matsContainer = document.getElementById('forge-mats-container');
     matsContainer.innerHTML = '';
 
-    // Display gathered materials
     let hasMats = false;
     for(let matId in player.materials) {
         if(player.materials[matId] > 0) {
@@ -291,7 +291,6 @@ function renderForge() {
     }
     if(!hasMats) matsContainer.innerHTML = '<p style="font-size:0.8rem; color:#bdc3c7;">No materials gathered yet. Hunt monsters!</p>';
 
-    // Display Recipes
     recipesData.forEach(recipe => {
         let canCraft = true;
         let costHtml = `<div style="font-size:0.8rem; margin-top:5px; display:flex; gap:5px; flex-wrap:wrap;">`;
@@ -329,26 +328,51 @@ function craftItem(recipeId) {
     }
 
     let newItem = {
-        name: recipe.name,
-        type: recipe.slot,
-        slot: recipe.slot,
-        icon: recipe.icon,
+        name: recipe.name, type: recipe.slot, slot: recipe.slot, icon: recipe.icon,
         stats: JSON.parse(JSON.stringify(recipe.stats)),
-        onHit: recipe.onHit || null,
-        onHitTaken: recipe.onHitTaken || null
+        onHit: recipe.onHit || null, onHitTaken: recipe.onHitTaken || null
     };
 
-    player.inventory.push(newItem);
-    updateUI();
-    renderForge();
-    showNotification(`🔨 Crafted ${recipe.name}!`);
+    player.inventory.push(newItem); updateUI(); renderForge(); showNotification(`🔨 Crafted ${recipe.name}!`);
 }
 
 function dropMaterial(matId, amount, unitId) {
+    // Add to long-term player inventory
     if (!player.materials[matId]) player.materials[matId] = 0;
     player.materials[matId] += amount;
+    
+    // Add to current run tracking (for the end-game summary screen)
+    if (!runStats.materialsGained[matId]) runStats.materialsGained[matId] = 0;
+    runStats.materialsGained[matId] += amount;
+    
     let mat = materialsData[matId];
-    if (mat) { spawnFloatingText(`enemy-${unitId}`, `+${amount} ${mat.icon}`, "float-heal"); }
+    if (mat) { 
+        spawnFloatingText(`enemy-${unitId}`, `+${amount} ${mat.icon}`, "float-heal"); 
+        
+        // Show the in-game notification UI at the top of the screen
+        showNotification(`Looted: ${amount}x ${mat.icon} ${mat.name}`);
+    }
+}
+
+// Helper to inject the materials summary onto the victory/defeat screens
+function renderMaterialRecap(containerId) {
+    let container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    
+    let hasMats = false;
+    for (let matId in runStats.materialsGained) {
+        let amount = runStats.materialsGained[matId];
+        if (amount > 0) {
+            hasMats = true;
+            let mData = materialsData[matId] || { icon: '📦', name: 'Unknown' };
+            container.innerHTML += `<div class="currency" title="${mData.name}" style="background: rgba(0,0,0,0.5);">${mData.icon} ${amount}</div>`;
+        }
+    }
+    
+    if (!hasMats) {
+        container.innerHTML = '<span style="color:#7f8c8d; font-size:0.9rem;">No materials found.</span>';
+    }
 }
 
 // --- HYBRID STATUS ENGINE ---
@@ -446,6 +470,7 @@ function debugApply(type, targetStr) {
     updateCombatStatsPanel();
 }
 
+// --- COMBAT CORE & MATH ENGINE ---
 function addCurrency(type, amount) {
     if (amount <= 0) return;
     if (type === 'gold') { player.gold += amount; runStats.goldGained += amount; spawnFloatingText('gold-container', `+${amount}`, 'float-gold'); } 
@@ -472,8 +497,8 @@ function spawnFloatingText(targetId, text, className) {
 
 function spawnLootDrop(targetId, type) {
     let targetDiv = document.getElementById(targetId); if(!targetDiv) return;
-    let emoji = type === 'rune' ? '🌀' : '🪙';
-    let ft = document.createElement('div'); ft.className = 'loot-drop'; ft.innerText = emoji; let dirX = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()); ft.style.setProperty('--dirX', dirX); ft.style.left = '50%'; ft.style.top = '30%';
+    let emoji = type === 'rune' ? '🌀' : '🪙'; let ft = document.createElement('div'); ft.className = 'loot-drop'; ft.innerText = emoji;
+    let dirX = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()); ft.style.setProperty('--dirX', dirX); ft.style.left = '50%'; ft.style.top = '30%';
     targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500);
 }
 
@@ -524,7 +549,7 @@ function combatTick() {
 function startTestBattle() {
     if (!heroData || Object.keys(heroData).length === 0) { alert("ERROR: Game data failed to load."); return; }
     isTestMode = true; player.activeEffects = []; 
-    runStats = { pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0, pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0, tempAtkActive: false, purificationActive: false, runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0, upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 }, hasRareUpgrade: false, hasUltimateUpgrade: false, commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }, maxHpBonus: 0 };
+    runStats = { pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0, pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0, tempAtkActive: false, purificationActive: false, runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0, materialsGained: {}, upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 }, hasRareUpgrade: false, hasUltimateUpgrade: false, commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }, maxHpBonus: 0 };
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) { let innate = heroData[player.currentHero].innate; for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; } }
     waveManager.wave = 1; waveManager.currentBiomeIndex = 0; waveManager.currentSubstageIndex = 0; player.currentHealth = getMaxHealth();
     document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none'; document.getElementById('debug-panel').style.display = 'flex'; waveManager.isUpgrading = true; waveManager.transitioning = false; 
@@ -541,7 +566,7 @@ function startTestBattle() {
 function startGame() {
     if (!heroData || Object.keys(heroData).length === 0) { alert("ERROR: Game data failed to load."); return; }
     isTestMode = false; document.getElementById('debug-panel').style.display = 'none'; player.activeEffects = [];
-    runStats = { pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0, pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0, tempAtkActive: false, purificationActive: false, runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0, upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 }, hasRareUpgrade: false, hasUltimateUpgrade: false, commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }, maxHpBonus: 0 };
+    runStats = { pAtk: 0, atkSpd: 0.0, pDef: 0, mAtk: 0, mDef: 0, spd: 0, evasion: 0.0, crit: 0.0, luck: 0.0, splashDmg: 0.0, doubleHitChance: 0.0, lifesteal: 0.0, pAtkMulti: 1.0, mAtkMulti: 1.0, pDefMulti: 1.0, mDefMulti: 1.0, atkSpdMulti: 1.0, goldMultiplier: 1.0, enemyHpMultiplier: 1.0, tempAtkActive: false, purificationActive: false, runes: 0, expGained: 0, goldGained: 0, gemsGained: 0, enemiesKilled: 0, materialsGained: {}, upgradeLevels: { p_atk: 0, m_atk: 0, spd: 0, splash: 0, double: 0, crit: 0, lifesteal: 0, evasion: 0, p_def: 0, m_def: 0 }, hasRareUpgrade: false, hasUltimateUpgrade: false, commonUpgradeCounts: { heal: 0, gold: 0, temp_atk: 0, vitality: 0 }, maxHpBonus: 0 };
     if (heroData[player.currentHero] && heroData[player.currentHero].innate) { let innate = heroData[player.currentHero].innate; for (let key in innate) { if (runStats.hasOwnProperty(key)) runStats[key] += innate[key]; } }
     waveManager.wave = 1; player.currentHealth = getMaxHealth(); document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none'; waveManager.isUpgrading = true; waveManager.transitioning = false; 
     updateCombatStatsPanel(); updatePlayerHealthBar(); openMenu('game'); spawnEnemyPack(); playBattleStartAnimation(); setTimeout(() => { waveManager.isUpgrading = false; startCombatLoop(); }, 1500); 
@@ -715,7 +740,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
 
     let expReward = target.exp || 10; runStats.expGained += expReward;
 
-    // --- NEW: MATERIAL DROPS LOGIC ---
     let stageInfo = getLevelAndWave();
     let genMats = Object.keys(materialsData).filter(k => materialsData[k].type === 'general');
     let biomeMats = Object.keys(materialsData).filter(k => materialsData[k].biome === stageInfo.biome.id);
@@ -727,7 +751,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
         let stats = getPlayerStats(); let goldEarned = Math.floor(10 * (1 + stats.luck)); addCurrency('gold', goldEarned);
         for(let i=0; i<10; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100); }
         
-        // Guarantee Boss Material & Biome Material
         if (bossMats.length > 0) dropMaterial(bossMats[0], 1, unitId);
         if (biomeMats.length > 0) dropMaterial(biomeMats[0], Math.floor(Math.random() * 3) + 1, unitId);
 
@@ -736,7 +759,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
         let stats = getPlayerStats(); let goldEarned = Math.floor(3 * (1 + stats.luck)); addCurrency('gold', goldEarned);
         for(let i=0; i<3; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150); }
         
-        // Elite Materials (100% Gen, 30% Biome)
         if (genMats.length > 0) dropMaterial(genMats[Math.floor(Math.random() * genMats.length)], Math.floor(Math.random() * 2) + 1, unitId);
         if (biomeMats.length > 0 && Math.random() < 0.3) dropMaterial(biomeMats[0], 1, unitId);
 
@@ -745,7 +767,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
         let stats = getPlayerStats();
         if (Math.random() < 0.25) { let goldEarned = Math.floor(1 * (1 + stats.luck)); if (goldEarned < 1) goldEarned = 1; addCurrency('gold', goldEarned); spawnLootDrop(`enemy-${unitId}`, 'gold'); }
         
-        // Normal Materials (25% Gen)
         if (Math.random() < 0.25 && genMats.length > 0) {
             dropMaterial(genMats[Math.floor(Math.random() * genMats.length)], 1, unitId);
         }
@@ -1047,6 +1068,7 @@ function showBossClearUI() {
     document.getElementById('boss-ui-gold').innerText = runStats.goldGained;
     document.getElementById('boss-ui-gems').innerText = runStats.gemsGained;
     document.getElementById('boss-ui-exp').innerText = runStats.expGained;
+    renderMaterialRecap('boss-materials-recap');
 }
 
 function continueToNextWave() {
@@ -1064,6 +1086,8 @@ function endRun(titleText, titleColor, killerText = "") {
     if (killerEl) { if (killerText) { killerEl.innerText = killerText; killerEl.style.display = 'block'; } else { killerEl.style.display = 'none'; } }
 
     document.getElementById('summary-kills').innerText = runStats.enemiesKilled; document.getElementById('summary-gold').innerText = runStats.goldGained; document.getElementById('summary-exp').innerText = runStats.expGained;
+    renderMaterialRecap('summary-materials-recap');
+    
     summaryUi.style.display = 'flex'; waveManager.transitioning = false; waveManager.isUpgrading = false;
 }
 
@@ -1091,8 +1115,7 @@ function updateUI() {
         let activeH = player.heroStats[player.currentHero]; document.getElementById('player-level-text').innerText = activeH.level;
         document.getElementById('player-exp-fill').style.width = ((activeH.exp / activeH.expNeeded) * 100) + '%'; document.getElementById('player-exp-text').innerText = activeH.exp + '/' + activeH.expNeeded;
     }
-    document.getElementById('tp-amount').innerText = player.talentPoints;
-    let elDmg = document.getElementById('talent-lvl-damage'); let elGold = document.getElementById('talent-lvl-gold');
+    document.getElementById('tp-amount').innerText = player.talentPoints; let elDmg = document.getElementById('talent-lvl-damage'); let elGold = document.getElementById('talent-lvl-gold');
     if(elDmg && player.talents) elDmg.innerText = player.talents.damage || 0; if(elGold && player.talents) elGold.innerText = player.talents.gold || 0;
 }
 
@@ -1116,7 +1139,6 @@ async function initGame() {
 
         try { const skillsResponse = await fetch('skills.json'); if (skillsResponse.ok) { enemySkillsData = await skillsResponse.json(); } } catch (err) { console.warn("Failed to load skills.json - verify file exists."); }
         
-        // NEW: Load Forge & Drop Data
         try { const matsResponse = await fetch('materials.json'); if (matsResponse.ok) { materialsData = await matsResponse.json(); } } catch (err) { console.warn("Failed to load materials.json"); }
         try { const recResponse = await fetch('recipes.json'); if (recResponse.ok) { recipesData = await recResponse.json(); } } catch (err) { console.warn("Failed to load recipes.json"); }
 
