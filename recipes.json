@@ -13,10 +13,30 @@
     "id": "arm_leather_armor",
     "name": "Leather Armor",
     "slot": "weapon",
-    "icon": "🦺",
+    "icon": "🧥",
     "goldCost": 20,
     "materials": { "beast_hide": 5 },
     "stats": { "pDef": 5, "mDef": 5, "maxHp": 150 },
+    "desc": "A sturdy basic sword."
+  },
+  {
+    "id": "wpn_bone_club",
+    "name": "Bone Club",
+    "slot": "weapon",
+    "icon": "🦴",
+    "goldCost": 30,
+    "materials": { "monster_bone": 8, "beast_hide":2 },
+    "stats": { "pAtk": 30 },
+    "desc": "A weapon made from bones."
+  },
+  {
+    "id": "boots_swift_boots",
+    "name": "Swift Boots",
+    "slot": "boots",
+    "icon": "🛼",
+    "goldCost": 25,
+    "materials": { "beast_hide": 10 },
+    "stats": { "mDef": 5, "pDef": 5, "atkSpd": 10000 },
     "desc": "A sturdy basic sword."
   },
   {
