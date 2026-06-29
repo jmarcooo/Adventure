@@ -1,5 +1,25 @@
 [
   {
+    "id": "arm_leather_cap",
+    "name": "Leather Cap",
+    "slot": "head",
+    "icon": "🤠",
+    "goldCost": 10,
+    "materials": { "beast_hide": 3 },
+    "stats": { "pDef": 2, "mDef": 2, "maxHp": 100 },
+    "desc": "A basic cap."
+  },
+  {
+    "id": "arm_leather_armor",
+    "name": "Leather Armor",
+    "slot": "weapon",
+    "icon": "🦺",
+    "goldCost": 20,
+    "materials": { "beast_hide": 5 },
+    "stats": { "pDef": 5, "mDef": 5, "maxHp": 150 },
+    "desc": "A sturdy basic sword."
+  },
+  {
     "id": "wpn_iron_sword",
     "name": "Iron Longsword",
     "slot": "weapon",
