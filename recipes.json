@@ -34,9 +34,9 @@
     "name": "Swift Boots",
     "slot": "boots",
     "icon": "🛼",
-    "goldCost": 25,
-    "materials": { "beast_hide": 10 },
-    "stats": { "mDef": 5, "pDef": 5, "atkSpd": 10000 },
+    "goldCost":  0,
+    "materials": { "beast_hide":  0 },
+    "stats": { "mDef": 5, "pDef": 5, "atkSpd": 10 },
     "desc": "A sturdy basic sword."
   },
   {
