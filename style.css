@@ -364,3 +364,29 @@ body {
 .substage-info { display: flex; flex-direction: column; text-align: left; }
 .substage-info h4 { margin: 0; font-size: 1.1rem; color: #fff; }
 .substage-info p { margin: 2px 0 0 0; font-size: 0.8rem; color: #bdc3c7; }
+
+/* --- TARGETING SYSTEM --- */
+.enemy-unit {
+    cursor: pointer; /* Shows the player they can click it */
+}
+
+.enemy-unit.targeted {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.8), inset 0 0 10px rgba(231, 76, 60, 0.5) !important;
+    transform: scale(1.05);
+}
+
+.enemy-unit.targeted::after {
+    content: "🎯";
+    position: absolute;
+    top: -35px;
+    font-size: 2rem;
+    animation: targetBounce 0.5s infinite alternate;
+    filter: drop-shadow(2px 2px 0px #000);
+    z-index: 100;
+}
+
+@keyframes targetBounce {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-8px) scale(1.1); }
+}
