@@ -1,11 +1,59 @@
 {
-  "iron_ore": { "name": "Iron Ore", "icon": "🪨", "type": "general" },
-  "monster_bone": { "name": "Monster Bone", "icon": "🦴", "type": "general" },
-  "beast_hide": { "name": "Beast Hide", "icon": "🟤", "type": "general" },
+  "animal_bone": { "name": "Animal Bone", "icon": "🦴", "type": "common", "desc": "A generic bone left behind by a beast." },
+  "scrap_hide": { "name": "Scrap Hide", "icon": "🟤", "type": "uncommon", "desc": "Tough, leathery scrap." },
+  "wolf_pelt": { "name": "Wolf Pelt", "icon": "🐺", "type": "rare", "desc": "A thick, warm pelt." },
+  "sharp_wolf_fang": { "name": "Sharp Wolf Fang", "icon": "🦷", "type": "very_rare", "desc": "Incredibly sharp, useful for daggers." },
   
-  "ancient_wood": { "name": "Ancient Wood", "icon": "🪵", "type": "biome", "biome": "forest" },
-  "troll_skull": { "name": "Troll Skull", "icon": "👹", "type": "boss", "boss": "forest" },
-  
-  "crystal_shard": { "name": "Crystal Shard", "icon": "💎", "type": "biome", "biome": "cave" },
-  "serpent_scale": { "name": "Serpent Scale", "icon": "🐍", "type": "boss", "boss": "cave" }
+  "thick_bear_pelt": { "name": "Thick Bear Pelt", "icon": "🐻", "type": "rare", "desc": "Extremely heavy and durable." },
+  "heavy_bear_claw": { "name": "Heavy Bear Claw", "icon": "🐾", "type": "very_rare", "desc": "Can tear through armor." },
+  "pristine_bear_heart": { "name": "Pristine Bear Heart", "icon": "❤️", "type": "super_rare", "desc": "Pulses with beastly vitality." },
+
+  "torn_wing": { "name": "Torn Wing", "icon": "🦇", "type": "uncommon", "desc": "Thin, leathery wing scrap." },
+  "bat_ear": { "name": "Bat Ear", "icon": "👂", "type": "rare", "desc": "Sensitive to the slightest sounds." },
+  "sonar_gland": { "name": "Sonar Gland", "icon": "📻", "type": "very_rare", "desc": "Vibrates constantly." },
+
+  "sticky_fluid": { "name": "Sticky Fluid", "icon": "💧", "type": "common", "desc": "Disgustingly sticky." },
+  "slime_gel": { "name": "Slime Gel", "icon": "🧪", "type": "uncommon", "desc": "Can be boiled down into alchemy bases." },
+  "acidic_goo": { "name": "Acidic Goo", "icon": "🟢", "type": "rare", "desc": "Burns to the touch." },
+
+  "bug_shell": { "name": "Bug Shell", "icon": "🪲", "type": "common", "desc": "A cracked piece of carapace." },
+  "spider_thread": { "name": "Spider Thread", "icon": "🧵", "type": "uncommon", "desc": "Stronger than steel of the same thickness." },
+  "venom_sac": { "name": "Venom Sac", "icon": "🧪", "type": "rare", "desc": "Filled with deadly toxin." },
+  "spider_eye": { "name": "Spider Eye", "icon": "👁️", "type": "very_rare", "desc": "Stares back at you." },
+
+  "plant_fiber": { "name": "Plant Fiber", "icon": "🌿", "type": "common", "desc": "Tough vines." },
+  "sturdy_bark": { "name": "Sturdy Bark", "icon": "🪵", "type": "uncommon", "desc": "As hard as iron." },
+  "living_leaf": { "name": "Living Leaf", "icon": "🍃", "type": "rare", "desc": "Never wilts." },
+  "natures_sap": { "name": "Nature's Sap", "icon": "🍯", "type": "very_rare", "desc": "Pure liquid life." },
+  "heartwood": { "name": "Heartwood", "icon": "🌳", "type": "super_rare", "desc": "The core of an ancient tree." },
+
+  "torn_cloth": { "name": "Torn Cloth", "icon": "🧻", "type": "common", "desc": "Ripped from old robes." },
+  "magic_dust": { "name": "Magic Dust", "icon": "✨", "type": "uncommon", "desc": "Tingles with arcane power." },
+  "glowing_ember": { "name": "Glowing Ember", "icon": "🔥", "type": "rare", "desc": "Warm to the touch." },
+  "shaman_mask": { "name": "Shaman Mask", "icon": "🎭", "type": "very_rare", "desc": "Carved from haunted wood." },
+  "cursed_totem": { "name": "Cursed Totem", "icon": "🗿", "type": "super_rare", "desc": "Whispers in your mind." },
+
+  "snake_scale": { "name": "Snake Scale", "icon": "🐍", "type": "uncommon", "desc": "Smooth and tough." },
+  "viper_fang": { "name": "Viper Fang", "icon": "🗡️", "type": "very_rare", "desc": "Drips with venom." },
+  "serpent_eye": { "name": "Serpent Eye", "icon": "👁️‍🗨️", "type": "super_rare", "desc": "Cold and unblinking." },
+
+  "pebbles": { "name": "Pebbles", "icon": "🪨", "type": "common", "desc": "Just rocks." },
+  "iron_ore": { "name": "Iron Ore", "icon": "⛏️", "type": "uncommon", "desc": "Can be smelted." },
+  "sturdy_stone": { "name": "Sturdy Stone", "icon": "🧱", "type": "rare", "desc": "Perfectly cut." },
+  "core_fragment": { "name": "Core Fragment", "icon": "💠", "type": "very_rare", "desc": "Powers golems." },
+  "earth_heart": { "name": "Earth Heart", "icon": "🌍", "type": "super_rare", "desc": "The essence of the mountains." },
+
+  "foul_sweat": { "name": "Foul Sweat", "icon": "💦", "type": "common", "desc": "Smells terrible." },
+  "troll_bone": { "name": "Troll Bone", "icon": "🦴", "type": "rare", "desc": "Massive and dense." },
+  "troll_blood": { "name": "Troll Blood", "icon": "🩸", "type": "very_rare", "desc": "Regenerates inside the vial." },
+  "troll_heart": { "name": "Troll Heart", "icon": "🫀", "type": "super_rare", "desc": "Still beating slowly." },
+
+  "rusted_metal": { "name": "Rusted Metal", "icon": "🔩", "type": "uncommon", "desc": "Old and flaky." },
+  "intact_skull": { "name": "Intact Skull", "icon": "💀", "type": "rare", "desc": "Surprisingly clean." },
+  "ancient_coin": { "name": "Ancient Coin", "icon": "🪙", "type": "very_rare", "desc": "From a lost empire." },
+
+  "ectoplasm": { "name": "Ectoplasm", "icon": "👻", "type": "common", "desc": "Cold and gooey." },
+  "soul_shard": { "name": "Soul Shard", "icon": "💎", "type": "rare", "desc": "A piece of a lost soul." },
+  "haunted_visage": { "name": "Haunted Visage", "icon": "😱", "type": "very_rare", "desc": "Screams silently." },
+  "spectral_core": { "name": "Spectral Core", "icon": "🌌", "type": "super_rare", "desc": "Pure ghostly energy." }
 }
