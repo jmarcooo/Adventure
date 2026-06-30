@@ -390,3 +390,16 @@ body {
     from { transform: translateY(0) scale(1); }
     to { transform: translateY(-8px) scale(1.1); }
 }
+/* --- MAIN MENU BACKGROUND IMAGE --- */
+#screen-home {
+    /* The linear-gradient adds a slight dark tint so your white text/buttons still pop! */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('your-image-name.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Optional: Make the home screen UI panels slightly transparent so you can see the background through them */
+#screen-home > div {
+    backdrop-filter: blur(3px); /* Adds a nice frosted glass effect over your image */
+}
