@@ -213,8 +213,12 @@ function openMenu(targetScreen) {
     let tEl = document.getElementById('screen-' + targetScreen); 
     if(tEl) tEl.classList.add('active');
     
+    let topBar = document.getElementById('main-top-bar');
+    let bottomNav = document.getElementById('bottom-nav-bar');
+
     if(targetScreen !== 'game') {
-        document.getElementById('bottom-nav-bar').style.display = 'flex';
+        if(bottomNav) bottomNav.style.display = 'flex';
+        if(topBar) topBar.style.display = 'flex';
         screens.forEach(s => { 
             let btn = document.getElementById('btn-' + s); 
             if(btn) btn.classList.remove('active'); 
@@ -227,7 +231,9 @@ function openMenu(targetScreen) {
             if(hBtn) hBtn.classList.add('active'); 
         }
     } else { 
-        document.getElementById('bottom-nav-bar').style.display = 'none'; 
+        // ⚠️ Hide Top Bar and Bottom Nav when in Battle
+        if(bottomNav) bottomNav.style.display = 'none'; 
+        if(topBar) topBar.style.display = 'none';
     }
 }
 
@@ -650,9 +656,9 @@ function switchShopTab(tab) {
     
     if (tab === 'forge') {
         btnForge.style.background = '#e67e22';
-        btnPremium.style.background = '#2c3e50';
+        btnPremium.style.background = 'rgba(0,0,0,0.5)';
     } else {
-        btnForge.style.background = '#2c3e50';
+        btnForge.style.background = 'rgba(0,0,0,0.5)';
         btnPremium.style.background = '#9b59b6';
     }
 }
@@ -893,9 +899,9 @@ function selectTarget(id) {
     let targetEnemy = activeEnemies.find(e => e.id === id && !e.isDead && e.hp > 0); 
     if (!targetEnemy) return;
     selectedTargetId = id; 
-    document.querySelectorAll('.enemy-unit').forEach(el => el.style.filter = ""); 
+    document.querySelectorAll('.enemy-unit').forEach(el => el.classList.remove('targeted')); 
     let targetEl = document.getElementById(`enemy-${id}`); 
-    if (targetEl) targetEl.style.filter = "drop-shadow(0 0 10px #e74c3c)";
+    if (targetEl) targetEl.classList.add('targeted');
 }
 
 // --- COMBAT CORE & RENDERING ---
@@ -1077,16 +1083,11 @@ function spawnEnemyPack() {
     let bgLayer = document.getElementById('battle-bg-layer');
     if (bgLayer) {
         if (stageInfo.biome && stageInfo.biome.backgrounds && stageInfo.biome.backgrounds[stageInfo.substageIndex]) {
-            // Pulls the specific image for Stage 1-1, 1-2, etc.
             let currentBg = stageInfo.biome.backgrounds[stageInfo.substageIndex];
             bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('${currentBg}')`;
-            
         } else if (stageInfo.biome && stageInfo.biome.background) {
-            // Fallback just in case you only defined one background for the whole biome
             bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('${stageInfo.biome.background}')`;
-            
         } else {
-            // Ultimate fallback if no images are set yet
             bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('default-battle-bg.jpg')`;
         }
     }
@@ -1435,15 +1436,24 @@ function showUpgradeShop(shopPool) {
     document.getElementById('global-modal-backdrop').style.display='block';
     document.getElementById('wave-upgrade-ui').style.display = 'flex'; 
     document.getElementById('shop-runes-display').innerText = runStats.runes; 
-    let list = document.getElementById('upgrade-list'); list.innerHTML = '';
+    let list = document.getElementById('upgrade-list'); 
+    list.innerHTML = '';
     
     for (let i = shopPool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shopPool[i], shopPool[j]] = [shopPool[j], shopPool[i]]; }
     shopPool.slice(0, 3).forEach(u => { 
         let canAfford = runStats.runes >= u.cost; 
-        let lvlText = u.rarity === 'uncommon' ? ` <span style="font-size:0.7rem; color:#bdc3c7;">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : ''; 
-        let opacity = canAfford ? '1' : '0.5';
+        let lvlText = u.rarity === 'uncommon' ? ` <span style="font-size:0.7rem; color:#bdc3c7;">(LV ${u.currentLvl + 1}/${u.maxLevel})</span>` : ''; 
         
-        list.innerHTML += `<button class="action-btn" style="opacity: ${opacity}; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; width: 100%; display: flex; align-items: center; justify-content: space-between;" ${canAfford ? `onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])"` : ''}><div style="display: flex; align-items: center; gap: 15px;"><div style="font-size: 2.5rem;">${u.icon || '✨'}</div><div style="text-align: left;"><h4 style="font-size: 0.9rem; margin: 0; color: #fff;">${u.name}${lvlText}</h4><p style="font-size: 0.8rem; margin: 2px 0 0 0; color: #f1c40f;">${u.desc}</p></div></div><div style="font-size: 1.1rem; font-weight: bold; color: ${u.cost > 0 ? '#00e5ff' : '#2ecc71'};">${u.cost > 0 ? u.cost + ' 🌀' : 'FREE'}</div></button>`; 
+        list.innerHTML += `<button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; width: 100%; text-align: left;" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${u.icon || '✨'}</div>
+                <div>
+                    <h4 style="font-size: 1rem; margin: 0; color: #fff; text-transform: uppercase; font-weight: 900;">${u.name}${lvlText}</h4>
+                    <p style="font-size: 0.8rem; margin: 2px 0 0 0; color: #f1c40f; font-weight: bold;">${u.desc}</p>
+                </div>
+            </div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: ${u.cost > 0 ? '#00e5ff' : '#2ecc71'}; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${u.cost > 0 ? u.cost + ' <span style="font-size:1rem;">🌀</span>' : 'FREE'}</div>
+        </button>`; 
     });
 }
 
