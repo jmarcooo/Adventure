@@ -4,332 +4,315 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocket Heroes</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <!-- Sleek Dark Fantasy Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="game-container">
+        <!-- Notifications & Overlays -->
         <div id="in-app-notification" class="notification-popup"></div>
         <div id="battle-start-overlay"><div id="crossed-swords">⚔️</div></div>
         <div id="global-modal-backdrop" class="modal-backdrop"></div>
 
-        <div class="top-bar modern-top-bar" id="main-top-bar">
-            <div style="display: flex; gap: 10px;">
-                <div class="currency-pill modern-pill">
-                    <div class="icon-circle gold-bg">🪙</div>
-                    <span id="gold-amount">0</span>
-                    <div class="plus-btn">+</div>
+        <!-- Top Navigation Bar -->
+        <div class="top-bar glass-panel" id="main-top-bar">
+            <div class="currency-wrapper">
+                <div class="currency-item">
+                    <span class="curr-icon gold-text">🪙</span>
+                    <span id="gold-amount" class="curr-val">0</span>
                 </div>
-                <div class="currency-pill modern-pill" onclick="checkSecretCheat()">
-                    <div class="icon-circle gem-bg">💎</div>
-                    <span id="gem-amount">0</span>
-                    <div class="plus-btn">+</div>
+                <div class="currency-item" onclick="checkSecretCheat()" style="cursor: pointer;">
+                    <span class="curr-icon gem-text">💎</span>
+                    <span id="gem-amount" class="curr-val">0</span>
                 </div>
             </div>
-            <div class="settings-btn modern-settings" onclick="document.getElementById('global-modal-backdrop').style.display='block'; document.getElementById('settings-modal').style.display='flex';">⚙️</div>
+            <button class="icon-btn" onclick="document.getElementById('global-modal-backdrop').style.display='block'; document.getElementById('settings-modal').style.display='flex';">⚙️</button>
         </div>
 
-        <div id="settings-modal" class="settings-modal">
-            <button class="hud-btn close-btn" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('settings-modal').style.display='none';">X</button>
-            <h2 style="margin: 0 0 5px 0; color: #fff; font-family: 'Fredoka One', cursive; font-size: 1.8rem;">Settings</h2>
-            <p style="color: #bdc3c7; font-size: 0.9rem; margin-bottom: 20px;">Manage your adventure.</p>
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="glass-modal">
+            <button class="close-btn" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('settings-modal').style.display='none';">✕</button>
+            <h2 class="rpg-title">Settings</h2>
+            <p class="sub-text">Manage your journey.</p>
             
-            <button class="action-btn btn-save" onclick="saveGame()">💾 Save Game</button>
-            <button class="action-btn btn-load" onclick="loadGame()">📂 Load Game</button>
+            <button class="rpg-btn" onclick="saveGame()">💾 Save Progress</button>
+            <button class="rpg-btn" onclick="loadGame()" style="margin-top: 10px;">📂 Load Progress</button>
             
-            <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-            <p style="color: #e74c3c; font-size: 0.8rem; margin: 0; font-weight: bold;">Danger Zone</p>
-            <button class="action-btn btn-wipe" onclick="wipeSaveData()">⚠️ Hard Reset</button>
+            <div class="divider"></div>
+            <p class="danger-text">Danger Zone</p>
+            <button class="rpg-btn btn-danger" onclick="wipeSaveData()">⚠️ Erase Save Data</button>
         </div>
 
-        <div id="screen-home" class="screen active" style="align-items: center; justify-content: center; background: linear-gradient(180deg, #5dade2 0%, #aed6f1 100%);">
-            <h1 class="game-title">POCKET<br>HEROES</h1>
-            
-            <div class="character-display">
-                <div class="hero-emoji" id="home-hero">🧑‍🎤</div>
-                <div class="weapon-emoji" id="home-weapon">⚔️</div>
-            </div>
-
-            <div class="level-panel modern-panel">
-                <div class="level-badge">
-                    <div class="shield-shape">🛡️</div>
-                    <span id="player-level-badge" class="badge-text">1</span>
-                </div>
-                <div class="level-info">
-                    <div class="level-text-row">
-                        <span class="lvl-label">LEVEL <span id="player-level-text" class="green-text">1</span></span>
-                        <span class="exp-label"><span class="yellow-text">EXP</span> <span id="player-exp-text">0/100</span></span>
-                    </div>
-                    <div class="modern-progress-track">
-                        <div class="modern-progress-fill exp" id="player-exp-fill"></div>
-                    </div>
+        <!-- SCREEN: HOME -->
+        <div id="screen-home" class="screen active center-content">
+            <div class="hero-showcase">
+                <h1 class="main-logo">Pocket<br>Heroes</h1>
+                <div class="character-display">
+                    <div class="hero-emoji" id="home-hero">🧑‍🎤</div>
+                    <div class="weapon-emoji" id="home-weapon">⚔️</div>
                 </div>
             </div>
 
-            <button class="play-btn-modern" onclick="openMenu('stages')">
-                PLAY <span class="bg-icon">⚔️</span>
-            </button>
-            
-            <button id="test-battle-btn" class="action-btn" onclick="startTestBattle()" style="display: none; background: #9b59b6; box-shadow: 0 6px 0 #732d91; margin-top: 20px;">TEST BATTLE</button>
-        </div>
-
-        <div id="screen-stages" class="screen" style="justify-content: flex-start;">
-            <div id="biome-list-view" style="width: 100%;">
-                <h2 onclick="unlockAllStagesCheat()" style="cursor: pointer; color: #2c3e50; font-family: 'Fredoka One', cursive;">Select Region</h2>
-                <div class="list-container" id="stages-list-container" style="padding-bottom: 20px;"></div>
-            </div>
-            <div id="substage-list-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <div style="width: 100%; display: flex; align-items: center; margin-bottom: 15px;">
-                    <button class="hud-btn" onclick="showBiomeList()">🔙 Back</button>
-                    <h2 id="selected-biome-title" style="flex-grow: 1; margin: 0; text-align: center; color: #2c3e50; font-family: 'Fredoka One', cursive;">Biome Name</h2>
-                    <div style="width: 60px;"></div>
+            <!-- Sleek Level Panel -->
+            <div class="level-card glass-panel">
+                <div class="level-header">
+                    <span class="lvl-text">Level <span id="player-level-text" class="highlight-cyan">1</span></span>
+                    <span class="exp-text">EXP <span id="player-exp-text">0/100</span></span>
                 </div>
-                <div class="list-container" id="substages-container" style="width: 100%; padding-bottom: 20px;"></div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="player-exp-fill"></div>
+                </div>
+            </div>
+
+            <!-- Sharp Play Button -->
+            <button class="play-btn-huge" onclick="openMenu('stages')">ENTER BATTLE</button>
+            
+            <button id="test-battle-btn" class="rpg-btn" onclick="startTestBattle()" style="display: none; margin-top: 20px; border-color: #9b59b6;">Test Dummy</button>
+        </div>
+
+        <!-- SCREEN: STAGES -->
+        <div id="screen-stages" class="screen">
+            <div id="biome-list-view" class="full-width">
+                <h2 class="rpg-title" onclick="unlockAllStagesCheat()" style="cursor: pointer;">Campaign Map</h2>
+                <div class="list-container" id="stages-list-container"></div>
+            </div>
+            <div id="substage-list-view" class="full-width" style="display: none;">
+                <div class="header-row">
+                    <button class="icon-btn" onclick="showBiomeList()">🔙</button>
+                    <h2 id="selected-biome-title" class="rpg-title">Biome</h2>
+                    <div style="width: 40px;"></div>
+                </div>
+                <div class="list-container" id="substages-container"></div>
             </div>
         </div>
 
-        <div id="screen-heroes" class="screen" style="justify-content: flex-start;">
-            <div id="heroes-list-view" style="width: 100%;">
-                <h2 style="color: #2c3e50; font-family: 'Fredoka One', cursive;">Hero Roster</h2>
-                <div class="list-container" id="heroes-list-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
+        <!-- SCREEN: HEROES -->
+        <div id="screen-heroes" class="screen">
+            <div id="heroes-list-view" class="full-width">
+                <h2 class="rpg-title">Hero Roster</h2>
+                <div class="grid-2col" id="heroes-list-container"></div>
             </div>
-            <div id="hero-details-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <button class="hud-btn" style="align-self: flex-start; margin-bottom: 15px;" onclick="viewingHero = null; renderHeroSelection();">🔙 Back</button>
-                <div id="hero-details-content" style="width: 100%; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;"></div>
-                <button id="btn-set-active" class="action-btn play-btn-modern" style="margin-top: 25px; font-size: 1.5rem; padding: 15px; width: 100%;" onclick="">SET ACTIVE</button>
+            <div id="hero-details-view" class="full-width" style="display: none;">
+                <button class="icon-btn" style="margin-bottom: 15px;" onclick="viewingHero = null; renderHeroSelection();">🔙</button>
+                <div id="hero-details-content" class="glass-panel text-left"></div>
+                <button id="btn-set-active" class="rpg-btn highlight-btn" style="margin-top: 20px; width: 100%;" onclick="">Mobilize Hero</button>
             </div>
         </div>
 
-        <div id="screen-gear" class="screen" style="justify-content: flex-start; padding-top: 10px;">
-            <div class="equipment-container" style="width: 100%;">
-                <div class="equip-top">
-                    <div class="equip-doll">
-                        <div style="font-size: 8rem; opacity: 0.2; color: #2c3e50;">🧍</div>
+        <!-- SCREEN: GEAR -->
+        <div id="screen-gear" class="screen">
+            <div class="equipment-layout">
+                <div class="equip-doll glass-panel">
+                    <div class="doll-bg">🧍</div>
+                    <div class="equip-grid">
                         <div class="equip-slot" id="slot-head"></div>
-                        <div class="equip-slot" id="slot-body"></div>
-                        <div class="equip-slot" id="slot-legs"></div>
-                        <div class="equip-slot" id="slot-boots"></div>
+                        <div class="equip-slot" id="slot-amulet"></div>
                         <div class="equip-slot" id="slot-weapon"></div>
+                        <div class="equip-slot" id="slot-body"></div>
                         <div class="equip-slot" id="slot-leftHand"></div>
                         <div class="equip-slot" id="slot-ring"></div>
-                        <div class="equip-slot" id="slot-amulet"></div>
+                        <div class="equip-slot" id="slot-legs"></div>
+                        <div class="equip-slot" id="slot-boots"></div>
                     </div>
-                    <div class="equip-stats" id="gear-hero-stats"></div>
                 </div>
-                <div class="equip-bottom" style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    <h3 style="margin-top: 0; margin-bottom: 15px; text-align: left; font-size: 1.2rem; color: #2c3e50; font-family: 'Fredoka One', cursive;">INVENTORY</h3>
-                    <div class="inventory-grid" id="inventory-grid"></div>
-                </div>
+                <div class="equip-stats glass-panel" id="gear-hero-stats"></div>
             </div>
-            <div id="gear-details-modal" class="settings-modal">
-                <button class="hud-btn close-btn" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('gear-details-modal').style.display='none'">X</button>
-                <div id="gear-modal-icon" style="font-size: 4.5rem; margin-bottom: 10px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));"></div>
-                <h2 id="gear-modal-name" style="margin: 0; color: #f1c40f; font-size: 1.5rem; font-family: 'Fredoka One', cursive;"></h2>
-                <p id="gear-modal-type" style="margin: 5px 0 15px 0; color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;"></p>
-                <div id="gear-modal-stats" style="width: 100%; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px; color: #fff;"></div>
-                <button id="gear-modal-action-btn" class="action-btn" style="font-size: 1.2rem; padding: 15px; width: 100%;"></button>
+            <div class="inventory-section glass-panel">
+                <h3 class="rpg-subtitle">Armory</h3>
+                <div class="inventory-grid" id="inventory-grid"></div>
+            </div>
+
+            <!-- Gear Modal -->
+            <div id="gear-details-modal" class="glass-modal">
+                <button class="close-btn" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('gear-details-modal').style.display='none'">✕</button>
+                <div id="gear-modal-icon" class="modal-icon"></div>
+                <h2 id="gear-modal-name" class="rpg-title gold-text"></h2>
+                <p id="gear-modal-type" class="sub-text"></p>
+                <div id="gear-modal-stats" class="stats-box"></div>
+                <button id="gear-modal-action-btn" class="rpg-btn highlight-btn" style="width: 100%; margin-top: 10px;"></button>
             </div>
         </div>
 
-        <div id="screen-talents" class="screen" style="justify-content: flex-start;">
-            <h2 style="color: #2c3e50; font-family: 'Fredoka One', cursive;">Talent Tree</h2>
-            <div style="background: #fff; padding: 15px; border-radius: 20px; margin: 5px 0 20px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <p style="color: #2c3e50; font-size: 1.3rem; margin: 0; font-weight: 900;">Talent Points: <span id="tp-amount" style="color: #3498db;">0</span></p>
-                <p style="color: #7f8c8d; font-size: 0.85rem; margin: 5px 0 0 0; font-weight: bold;">Gain points by leveling up your hero.</p>
+        <!-- SCREEN: TALENTS -->
+        <div id="screen-talents" class="screen">
+            <h2 class="rpg-title">Talent Tree</h2>
+            <div class="glass-panel" style="margin-bottom: 20px; text-align: center;">
+                <p class="stat-row" style="justify-content: center; font-size: 1.2rem;">Unspent Points: <span id="tp-amount" class="highlight-cyan" style="margin-left: 10px; font-size: 1.5rem;">0</span></p>
             </div>
             <div class="list-container">
-                <div class="card" onclick="upgradeTalent('damage')">
-                    <div class="card-icon" style="font-size: 2.5rem;">💥</div>
+                <div class="rpg-card" onclick="upgradeTalent('damage')">
+                    <div class="card-icon">💥</div>
                     <div class="card-info">
-                        <h3 style="color: #2c3e50; margin:0; font-family: 'Fredoka One', cursive;">Fierce Strike</h3>
-                        <p style="color: #e67e22; margin: 2px 0; font-weight: bold;">+10% Total Damage</p>
-                        <p style="font-size: 0.85rem; color: #7f8c8d; margin:0; font-weight: bold;">Level: <span id="talent-lvl-damage" style="color: #2c3e50;">0</span></p>
+                        <h3 class="card-title">Fierce Strike</h3>
+                        <p class="card-desc">+10% Total Damage</p>
+                        <p class="card-meta">Rank: <span id="talent-lvl-damage">0</span></p>
                     </div>
                 </div>
-                <div class="card" onclick="upgradeTalent('gold')">
-                    <div class="card-icon" style="font-size: 2.5rem;">💰</div>
+                <div class="rpg-card" onclick="upgradeTalent('gold')">
+                    <div class="card-icon">💰</div>
                     <div class="card-info">
-                        <h3 style="color: #2c3e50; margin:0; font-family: 'Fredoka One', cursive;">Bounty Hunter</h3>
-                        <p style="color: #f1c40f; margin: 2px 0; font-weight: bold;">+20% Gold Drops</p>
-                        <p style="font-size: 0.85rem; color: #7f8c8d; margin:0; font-weight: bold;">Level: <span id="talent-lvl-gold" style="color: #2c3e50;">0</span></p>
+                        <h3 class="card-title">Bounty Hunter</h3>
+                        <p class="card-desc">+20% Gold Drops</p>
+                        <p class="card-meta">Rank: <span id="talent-lvl-gold">0</span></p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="screen-shop" class="screen" style="justify-content: flex-start;">
-            <div style="display: flex; width: 100%; gap: 10px; margin-bottom: 20px;">
-                <button id="tab-forge" class="action-btn active" style="flex: 1; padding: 12px; font-size: 1.1rem; background: #e67e22; box-shadow: 0 4px 0 #d35400;" onclick="switchShopTab('forge')">🔨 Forge</button>
-                <button id="tab-premium" class="action-btn" style="flex: 1; padding: 12px; font-size: 1.1rem; background: #9b59b6; box-shadow: 0 4px 0 #8e44ad;" onclick="switchShopTab('premium')">💎 Premium</button>
+        <!-- SCREEN: SHOP (Forge + Premium) -->
+        <div id="screen-shop" class="screen">
+            <div class="tab-container">
+                <button id="tab-forge" class="tab-btn active" onclick="switchShopTab('forge')">The Forge</button>
+                <button id="tab-premium" class="tab-btn" onclick="switchShopTab('premium')">Bazaar</button>
             </div>
             
-            <div id="forge-view" style="width: 100%;">
-                <div style="background: #fff; padding: 15px; border-radius: 20px; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    <h4 style="color: #7f8c8d; font-size: 0.85rem; text-align: left; margin: 0 0 10px 0; text-transform: uppercase; font-weight: 900;">Your Materials Vault</h4>
-                    <div id="forge-mats-container" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;"></div>
+            <div id="forge-view" class="full-width">
+                <div class="glass-panel" style="margin-bottom: 20px;">
+                    <h4 class="rpg-subtitle" style="margin-top: 0;">Material Vault</h4>
+                    <div id="forge-mats-container" class="mats-flex"></div>
                 </div>
-                <div class="list-container" id="forge-recipes-container" style="padding-bottom: 20px;"></div>
+                <div class="list-container" id="forge-recipes-container"></div>
             </div>
 
-            <div id="premium-view" style="display: none; width: 100%;">
+            <div id="premium-view" class="full-width" style="display: none;">
                 <div class="list-container">
-                    <div class="card" onclick="buyPremium('gold')">
-                        <div class="card-icon" style="font-size: 3rem;">💰</div>
+                    <div class="rpg-card" onclick="buyPremium('gold')">
+                        <div class="card-icon">💰</div>
                         <div class="card-info">
-                            <h3 style="color: #2c3e50; margin:0; font-family: 'Fredoka One', cursive;">Pouch of Gold</h3>
-                            <p style="color: #7f8c8d; font-size: 0.85rem; margin: 4px 0; font-weight: bold;">Instantly gain 1,000 Gold.</p>
-                            <div style="margin-top: 8px; color: #fff; font-weight:bold; font-size: 1.1rem; background: #3498db; display: inline-block; padding: 4px 10px; border-radius: 10px; box-shadow: 0 3px 0 #2980b9;">10 💎</div>
+                            <h3 class="card-title">Pouch of Gold</h3>
+                            <p class="card-desc">Instantly gain 1,000 Gold.</p>
+                            <span class="price-tag">10 💎</span>
                         </div>
                     </div>
-                    <div class="card" onclick="buyPremium('damage')">
-                        <div class="card-icon" style="font-size: 3rem;">⚔️</div>
+                    <div class="rpg-card" onclick="buyPremium('damage')">
+                        <div class="card-icon">⚔️</div>
                         <div class="card-info">
-                            <h3 style="color: #2c3e50; margin:0; font-family: 'Fredoka One', cursive;">Power Elixir</h3>
-                            <p style="color: #7f8c8d; font-size: 0.85rem; margin: 4px 0; font-weight: bold;">Permanent +50 Base Damage.</p>
-                            <div style="margin-top: 8px; color: #fff; font-weight:bold; font-size: 1.1rem; background: #3498db; display: inline-block; padding: 4px 10px; border-radius: 10px; box-shadow: 0 3px 0 #2980b9;">50 💎</div>
+                            <h3 class="card-title">Power Elixir</h3>
+                            <p class="card-desc">Permanent +50 Base Damage.</p>
+                            <span class="price-tag">50 💎</span>
                         </div>
                     </div>
-                    <div class="card" onclick="buyPremium('chest')">
-                        <div class="card-icon" style="font-size: 3rem;">🎁</div>
+                    <div class="rpg-card" onclick="buyPremium('chest')">
+                        <div class="card-icon">🎁</div>
                         <div class="card-info">
-                            <h3 style="color: #2c3e50; margin:0; font-family: 'Fredoka One', cursive;">Mystic Chest</h3>
-                            <p style="color: #7f8c8d; font-size: 0.85rem; margin: 4px 0; font-weight: bold;">Get 1 Random Equipment.</p>
-                            <div style="margin-top: 8px; color: #fff; font-weight:bold; font-size: 1.1rem; background: #3498db; display: inline-block; padding: 4px 10px; border-radius: 10px; box-shadow: 0 3px 0 #2980b9;">20 💎</div>
+                            <h3 class="card-title">Mystic Chest</h3>
+                            <p class="card-desc">Get 1 Random Equipment.</p>
+                            <span class="price-tag">20 💎</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="screen-game" class="screen" style="background: #2c3e50; justify-content: space-around; position: relative;">
-            <button class="hud-btn retreat-btn" onclick="fleeCombat()" title="Retreat" style="position: absolute; top: 15px; left: 15px; z-index: 10;">🔙</button>
-            <div id="top-right-ui" style="position: absolute; top: 15px; right: 15px; z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-                <button id="speed-toggle-btn" class="hud-btn" onclick="toggleGameSpeed()">▶️ x1</button>
-                <div id="in-run-currency" style="background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 10px; color: #fff; font-weight: bold;">🌀 <span id="run-runes-text">0</span></div>
+        <!-- SCREEN: GAME (Battle) -->
+        <div id="screen-game" class="screen battle-bg">
+            <div class="battle-header">
+                <button class="icon-btn" onclick="fleeCombat()" title="Retreat">🏃</button>
+                <div class="battle-top-right">
+                    <div id="in-run-currency" class="run-currency">🌀 <span id="run-runes-text">0</span></div>
+                    <button id="speed-toggle-btn" class="icon-btn" onclick="toggleGameSpeed()">▶️ x1</button>
+                </div>
             </div>
             
-            <div style="width: 100%; margin-top: 50px;">
-                <h2 id="level-wave-text" style="color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-align: center; font-family: 'Fredoka One', cursive;">Level 1 - Wave 1</h2>
-                <div id="mutator-display" style="display: none; color: #e74c3c; font-size: 0.95rem; font-weight: bold; margin-top: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-align: center;"></div>
+            <div class="combat-arena">
+                <h2 id="level-wave-text" class="wave-text">Level 1 - Wave 1</h2>
+                <div id="mutator-display" class="mutator-text"></div>
                 <div id="enemy-container"></div>
             </div>
             
-            <div style="width: 100%; position: relative; margin-top: auto;" id="player-combat-area">
+            <div class="player-hud" id="player-combat-area">
                 
-                <div id="debug-panel" style="display: none; flex-direction: column; gap: 5px; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px dashed #f1c40f; width: 90%; margin-left: auto; margin-right: auto;">
-                    <div style="font-size: 0.8rem; font-weight: bold; color: #3498db; text-align: left;">Player Debuffs:</div>
-                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                        <button class="hud-btn" style="background: #e74c3c; font-size: 0.65rem; color: white;" onclick="debugApply('stun', 'player')">Stun</button>
-                        <button class="hud-btn" style="background: #27ae60; font-size: 0.65rem; color: white;" onclick="debugApply('poison', 'player')">Poison</button>
-                        <button class="hud-btn" style="background: #d35400; font-size: 0.65rem; color: white;" onclick="debugApply('burn', 'player')">Burn</button>
-                        <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem; color: white;" onclick="debugApply('bleed', 'player')">Bleed</button>
+                <!-- Debug Panel -->
+                <div id="debug-panel" class="glass-panel" style="display: none; padding: 10px; margin-bottom: 10px;">
+                    <div style="font-size: 0.7rem; color: #fff; margin-bottom: 5px;">DEBUG TOOLS</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px;">
+                        <button class="rpg-btn" style="padding: 4px; font-size: 0.6rem;" onclick="debugApply('stun', 'player')">Stun P</button>
+                        <button class="rpg-btn" style="padding: 4px; font-size: 0.6rem;" onclick="debugApply('vulnerable', 'enemy')">Vuln E</button>
+                        <button class="rpg-btn" style="padding: 4px; font-size: 0.6rem;" onclick="debugApply('blind', 'enemy')">Blind E</button>
                     </div>
-
-                    <div style="font-size: 0.8rem; font-weight: bold; color: #e74c3c; text-align: left; margin-top: 5px;">Dummy Debuffs:</div>
                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                        <button class="hud-btn" style="background: #8e44ad; font-size: 0.65rem; color: white;" onclick="debugApply('vulnerable', 'enemy')">Vuln</button>
-                        <button class="hud-btn" style="background: #2c3e50; font-size: 0.65rem; color: white;" onclick="debugApply('marked', 'enemy')">Marked</button>
-                        <button class="hud-btn" style="background: #f39c12; font-size: 0.65rem; color: white;" onclick="debugApply('blind', 'enemy')">Blind</button>
-                        <button class="hud-btn" style="background: #16a085; font-size: 0.65rem; color: white;" onclick="debugApply('poison', 'enemy')">Poison</button>
-                    </div>
-
-                    <div style="font-size: 0.8rem; font-weight: bold; color: #f1c40f; text-align: left; margin-top: 5px;">Mutator Test:</div>
-                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                        <button class="hud-btn" style="background: #d35400; font-size: 0.65rem; color: white;" onclick="debugMutator('magic_immune')">No Magic</button>
-                        <button class="hud-btn" style="background: #c0392b; font-size: 0.65rem; color: white;" onclick="debugMutator('toxic')">Toxic Air</button>
-                        <button class="hud-btn" style="background: #7f8c8d; font-size: 0.65rem; color: white;" onclick="debugMutator('clear')">Clear</button>
+                        <button class="rpg-btn" style="padding: 4px; font-size: 0.6rem;" onclick="debugMutator('magic_immune')">No Magic</button>
+                        <button class="rpg-btn" style="padding: 4px; font-size: 0.6rem;" onclick="debugMutator('toxic')">Toxic</button>
+                        <button class="rpg-btn" style="padding: 4px; font-size: 0.6rem;" onclick="debugMutator('clear')">Clear Mut</button>
                     </div>
                 </div>
 
-                <div id="player-status-effects" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; min-height: 25px; margin-bottom: 10px;"></div>
+                <div id="player-status-effects" class="status-tray"></div>
                 
-                <div class="combat-stats-panel" id="combat-stats-panel" style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 20px; width: 90%; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: space-around; color: white;"></div>
+                <div class="combat-stats-panel glass-panel" id="combat-stats-panel"></div>
                 
-                <div style="display: flex; justify-content: space-between; width: 90%; margin: 0 auto; align-items: flex-end; color: white;">
-                    <h3 style="margin:0; text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-family: 'Fredoka One', cursive;">Your Health</h3>
-                    <span id="player-hp-text" style="font-weight: bold; font-size: 1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">100/100</span>
-                </div>
-                <div class="bar-container" style="width: 90%; margin: 5px auto 2px auto; height: 18px; border-radius: 10px; background: #111;">
-                    <div class="bar-fill player-hp" id="player-health" style="border-radius: 10px; background: #2ecc71;"></div>
-                </div>
-                <div class="bar-container" style="width: 90%; margin: 0 auto 15px auto; height: 8px; border-radius: 10px; background: #111;">
-                    <div class="bar-fill" id="player-atb" style="background: #f1c40f; border-radius: 10px; width: 0%; transition: none;"></div>
+                <div class="health-hud">
+                    <div class="hp-text-row">
+                        <span class="hp-label">Vitality</span>
+                        <span id="player-hp-text" class="hp-val">100/100</span>
+                    </div>
+                    <div class="progress-track hp-track">
+                        <div class="progress-fill hp-fill" id="player-health"></div>
+                    </div>
+                    <div class="progress-track atb-track">
+                        <div class="progress-fill atb-fill" id="player-atb"></div>
+                    </div>
                 </div>
             </div>
 
-            <div id="wave-upgrade-ui" class="settings-modal" style="width: 90%; max-width: 400px; background: rgba(20, 30, 45, 0.95);">
-                <h1 style="color: #f1c40f; font-family: 'Fredoka One', cursive; margin-bottom: 5px; font-size: 2.5rem; text-shadow: 0 4px 8px rgba(0,0,0,0.5);">WAVE CLEARED!</h1>
-                <p style="margin-bottom: 10px; color: #fff;">Spend your Runes.</p>
-                <div style="font-size: 2.5rem; font-weight: bold; color: #00e5ff; margin-bottom: 15px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">🌀 <span id="shop-runes-display">0</span></div>
-                <div id="upgrade-list" style="width: 100%; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;"></div>
-                <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; width: 100%; background: #3498db; box-shadow: 0 5px 0 #2980b9;">Skip & Continue</button>
+            <!-- Modals for End of Wave/Run -->
+            <div id="wave-upgrade-ui" class="glass-modal">
+                <h1 class="rpg-title gold-text">Wave Cleared</h1>
+                <p class="sub-text">Enhance your attributes.</p>
+                <div class="run-currency-large">🌀 <span id="shop-runes-display">0</span></div>
+                <div id="upgrade-list" class="upgrade-grid"></div>
+                <button class="rpg-btn" onclick="continueToNextWave()" style="width: 100%; margin-top: 15px;">Skip</button>
             </div>
 
-            <div id="boss-clear-ui" class="settings-modal" style="width: 90%; max-width: 400px; background: rgba(20, 30, 45, 0.95);">
-                <h1 style="color: #2ecc71; font-family: 'Fredoka One', cursive; margin-bottom: 5px; font-size: 2.8rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
-                <p style="margin-bottom: 15px; font-size: 1.1rem; font-weight: bold; color: #fff;">You conquered this area!</p>
-                
-                <div class="loot-panel" style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 15px; width: 100%; display: flex; justify-content: space-around;">
-                    <div class="loot-item" style="color: white; font-weight: bold; font-size: 1.2rem;"><span style="font-size: 1.5rem;">🪙</span> <span id="boss-ui-gold" style="color: #f1c40f;">0</span></div>
-                    <div class="loot-item" style="color: white; font-weight: bold; font-size: 1.2rem;"><span style="font-size: 1.5rem;">💎</span> <span id="boss-ui-gems" style="color: #3498db;">0</span></div>
-                    <div class="loot-item" style="color: white; font-weight: bold; font-size: 1.2rem;"><span style="font-size: 1.5rem;">🌟</span> <span id="boss-ui-exp" style="color: #9b59b6;">0</span></div>
+            <div id="boss-clear-ui" class="glass-modal">
+                <h1 class="rpg-title highlight-cyan">Stage Conquered</h1>
+                <div class="loot-recap glass-panel" style="margin: 15px 0;">
+                    <span class="gold-text">🪙 <span id="boss-ui-gold">0</span></span>
+                    <span class="gem-text">💎 <span id="boss-ui-gems">0</span></span>
+                    <span style="color: #9b59b6;">🌟 <span id="boss-ui-exp">0</span></span>
                 </div>
-                
-                <h3 style="color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Materials Found</h3>
-                <div id="boss-materials-recap" style="margin-bottom: 20px; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;"></div>
-
-                <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.2rem; padding: 15px; width: 100%; background: #2ecc71; box-shadow: 0 6px 0 #27ae60;">Claim Loot & Return</button>
+                <h3 class="rpg-subtitle">Materials Secured</h3>
+                <div id="boss-materials-recap" class="mats-flex"></div>
+                <button class="rpg-btn highlight-btn" onclick="collectRunRewards()" style="width: 100%; margin-top: 20px;">Claim & Return</button>
             </div>
 
-            <div id="run-summary-ui" class="settings-modal" style="width: 90%; max-width: 400px; background: rgba(40, 20, 20, 0.95); border-color: #e74c3c;">
-                <h1 id="run-summary-title" style="font-family: 'Fredoka One', cursive; font-size: 3rem; margin-bottom: 5px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">DEFEATED</h1>
-                <p id="run-summary-killer" style="color: #e74c3c; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; text-transform: uppercase;"></p>
-                <p style="margin-bottom: 15px; font-size: 1rem; color: #bdc3c7;">Run Summary</p>
-                
-                <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; width: 100%; margin-bottom: 20px;">
-                    <div style="font-size: 1.2rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; color: white; font-weight: bold;">
-                        <span>💀 Kills:</span> <span id="summary-kills" style="color: #e74c3c;">0</span>
-                    </div>
-                    <div style="font-size: 1.2rem; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; color: white; font-weight: bold;">
-                        <span>🪙 Gold:</span> <span id="summary-gold" style="color: #f1c40f;">0</span>
-                    </div>
-                    <div style="font-size: 1.2rem; display: flex; justify-content: space-between; padding-top: 5px; color: white; font-weight: bold;">
-                        <span>🌟 EXP:</span> <span id="summary-exp" style="color: #9b59b6;">0</span>
-                    </div>
+            <div id="run-summary-ui" class="glass-modal" style="border-top: 3px solid #e74c3c;">
+                <h1 id="run-summary-title" class="rpg-title danger-text">Defeated</h1>
+                <p id="run-summary-killer" class="sub-text"></p>
+                <div class="loot-recap glass-panel" style="margin: 15px 0; flex-direction: column; align-items: flex-start;">
+                    <div class="stat-row"><span>Enemies Slain:</span> <span id="summary-kills" class="danger-text">0</span></div>
+                    <div class="stat-row"><span>Gold Found:</span> <span id="summary-gold" class="gold-text">0</span></div>
+                    <div class="stat-row"><span>Experience:</span> <span id="summary-exp" style="color: #9b59b6;">0</span></div>
                 </div>
-
-                <h3 style="color: #bdc3c7; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px;">Materials Salvaged</h3>
-                <div id="summary-materials-recap" style="margin-bottom: 20px; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;"></div>
-
-                <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.2rem; padding: 15px; width: 100%; background: #e67e22; box-shadow: 0 6px 0 #d35400;">Collect & Go Home</button>
+                <h3 class="rpg-subtitle">Materials Salvaged</h3>
+                <div id="summary-materials-recap" class="mats-flex"></div>
+                <button class="rpg-btn" onclick="collectRunRewards()" style="width: 100%; margin-top: 20px;">Accept Fate</button>
             </div>
         </div>
 
-        <div class="bottom-nav modern-nav" id="bottom-nav-bar">
+        <!-- Bottom Navigation Menu -->
+        <div class="bottom-nav glass-panel" id="bottom-nav-bar">
             <button class="nav-btn" id="btn-heroes" onclick="openMenu('heroes')">
-                <span class="icon">🦸‍♂️</span><span class="label">Heroes</span>
+                <span class="icon">♙</span><span class="label">Roster</span>
             </button>
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')">
-                <span class="icon">🎒</span><span class="label">Gear</span>
+                <span class="icon">🛡️</span><span class="label">Armory</span>
             </button>
-            
-            <div class="nav-home-wrapper">
-                <button class="nav-btn home-btn active" id="btn-home" onclick="handleHomeClick()">
-                    <div class="home-circle"><span class="icon">🏠</span></div>
-                    <span class="label">Home</span>
-                </button>
-            </div>
-            
+            <button class="nav-btn active" id="btn-home" onclick="handleHomeClick()">
+                <span class="icon">⚲</span><span class="label">Camp</span>
+            </button>
             <button class="nav-btn" id="btn-talents" onclick="openMenu('talents')">
-                <span class="icon">⭐</span><span class="label">Talents</span>
+                <span class="icon">✧</span><span class="label">Talents</span>
             </button>
             <button class="nav-btn" id="btn-shop" onclick="openMenu('shop')">
-                <span class="icon">🏪</span><span class="label">Shop</span>
+                <span class="icon">⚖</span><span class="label">Forge</span>
             </button>
         </div>
     </div>
 
+    <!-- The external logic script -->
     <script src="script.js"></script>
 
 </body>
