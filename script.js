@@ -231,7 +231,6 @@ function openMenu(targetScreen) {
             if(hBtn) hBtn.classList.add('active'); 
         }
     } else { 
-        // ⚠️ Hide Top Bar and Bottom Nav when in Battle
         if(bottomNav) bottomNav.style.display = 'none'; 
         if(topBar) topBar.style.display = 'none';
     }
@@ -1079,7 +1078,6 @@ function spawnEnemyPack() {
     
     if (!biomeEnemies || biomeEnemies.length === 0) biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, pAtk: 2, mAtk: 0, pDef: 1, mDef: 1, spd: 10, atkSpd: 1.0, exp: 10, skill: null, loot: {} }];
 
-    // --- DYNAMIC BACKGROUND INJECTION (PER SUBSTAGE) ---
     let bgLayer = document.getElementById('battle-bg-layer');
     if (bgLayer) {
         if (stageInfo.biome && stageInfo.biome.backgrounds && stageInfo.biome.backgrounds[stageInfo.substageIndex]) {
@@ -1432,6 +1430,7 @@ function packDefeated() {
     if (shopPool.length === 0 || !canAffordAny) { setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); } else { showUpgradeShop(shopPool); }
 }
 
+// ⚠️ FIXED: Upgrade cards are now portrait columns that sit side-by-side
 function showUpgradeShop(shopPool) {
     document.getElementById('global-modal-backdrop').style.display='block';
     document.getElementById('wave-upgrade-ui').style.display = 'flex'; 
@@ -1442,17 +1441,15 @@ function showUpgradeShop(shopPool) {
     for (let i = shopPool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shopPool[i], shopPool[j]] = [shopPool[j], shopPool[i]]; }
     shopPool.slice(0, 3).forEach(u => { 
         let canAfford = runStats.runes >= u.cost; 
-        let lvlText = u.rarity === 'uncommon' ? ` <span style="font-size:0.7rem; color:#bdc3c7;">(LV ${u.currentLvl + 1}/${u.maxLevel})</span>` : ''; 
+        let lvlText = u.rarity === 'uncommon' ? `<br><span style="font-size:0.65rem; color:#bdc3c7;">(LV ${u.currentLvl + 1}/${u.maxLevel})</span>` : ''; 
         
-        list.innerHTML += `<button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; width: 100%; text-align: left;" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div style="font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${u.icon || '✨'}</div>
-                <div>
-                    <h4 style="font-size: 1rem; margin: 0; color: #fff; text-transform: uppercase; font-weight: 900;">${u.name}${lvlText}</h4>
-                    <p style="font-size: 0.8rem; margin: 2px 0 0 0; color: #f1c40f; font-weight: bold;">${u.desc}</p>
-                </div>
+        list.innerHTML += `<button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])">
+            <div style="font-size: 2.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); margin-bottom: 8px;">${u.icon || '✨'}</div>
+            <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center;">
+                <h4 style="font-size: 0.85rem; margin: 0; color: #fff; text-transform: uppercase; font-weight: 900; line-height: 1.1;">${u.name}${lvlText}</h4>
+                <p style="font-size: 0.75rem; margin: 4px 0 8px 0; color: #f1c40f; font-weight: bold; line-height: 1.1;">${u.desc}</p>
             </div>
-            <div style="font-size: 1.4rem; font-weight: bold; color: ${u.cost > 0 ? '#00e5ff' : '#2ecc71'}; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${u.cost > 0 ? u.cost + ' <span style="font-size:1rem;">🌀</span>' : 'FREE'}</div>
+            <div style="font-size: 1.2rem; font-weight: bold; color: ${u.cost > 0 ? '#00e5ff' : '#2ecc71'}; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${u.cost > 0 ? u.cost + ' <span style="font-size:0.8rem;">🌀</span>' : 'FREE'}</div>
         </button>`; 
     });
 }
