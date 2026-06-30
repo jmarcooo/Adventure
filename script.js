@@ -8,6 +8,7 @@ let mutatorsData = {};
 let enemySkillsData = {}; 
 let materialsData = {}; 
 let recipesData = [];   
+let bossesData = {}; 
 let activeMutator = null;
 let selectedTargetId = null;
 
@@ -46,18 +47,18 @@ let combatTickInterval;
 let mutatorTickTimer = 0; 
 let isTestMode = false;
 
-// --- STAGE DEFINITIONS & BOSS LOOT TABLES ---
+// --- STAGE DEFINITIONS ---
 const STAGE_DATA = [
-    { id: 'forest', name: 'Forest', bossName: 'Great Forest Troll', bossEmoji: '🧌', skill: 'bash', loot: { common: 'foul_sweat', uncommon: 'scrap_hide', rare: 'troll_bone', very_rare: 'troll_blood', super_rare: 'troll_heart' } },
-    { id: 'cave', name: 'Cave', bossName: 'Cave Serpent', bossEmoji: '🐍', skill: 'poison_aura', loot: { common: 'animal_bone', uncommon: 'snake_scale', rare: 'venom_sac', very_rare: 'viper_fang', super_rare: 'serpent_eye' } },
-    { id: 'graveyard', name: 'Haunted Graveyard', bossName: 'Great Skeleton', bossEmoji: '💀', skill: 'intimidate_revive', loot: { common: 'animal_bone', uncommon: 'rusted_metal', rare: 'intact_skull', very_rare: 'ancient_coin', super_rare: 'cursed_totem' } },
-    { id: 'ruins', name: 'Ancient Ruins', bossName: 'Ancient Golem', bossEmoji: '🗿', skill: 'high_armor', loot: { common: 'pebbles', uncommon: 'iron_ore', rare: 'sturdy_stone', very_rare: 'core_fragment', super_rare: 'earth_heart' } },
-    { id: 'coast', name: 'Forbidden Coast', bossName: 'Leviathan', bossEmoji: '🐋', skill: 'leviathan_spawns', loot: {} },
-    { id: 'volcano', name: 'Volcanic Crag', bossName: 'Infernal Dragon', bossEmoji: '🐉', skill: 'high_armor', loot: {} },
-    { id: 'tundra', name: 'Frozen Tundra', bossName: 'Frost Lich', bossEmoji: '🥶', skill: 'intimidate_revive', loot: {} },
-    { id: 'desert', name: 'Scorched Desert', bossName: 'Giant Sandworm', bossEmoji: '🐛', skill: 'poison_aura', loot: {} },
-    { id: 'void', name: 'Shadow Realm', bossName: 'Void Lord', bossEmoji: '👁️‍🗨️', skill: 'leviathan_spawns', loot: {} },
-    { id: 'celestial', name: "Celestial Palace", bossName: 'Fallen Titan', bossEmoji: '👼', skill: 'bash', loot: {} }
+    { id: 'forest', name: 'Forest' },
+    { id: 'cave', name: 'Cave' },
+    { id: 'graveyard', name: 'Haunted Graveyard' },
+    { id: 'ruins', name: 'Ancient Ruins' },
+    { id: 'coast', name: 'Forbidden Coast' },
+    { id: 'volcano', name: 'Volcanic Crag' },
+    { id: 'tundra', name: 'Frozen Tundra' },
+    { id: 'desert', name: 'Scorched Desert' },
+    { id: 'void', name: 'Shadow Realm' },
+    { id: 'celestial', name: "Celestial Palace" }
 ];
 
 const SUBSTAGE_NAMES = ['Outskirts', 'Trail', 'Depths', 'Ruins', 'Gauntlet', 'Lair'];
@@ -285,14 +286,8 @@ function renderHeroList() {
         let hero = heroData[heroId]; 
         let isSelected = player.currentHero === heroId ? 'selected' : '';
         let hLvl = player.heroStats[heroId] ? player.heroStats[heroId].level : 1;
-        
         container.innerHTML += `
-            <div class="card ${isSelected}" style="flex-direction: column; text-align: center; gap: 5px;" onclick="viewingHero = '${heroId}'; renderHeroSelection();">
-                <div class="card-icon" style="font-size: 2.5rem;">${hero.emoji}</div>
-                <div class="card-info" style="text-align: center;">
-                    <h3 style="font-size: 1rem;">${hero.name} <span style="font-size:0.7rem; color:#f1c40f;">Lv.${hLvl}</span></h3>
-                </div>
-            </div>`;
+            <div class="card ${isSelected}" style="flex-direction: column; text-align: center; gap: 5px;" onclick="viewingHero = '${heroId}'; renderHeroSelection();"><div class="card-icon" style="font-size: 2.5rem;">${hero.emoji}</div><div class="card-info" style="text-align: center;"><h3 style="font-size: 1rem;">${hero.name} <span style="font-size:0.7rem; color:#f1c40f;">Lv.${hLvl}</span></h3></div></div>`;
     }
 }
 
@@ -360,7 +355,7 @@ function upgradeHeroSkill(heroId) {
         renderHeroSelection(); 
         showNotification(`Skill Upgraded to Level ${player.heroSkillLevels[heroId] + 1}!`); 
     } else { 
-        showNotification(`Not enough Gold! Need ${cost} 🪙`); 
+        showNotification("Not enough Gold!"); 
     } 
 }
 
@@ -859,8 +854,23 @@ function addCurrency(type, amount) {
     else if (type === 'gem') { player.gems += amount; runStats.gemsGained += amount; spawnFloatingText('gem-container', `+${amount}`, 'float-gem'); } 
     updateUI(); 
 }
-function updateCombatStatsPanel() { let panel = document.getElementById('combat-stats-panel'); let stats = getPlayerStats(); let d = getTotalDamage(); panel.innerHTML = `<div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div><div><p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p><p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p><p>🎯 ${Math.round(stats.crit * 100)}% Crit</p></div><div><p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p><p>💨 ${Math.round(stats.evasion * 100)}% Ddg</p><p>🍀 ${Math.round(stats.luck * 100)}% Lck</p></div>`; document.getElementById('run-runes-text').innerText = runStats.runes; }
-function playBattleStartAnimation() { let overlay = document.getElementById('battle-start-overlay'); let swords = document.getElementById('crossed-swords'); if(overlay && swords) { overlay.style.display = 'flex'; swords.classList.remove('animate-swords'); void swords.offsetWidth; swords.classList.add('animate-swords'); setTimeout(() => { overlay.style.display = 'none'; }, 1000); } }
+
+function updateCombatStatsPanel() { 
+    let panel = document.getElementById('combat-stats-panel'); 
+    let stats = getPlayerStats(); 
+    let d = getTotalDamage(); 
+    panel.innerHTML = `<div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div><div><p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p><p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p><p>🎯 ${Math.round(stats.crit * 100)}% Crit</p></div><div><p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p><p>💨 ${Math.round(stats.evasion * 100)}% Ddg</p><p>🍀 ${Math.round(stats.luck * 100)}% Lck</p></div>`; 
+    document.getElementById('run-runes-text').innerText = runStats.runes; 
+}
+
+function playBattleStartAnimation() { 
+    let overlay = document.getElementById('battle-start-overlay'); 
+    let swords = document.getElementById('crossed-swords'); 
+    if(overlay && swords) { 
+        overlay.style.display = 'flex'; swords.classList.remove('animate-swords'); void swords.offsetWidth; swords.classList.add('animate-swords'); setTimeout(() => { overlay.style.display = 'none'; }, 1000); 
+    } 
+}
+
 function spawnFloatingText(targetId, text, className) { let targetDiv = document.getElementById(targetId); if(!targetDiv) return; let ft = document.createElement('div'); ft.className = `floating-text ${className}`; ft.innerText = text; let offsetX = (Math.random() * 40) - 20; ft.style.left = `calc(50% + ${offsetX}px)`; ft.style.top = '10px'; targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500); }
 function spawnLootDrop(targetId, type) { let targetDiv = document.getElementById(targetId); if(!targetDiv) return; let emoji = type === 'rune' ? '🌀' : '🪙'; let ft = document.createElement('div'); ft.className = 'loot-drop'; ft.innerText = emoji; let dirX = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()); ft.style.setProperty('--dirX', dirX); ft.style.left = '50%'; ft.style.top = '30%'; targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500); }
 
@@ -868,16 +878,26 @@ function summonEnemyMidBattle(enemyId, hpOverride = null) {
     let template = null; 
     for (let biome in enemiesData) { let found = enemiesData[biome].find(en => en.id === enemyId); if (found) { template = found; break; } } 
     if (!template) return; 
+    
     let stageInfo = getLevelAndWave(); 
     let normHp = hpOverride !== null ? hpOverride : Math.floor((template.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier); 
-    let normPAtk = Math.max(0, Math.floor((template.pAtk || 0) + (stageInfo.absoluteLevel * 0.8))); let normMAtk = Math.max(0, Math.floor((template.mAtk || 0) + (stageInfo.absoluteLevel * 0.8))); let normPDef = Math.floor((template.pDef || 0) + (stageInfo.absoluteLevel * 0.5)); let normMDef = Math.floor((template.mDef || 0) + (stageInfo.absoluteLevel * 0.5)); let normExp = Math.floor((template.exp || 10) + (stageInfo.absoluteLevel * 2));
-    let newId = 0; activeEnemies.forEach(e => { if (e.id >= newId) newId = e.id + 1; });
+    let normPAtk = Math.max(0, Math.floor((template.pAtk || 0) + (stageInfo.absoluteLevel * 0.8))); 
+    let normMAtk = Math.max(0, Math.floor((template.mAtk || 0) + (stageInfo.absoluteLevel * 0.8))); 
+    let normPDef = Math.floor((template.pDef || 0) + (stageInfo.absoluteLevel * 0.5)); 
+    let normMDef = Math.floor((template.mDef || 0) + (stageInfo.absoluteLevel * 0.5)); 
+    let normExp = Math.floor((template.exp || 10) + (stageInfo.absoluteLevel * 2));
+    let newId = 0; 
+    
+    activeEnemies.forEach(e => { if (e.id >= newId) newId = e.id + 1; });
     let newEnemy = { id: newId, name: template.name, maxHp: normHp, hp: normHp, pAtk: normPAtk, mAtk: normMAtk, pDef: normPDef, mDef: normMDef, exp: normExp, skill: template.skill, loot: template.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: false, spd: template.spd || 10, atkSpd: template.atkSpd || 1.0 };
-    activeEnemies.push(newEnemy); renderNormalEnemyUI(newEnemy.id, newEnemy, template.emoji, false);
+    
+    activeEnemies.push(newEnemy); 
+    renderNormalEnemyUI(newEnemy.id, newEnemy, template.emoji, false);
 }
 
 // --- ATB LOOP ENGINE ---
 function startCombatLoop() { clearInterval(combatTickInterval); combatTickInterval = setInterval(combatTick, 50); }
+
 function combatTick() {
     if(!document.getElementById('screen-game').classList.contains('active') || player.currentHealth <= 0 || waveManager.isUpgrading) return;
     processTimeEffects(player); let aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead); aliveEnemies.forEach(e => processTimeEffects(e)); aliveEnemies = activeEnemies.filter(e => e.hp > 0 && !e.isDead);
@@ -937,13 +957,20 @@ function startGame() {
 }
 
 function getLevelAndWave() {
-    let bIndex = waveManager.currentBiomeIndex; let sIndex = waveManager.currentSubstageIndex; let stageWave = waveManager.wave; let biome = STAGE_DATA[bIndex] || STAGE_DATA[0]; let absoluteLevel = (bIndex * 6) + sIndex + 1; let isGenericBoss = stageWave === 10; let isBiomeBoss = stageWave === 10 && sIndex === 5; let isMiniBoss = stageWave === 5;
+    let bIndex = waveManager.currentBiomeIndex; 
+    let sIndex = waveManager.currentSubstageIndex; 
+    let stageWave = waveManager.wave; 
+    let biome = STAGE_DATA[bIndex] || STAGE_DATA[0]; 
+    let absoluteLevel = (bIndex * 6) + sIndex + 1; 
+    let isGenericBoss = stageWave === 10; 
+    let isBiomeBoss = stageWave === 10 && sIndex === 5; 
+    let isMiniBoss = stageWave === 5;
     return { absoluteLevel: absoluteLevel, biomeIndex: bIndex, substageIndex: sIndex, wave: stageWave, isBoss: isGenericBoss, isBiomeBoss: isBiomeBoss, isMiniBoss: isMiniBoss, biome: biome };
 }
 
 function renderBossUI(id, name, emoji, hp, bSkill) {
     let container = document.getElementById('enemy-container');
-    container.innerHTML += `<div class="enemy-unit boss" id="enemy-${id}" onclick="selectTarget(${id})"><div class="emoji" style="font-size: 4rem;">${emoji}</div><div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${name}</div><div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div><div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div><div class="mini-hp-text" id="enemy-hp-text-${id}">${hp}/${hp}</div><div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>${bSkill ? `<div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon} ${bSkill.name}</div>` : ''}</div>`;
+    container.innerHTML += `<div class="enemy-unit boss" id="enemy-${id}" onclick="selectTarget(${id})"><div class="emoji" style="font-size: 4rem;">${emoji}</div><div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${name}</div><div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div><div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div><div class="mini-hp-text" id="enemy-hp-text-${id}">${hp}/${hp}</div><div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>${bSkill && bSkill.name ? `<div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon || '🔥'} ${bSkill.name}</div>` : ''}</div>`;
 }
 
 function renderNormalEnemyUI(id, enemyData, emoji, isElite) {
@@ -955,7 +982,10 @@ function spawnEnemyPack() {
     let container = document.getElementById('enemy-container'); let textEl = document.getElementById('level-wave-text'); let mutatorEl = document.getElementById('mutator-display'); 
     container.innerHTML = ''; activeEnemies = []; activeMutator = null; selectedTargetId = null; if(mutatorEl) mutatorEl.style.display = 'none';
 
-    let stageInfo = getLevelAndWave(); let biomeEnemies = enemiesData[stageInfo.biome.id];
+    let stageInfo = getLevelAndWave(); 
+    let biomeEnemies = enemiesData[stageInfo.biome.id];
+    let biomeBosses = bossesData[stageInfo.biome.id] || {};
+    
     if (!biomeEnemies || biomeEnemies.length === 0) biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, pAtk: 2, mAtk: 0, pDef: 1, mDef: 1, spd: 10, atkSpd: 1.0, exp: 10, skill: null, loot: {} }];
 
     let gameScreen = document.getElementById('screen-game');
@@ -967,20 +997,47 @@ function spawnEnemyPack() {
     let statMult = isDepths ? 1.2 : 1.0;
 
     if (stageInfo.isBiomeBoss) {
-        let bossHp = Math.floor((300 + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier * statMult);
-        let bPAtk = Math.floor((10 + (stageInfo.absoluteLevel * 1.5)) * statMult); let bMAtk = Math.floor((10 + (stageInfo.absoluteLevel * 1.5)) * statMult); let bPDef = Math.floor((5 + (stageInfo.absoluteLevel * 1.0)) * statMult); let bMDef = Math.floor((5 + (stageInfo.absoluteLevel * 1.0)) * statMult);
-        let bExp = 100 + (stageInfo.absoluteLevel * 20); let bSkill = { id: stageInfo.biome.skill, name: stageInfo.biome.bossName, icon: '👑', desc: 'Unique Biome Boss' };
-        activeEnemies.push({ id: 0, name: stageInfo.biome.bossName, maxHp: bossHp, hp: bossHp, pAtk: bPAtk, mAtk: bMAtk, pDef: bPDef, mDef: bMDef, exp: bExp, skill: bSkill.id, loot: stageInfo.biome.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, isBiomeBoss: true });
+        let bossTemplate = biomeBosses.region_boss || { name: "Unknown Boss", emoji: "❓", baseHp: 500, pAtk: 25, mAtk: 25, pDef: 15, mDef: 15, spd: 10, atkSpd: 1.0, exp: 500, skill: null, loot: {} };
+        let bossHp = Math.floor((bossTemplate.baseHp + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier * statMult);
+        let bPAtk = Math.floor((bossTemplate.pAtk + (stageInfo.absoluteLevel * 1.5)) * statMult); 
+        let bMAtk = Math.floor((bossTemplate.mAtk + (stageInfo.absoluteLevel * 1.5)) * statMult); 
+        let bPDef = Math.floor((bossTemplate.pDef + (stageInfo.absoluteLevel * 1.0)) * statMult); 
+        let bMDef = Math.floor((bossTemplate.mDef + (stageInfo.absoluteLevel * 1.0)) * statMult);
+        let bExp = bossTemplate.exp + (stageInfo.absoluteLevel * 20); 
+        
+        let bSkill = { id: bossTemplate.skill, name: bossTemplate.name, icon: '👑', desc: 'Unique Biome Boss' };
+        
+        activeEnemies.push({ id: 0, name: bossTemplate.name, maxHp: bossHp, hp: bossHp, pAtk: bPAtk, mAtk: bMAtk, pDef: bPDef, mDef: bMDef, exp: bExp, skill: bSkill.id, loot: bossTemplate.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, isBiomeBoss: true });
         textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ REGION BOSS ⚠️</span>`;
-        renderBossUI(0, stageInfo.biome.bossName, stageInfo.biome.bossEmoji, bossHp, bSkill);
+        renderBossUI(0, bossTemplate.name, bossTemplate.emoji, bossHp, bSkill);
+        
     } else if (stageInfo.isBoss) {
-        let bossHp = Math.floor((200 + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier * statMult);
-        let bPAtk = Math.floor((8 + (stageInfo.absoluteLevel * 1.2)) * statMult); let bMAtk = Math.floor((8 + (stageInfo.absoluteLevel * 1.2)) * statMult); let bPDef = Math.floor((5 + (stageInfo.absoluteLevel * 0.8)) * statMult); let bMDef = Math.floor((5 + (stageInfo.absoluteLevel * 0.8)) * statMult);
-        let bExp = 50 + (stageInfo.absoluteLevel * 10);
-        let bSkill = bossSkillsData && bossSkillsData.length > 0 ? bossSkillsData[Math.floor(Math.random() * bossSkillsData.length)] : {id: 'none', name: 'No Skill', icon: '❓', desc: ''}; if (isOutskirts) bSkill = {id: 'none', name: 'No Skill', icon: '❓', desc: ''};
-        activeEnemies.push({ id: 0, name: "Area Guardian", maxHp: bossHp, hp: bossHp, pAtk: bPAtk, mAtk: bMAtk, pDef: bPDef, mDef: bMDef, exp: bExp, skill: bSkill.id, loot: stageInfo.biome.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
-        let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex]; textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS: ${nodeName} ⚠️</span>`;
-        renderBossUI(0, "Area Guardian", waveManager.bossEmojis[Math.floor(Math.random() * waveManager.bossEmojis.length)], bossHp, bSkill);
+        let bossArray = biomeBosses.area_bosses || [];
+        let bossTemplate = bossArray[stageInfo.substageIndex];
+        
+        if (!bossTemplate) {
+            bossTemplate = biomeBosses.area_boss || { 
+                name: "Area Guardian", emoji: "🛡️", baseHp: 250, pAtk: 15, mAtk: 15, pDef: 10, mDef: 10, 
+                spd: 12, atkSpd: 1.1, exp: 200, skill: null, loot: {} 
+            };
+        }
+
+        let bossHp = Math.floor((bossTemplate.baseHp + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier * statMult);
+        let bPAtk = Math.floor((bossTemplate.pAtk + (stageInfo.absoluteLevel * 1.2)) * statMult); 
+        let bMAtk = Math.floor((bossTemplate.mAtk + (stageInfo.absoluteLevel * 1.2)) * statMult); 
+        let bPDef = Math.floor((bossTemplate.pDef + (stageInfo.absoluteLevel * 0.8)) * statMult); 
+        let bMDef = Math.floor((bossTemplate.mDef + (stageInfo.absoluteLevel * 0.8)) * statMult);
+        let bExp = bossTemplate.exp + (stageInfo.absoluteLevel * 10);
+        
+        let bSkill = { id: bossTemplate.skill, name: bossTemplate.name, icon: '🛡️', desc: 'Area Guardian' };
+        
+        activeEnemies.push({ id: 0, name: bossTemplate.name, maxHp: bossHp, hp: bossHp, pAtk: bPAtk, mAtk: bMAtk, pDef: bPDef, mDef: bMDef, exp: bExp, skill: bSkill.id, loot: bossTemplate.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: true });
+        
+        let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex]; 
+        textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#e74c3c; text-shadow: 0 0 10px #e74c3c;">⚠️ BOSS: ${nodeName} ⚠️</span>`;
+        
+        renderBossUI(0, bossTemplate.name, bossTemplate.emoji, bossHp, bSkill);
+        
     } else if (stageInfo.isMiniBoss) {
         let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex]; textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ ${nodeName} Elite ⚔️</span>`;
         let strongestTemplate = tier3[Math.floor(Math.random() * tier3.length)];
@@ -1033,7 +1090,6 @@ function spawnEnemyPack() {
     renderStatusEffects(); 
 }
 
-// ⚠️ NEW LOOT SYSTEM INJECTION
 function handleEnemyDeath(target, unitId, unitDiv) {
     let skillData = target.skill ? enemySkillsData[target.skill] : null;
 
@@ -1067,18 +1123,17 @@ function handleEnemyDeath(target, unitId, unitDiv) {
             addCurrency('gold', goldEarned);
             for(let i=0; i<10; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 100); }
             
-            if (lootTable.common) dropMaterial(lootTable.common, 3, unitId);
-            if (lootTable.uncommon) dropMaterial(lootTable.uncommon, 2, unitId);
-            if (lootTable.rare) dropMaterial(lootTable.rare, 1, unitId);
-            if (lootTable.very_rare) dropMaterial(lootTable.very_rare, 1, unitId);
-            if (lootTable.super_rare) dropMaterial(lootTable.super_rare, 1, unitId);
+            if (lootTable.common) dropMaterial(lootTable.common, Math.floor(Math.random() * 2) + 1, unitId);
+            if (lootTable.uncommon && Math.random() < 0.60) dropMaterial(lootTable.uncommon, 1, unitId);
+            if (lootTable.rare && Math.random() < 0.30) dropMaterial(lootTable.rare, 1, unitId);
+            if (lootTable.very_rare && Math.random() < 0.12) dropMaterial(lootTable.very_rare, 1, unitId);
+            if (lootTable.super_rare && Math.random() < 0.04) dropMaterial(lootTable.super_rare, 1, unitId);
 
         } else if (target.isElite) {
             if (Math.random() < 0.5) { runStats.runes += 1; spawnLootDrop(`enemy-${unitId}`, 'rune'); spawnFloatingText('in-run-currency', '+1', 'float-rune'); }
             let stats = getPlayerStats(); let goldEarned = Math.floor(3 * (1 + (stats.luck || 0))); addCurrency('gold', goldEarned);
             for(let i=0; i<3; i++) { setTimeout(() => spawnLootDrop(`enemy-${unitId}`, 'gold'), i * 150); }
             
-            // Elite Guaranteed Loot
             if (lootTable.common) dropMaterial(lootTable.common, 1, unitId);
             if (lootTable.uncommon) dropMaterial(lootTable.uncommon, 1, unitId);
             if (lootTable.rare && Math.random() < 0.10) dropMaterial(lootTable.rare, 1, unitId);
@@ -1090,7 +1145,6 @@ function handleEnemyDeath(target, unitId, unitDiv) {
             let stats = getPlayerStats();
             if (Math.random() < 0.25) { let goldEarned = Math.floor(1 * (1 + (stats.luck || 0))); if (goldEarned < 1) goldEarned = 1; addCurrency('gold', goldEarned); spawnLootDrop(`enemy-${unitId}`, 'gold'); }
             
-            // Standard Roll
             if (lootTable.common && Math.random() < 0.45) dropMaterial(lootTable.common, 1, unitId);
             if (lootTable.uncommon && Math.random() < 0.20) dropMaterial(lootTable.uncommon, 1, unitId);
             if (lootTable.rare && Math.random() < 0.10) dropMaterial(lootTable.rare, 1, unitId);
@@ -1274,12 +1328,17 @@ async function initGame() {
         const heroesResponse = await fetch('heroes.json'); if (!heroesResponse.ok) throw new Error("HTTP error " + heroesResponse.status); heroData = await heroesResponse.json();
         const itemsResponse = await fetch('items.json'); const itemsData = await itemsResponse.json();
         const enemiesResponse = await fetch('enemies.json'); enemiesData = await enemiesResponse.json();
+        
+        try { const bossesResponse = await fetch('boss.json'); if (bossesResponse.ok) { bossesData = await bossesResponse.json(); } } catch (err) { console.warn("Failed to load boss.json"); }
         try { const skillsResponse = await fetch('skills.json'); if (skillsResponse.ok) { enemySkillsData = await skillsResponse.json(); } } catch (err) { console.warn("Failed to load skills.json - verify file exists."); }
         try { const matsResponse = await fetch('materials.json'); if (matsResponse.ok) { materialsData = await matsResponse.json(); } } catch (err) { console.warn("Failed to load materials.json"); }
         try { const recResponse = await fetch('recipes.json'); if (recResponse.ok) { recipesData = await recResponse.json(); } } catch (err) { console.warn("Failed to load recipes.json"); }
         try { let equipResponse = await fetch('equipment.json'); if (!equipResponse.ok) equipResponse = await fetch('equipments.json'); if (equipResponse.ok) { equipmentData = await equipResponse.json(); } } catch (err) { console.warn("Failed to fetch equipment:", err); }
+        
         runUpgradeData = itemsData.runUpgradeData || []; commonUpgradesData = itemsData.commonUpgradesData || []; bossSkillsData = itemsData.bossSkillsData || [];
+        
         for (let h in heroData) { if (!player.heroStats[h]) { player.heroStats[h] = { level: 1, exp: 0, expNeeded: 100 }; } if (player.heroSkillLevels[h] === undefined) { player.heroSkillLevels[h] = 0; } }
+        
         loadGame();
         if (!player.currentHero || !heroData[player.currentHero]) { if (heroData.warrior) { setActiveHero('warrior'); } else { setActiveHero(Object.keys(heroData)[0]); } }
         renderHeroSelection(); updateUI();
