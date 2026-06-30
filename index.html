@@ -31,12 +31,18 @@
 <body>
 
     <div id="game-container">
+        <!-- Overlays -->
         <div id="in-app-notification" class="notification-popup"></div>
         <div id="battle-start-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; justify-content: center; align-items: center; z-index: 999; background: rgba(0,0,0,0.5); pointer-events: none;">
             <div id="crossed-swords" style="font-size: 8rem; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.8)); transform: scale(0); opacity: 0;">⚔️</div>
         </div>
         <div id="global-modal-backdrop" class="modal-backdrop"></div>
 
+        <!-- ==========================================
+             MODALS (KEPT AT ROOT TO PREVENT CUT-OFF)
+             ========================================== -->
+        
+        <!-- Settings Modal -->
         <div id="settings-modal" class="settings-modal">
             <button class="hud-btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; background: #7f8c8d; color: white;" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('settings-modal').style.display='none';">X</button>
             <h2 style="margin: 0 0 5px 0; color: #fff; font-size: 1.8rem;">Settings</h2>
@@ -50,6 +56,7 @@
             <button class="settings-btn btn-wipe" onclick="wipeSaveData()">⚠️ Hard Reset</button>
         </div>
 
+        <!-- Gear Modal -->
         <div id="gear-details-modal" class="settings-modal" style="border-color: #3498db;">
             <button class="hud-btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 12px; background: #e74c3c; color: white;" onclick="document.getElementById('global-modal-backdrop').style.display='none'; document.getElementById('gear-details-modal').style.display='none'">X</button>
             <div id="gear-modal-icon" style="font-size: 4.5rem; margin-bottom: 10px; text-shadow: 0 5px 10px rgba(0,0,0,0.5);"></div>
@@ -59,6 +66,7 @@
             <button id="gear-modal-action-btn" class="action-btn" style="font-size: 1.2rem; padding: 15px; width: 100%; box-shadow: 0 5px 0 rgba(0,0,0,0.3); color: white;"></button>
         </div>
 
+        <!-- Wave Clear Upgrade UI -->
         <div id="wave-upgrade-ui" class="settings-modal" style="border-color: #3498db; width: 95%; max-width: 420px;">
             <h1 style="color: #f1c40f; font-family: 'Fredoka One', cursive; margin-bottom: 5px; text-shadow: 0 4px 8px rgba(0,0,0,0.5);">WAVE CLEARED!</h1>
             <p style="margin-bottom: 10px; color: #fff;">Spend your Runes for this run.</p>
@@ -69,6 +77,7 @@
             <button class="action-btn" onclick="continueToNextWave()" style="font-size: 1.2rem; padding: 15px; margin-top: 20px; width: 100%; background: #3498db; box-shadow: 0 5px 0 #2980b9; color: white;">SKIP & CONTINUE</button>
         </div>
 
+        <!-- Stage Victory UI -->
         <div id="boss-clear-ui" class="settings-modal" style="border-color: #2ecc71; width: 90%; max-width: 400px;">
             <h1 style="color: #2ecc71; font-family: 'Fredoka One', cursive; margin-bottom: 5px; font-size: 3rem; text-shadow: 0 5px 10px rgba(0,0,0,0.5);">STAGE CLEARED!</h1>
             <p style="margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; color: #fff;">You conquered this area!</p>
@@ -85,6 +94,7 @@
             <button class="action-btn" onclick="collectRunRewards()" style="font-size: 1.5rem; padding: 15px; width: 100%; background: #2ecc71; box-shadow: 0 8px 0 #27ae60; color: white;">Claim Loot & Return</button>
         </div>
 
+        <!-- Run Defeat UI -->
         <div id="run-summary-ui" class="settings-modal" style="border-color: #e74c3c; width: 90%; max-width: 400px;">
             <h1 id="run-summary-title" style="font-family: 'Fredoka One', cursive; font-size: 3.5rem; margin-bottom: 5px; text-shadow: 0 5px 10px rgba(0,0,0,0.5); color: #e74c3c;">DEFEATED</h1>
             <p id="run-summary-killer" style="color: #e74c3c; font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;"></p>
@@ -109,6 +119,11 @@
         </div>
 
 
+        <!-- ==========================================
+             SCREENS (LAYERS & MENUS)
+             ========================================== -->
+
+        <!-- Top Navigation Bar -->
         <div class="top-bar" id="main-top-bar">
             <div style="display: flex; gap: 15px;">
                 <div class="currency" id="gold-container" style="font-weight: bold; color: #f1c40f; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🪙 <span id="gold-amount">0</span></div>
@@ -117,6 +132,7 @@
             <div style="font-size: 1.5rem; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.8);" onclick="document.getElementById('global-modal-backdrop').style.display='block'; document.getElementById('settings-modal').style.display='flex';">⚙️</div>
         </div>
 
+        <!-- SCREEN: HOME -->
         <div id="screen-home" class="screen active">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url('main-menu-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
             
@@ -139,6 +155,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: STAGES -->
         <div id="screen-stages" class="screen">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(30,40,50,0.7), rgba(30,40,50,0.9)), url('campaign-map-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
 
@@ -159,6 +176,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: HEROES -->
         <div id="screen-heroes" class="screen">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(30,40,50,0.8), rgba(30,40,50,0.95)), url('main-menu-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
             
@@ -176,6 +194,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: GEAR -->
         <div id="screen-gear" class="screen">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(30,40,50,0.8), rgba(30,40,50,0.95)), url('main-menu-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
             
@@ -201,6 +220,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: TALENTS -->
         <div id="screen-talents" class="screen">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(30,40,50,0.8), rgba(30,40,50,0.95)), url('main-menu-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
             
@@ -223,6 +243,7 @@
             </div>
         </div>
 
+        <!-- SCREEN: SHOP (Forge + Premium) -->
         <div id="screen-shop" class="screen">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(30,40,50,0.8), rgba(30,40,50,0.95)), url('main-menu-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
             
@@ -232,6 +253,7 @@
                     <button id="tab-premium" class="hud-btn" style="flex: 1; padding: 12px; font-size: 1.1rem; background: rgba(0,0,0,0.5); font-weight: bold; border-radius: 10px;" onclick="switchShopTab('premium')">💎 Premium</button>
                 </div>
                 
+                <!-- FORGE VIEW -->
                 <div id="forge-view" style="width: 100%;">
                     <p style="color: #e67e22; font-size: 1.1rem; font-weight: bold; margin-top: 0px; margin-bottom:10px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Craft powerful gear using loot.</p>
                     <div style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); padding: 15px; border-radius: 12px; width: 100%; margin-bottom: 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); border: 1px solid rgba(230, 126, 34, 0.3);">
@@ -241,6 +263,7 @@
                     <div class="list-container" id="forge-recipes-container" style="padding-bottom: 20px;"></div>
                 </div>
 
+                <!-- PREMIUM VIEW -->
                 <div id="premium-view" style="display: none; width: 100%;">
                     <p style="color: #9b59b6; font-size: 1.1rem; font-weight: bold; margin-top: 0px; margin-bottom:20px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Spend Gems for permanent boosts.</p>
                     <div class="list-container">
@@ -273,22 +296,26 @@
             </div>
         </div>
 
+        <!-- SCREEN: GAME (Battle) -->
         <div id="screen-game" class="screen">
             <div id="battle-bg-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('default-battle-bg.jpg'); background-size: cover; background-position: center; z-index: 0; pointer-events: none;"></div>
 
             <div style="position: relative; z-index: 1; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                <div style="display: flex; justify-content: space-between; width: 100%;">
+                
+                <!-- ⚠️ FIXED: Header Container creates safe space for Absolute buttons -->
+                <div style="width: 100%; position: relative; padding-top: 15px;">
                     <button class="hud-btn retreat-btn" onclick="fleeCombat()" title="Retreat">🔙</button>
                     <div id="top-right-ui" style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
                         <button id="speed-toggle-btn" class="hud-btn" onclick="toggleGameSpeed()">▶️ x1</button>
                         <div id="in-run-currency" style="position: relative; font-weight: bold; text-shadow: 0 1px 2px #000;">🌀 <span id="run-runes-text">0</span></div>
                     </div>
-                </div>
-                
-                <div style="width: 100%; margin-top: 10px;">
-                    <h2 id="level-wave-text" style="color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-align: center;">Level 1 - Wave 1</h2>
-                    <div id="mutator-display" style="display: none; color: #e74c3c; font-size: 0.95rem; font-weight: bold; margin-top: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-align: center;"></div>
-                    <div id="enemy-container"></div>
+                    
+                    <!-- ⚠️ FIXED: Margin top pushed down so text clears buttons -->
+                    <div style="width: 100%; margin-top: 50px;">
+                        <h2 id="level-wave-text" style="color: #f1c40f; text-shadow: 0 2px 4px rgba(0,0,0,0.8); text-align: center; font-size: 1.4rem; padding: 0 10px;">Level 1 - Wave 1</h2>
+                        <div id="mutator-display" style="display: none; color: #e74c3c; font-size: 0.95rem; font-weight: bold; margin-top: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-align: center;"></div>
+                        <div id="enemy-container"></div>
+                    </div>
                 </div>
                 
                 <div style="width: 100%; position: relative; margin-top: auto;" id="player-combat-area">
@@ -331,6 +358,7 @@
             </div>
         </div>
 
+        <!-- Bottom Navigation Menu -->
         <div class="bottom-nav" id="bottom-nav-bar" style="position: relative; z-index: 10;">
             <button class="nav-btn" id="btn-heroes" onclick="openMenu('heroes')"><span class="icon">🦸‍♂️</span>Heroes</button>
             <button class="nav-btn" id="btn-gear" onclick="openMenu('gear')"><span class="icon">🎒</span>Gear</button>
