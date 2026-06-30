@@ -47,18 +47,58 @@ let combatTickInterval;
 let mutatorTickTimer = 0; 
 let isTestMode = false;
 
-// --- STAGE DEFINITIONS ---
+// --- STAGE DEFINITIONS WITH DYNAMIC BACKGROUNDS ---
 const STAGE_DATA = [
-    { id: 'forest', name: 'Forest' },
-    { id: 'cave', name: 'Cave' },
-    { id: 'graveyard', name: 'Haunted Graveyard' },
-    { id: 'ruins', name: 'Ancient Ruins' },
-    { id: 'coast', name: 'Forbidden Coast' },
-    { id: 'volcano', name: 'Volcanic Crag' },
-    { id: 'tundra', name: 'Frozen Tundra' },
-    { id: 'desert', name: 'Scorched Desert' },
-    { id: 'void', name: 'Shadow Realm' },
-    { id: 'celestial', name: "Celestial Palace" }
+    { 
+        id: 'forest', 
+        name: 'Forest', 
+        backgrounds: ['forest-1.jpg', 'forest-2.jpg', 'forest-3.jpg', 'forest-4.jpg', 'forest-5.jpg', 'forest-6.jpg'] 
+    },
+    { 
+        id: 'cave', 
+        name: 'Cave', 
+        backgrounds: ['cave-1.jpg', 'cave-2.jpg', 'cave-3.jpg', 'cave-4.jpg', 'cave-5.jpg', 'cave-6.jpg'] 
+    },
+    { 
+        id: 'graveyard', 
+        name: 'Haunted Graveyard', 
+        backgrounds: ['grave-1.jpg', 'grave-2.jpg', 'grave-3.jpg', 'grave-4.jpg', 'grave-5.jpg', 'grave-6.jpg'] 
+    },
+    { 
+        id: 'ruins', 
+        name: 'Ancient Ruins', 
+        backgrounds: ['ruins-1.jpg', 'ruins-2.jpg', 'ruins-3.jpg', 'ruins-4.jpg', 'ruins-5.jpg', 'ruins-6.jpg'] 
+    },
+    { 
+        id: 'coast', 
+        name: 'Forbidden Coast', 
+        backgrounds: ['coast-1.jpg', 'coast-2.jpg', 'coast-3.jpg', 'coast-4.jpg', 'coast-5.jpg', 'coast-6.jpg'] 
+    },
+    { 
+        id: 'volcano', 
+        name: 'Volcanic Crag', 
+        backgrounds: ['volcano-1.jpg', 'volcano-2.jpg', 'volcano-3.jpg', 'volcano-4.jpg', 'volcano-5.jpg', 'volcano-6.jpg'] 
+    },
+    { 
+        id: 'tundra', 
+        name: 'Frozen Tundra', 
+        backgrounds: ['tundra-1.jpg', 'tundra-2.jpg', 'tundra-3.jpg', 'tundra-4.jpg', 'tundra-5.jpg', 'tundra-6.jpg'] 
+    },
+    { 
+        id: 'desert', 
+        name: 'Scorched Desert', 
+        backgrounds: ['desert-1.jpg', 'desert-2.jpg', 'desert-3.jpg', 'desert-4.jpg', 'desert-5.jpg', 'desert-6.jpg'] 
+    },
+    { 
+        id: 'void', 
+        name: 'Shadow Realm', 
+        backgrounds: ['void-1.jpg', 'void-2.jpg', 'void-3.jpg', 'void-4.jpg', 'void-5.jpg', 'void-6.jpg'] 
+    },
+    { 
+        id: 'celestial', 
+        name: "Celestial Palace", 
+        backgrounds: ['celestial-1.jpg', 'celestial-2.jpg', 'celestial-3.jpg', 'celestial-4.jpg', 'celestial-5.jpg', 'celestial-6.jpg'] 
+    }
 ];
 
 const SUBSTAGE_NAMES = ['Outskirts', 'Trail', 'Depths', 'Ruins', 'Gauntlet', 'Lair'];
@@ -309,12 +349,12 @@ function renderHeroDetails(heroId) {
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
             <div style="font-size: 4rem;">${hero.emoji}</div>
             <div>
-                <h2 style="margin: 0; font-size: 2rem;">${hero.name}</h2>
-                <p style="margin: 0; font-size: 1.2rem;">Weapon: ${hero.weapon}</p>
+                <h2 style="margin: 0; font-size: 2rem; color: #fff;">${hero.name}</h2>
+                <p style="margin: 0; font-size: 1.2rem; color: #bdc3c7;">Weapon: ${hero.weapon}</p>
             </div>
         </div>
         <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem; color: #fff;">
             <p><b>P.Atk:</b> <span style="color: #e74c3c;">${hero.pAtk + bonusPAtk}</span> <span style="font-size:0.7rem; color:#aaa;">(+${hero.pAtkGrowth || 0}/lv)</span></p>
             <p><b>M.Atk:</b> <span style="color: #9b59b6;">${hero.mAtk + bonusMAtk}</span> <span style="font-size:0.7rem; color:#aaa;">(+${hero.mAtkGrowth || 0}/lv)</span></p>
             <p><b>P.Def:</b> <span style="color: #f39c12;">${hero.pDef + bonusPDef}</span> <span style="font-size:0.7rem; color:#aaa;">(+${hero.pDefGrowth || 0}/lv)</span></p>
@@ -325,9 +365,9 @@ function renderHeroDetails(heroId) {
             <p><b>Dodge:</b> <span style="color: #1abc9c;">${hero.evasion * 100}%</span></p>
             <p><b>Luck:</b> <span style="color: #f39c12;">${hero.luck * 100}%</span></p>
         </div>
-        <p style="margin-top: 5px;"><b>Innate Passive:</b> <span style="color: #f1c40f;">${hero.innateDesc || 'None'}</span></p>
-        <p style="margin-top: 5px;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
-        <button class="hud-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>`;
+        <p style="margin-top: 5px; color: #fff;"><b>Innate Passive:</b> <span style="color: #f1c40f;">${hero.innateDesc || 'None'}</span></p>
+        <p style="margin-top: 5px; color: #fff;"><b>Active Skill:</b> <span style="color: #3498db;">${hero.innateSkill ? `(${skillChance}%) ${hero.innateSkill.desc}` : 'None'}</span></p>
+        <button class="action-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #e67e22; box-shadow: 0 4px 0 #d35400; font-size: 1.1rem;" onclick="upgradeHeroSkill('${heroId}')">${btnText}</button>`;
         
     let btnActive = document.getElementById('btn-set-active'); 
     btnActive.onclick = () => setActiveHero(heroId);
@@ -335,10 +375,12 @@ function renderHeroDetails(heroId) {
     if (player.currentHero === heroId) { 
         btnActive.innerText = "CURRENTLY ACTIVE"; 
         btnActive.style.background = "#2ecc71"; 
+        btnActive.style.boxShadow = "0 6px 0 #27ae60";
         btnActive.disabled = true; 
     } else { 
         btnActive.innerText = "SET ACTIVE"; 
         btnActive.style.background = "linear-gradient(180deg, #f1c40f 0%, #f39c12 100%)"; 
+        btnActive.style.boxShadow = "0 6px 0 #d35400";
         btnActive.disabled = false; 
     }
 }
@@ -401,7 +443,7 @@ function renderGearMenu() {
             if (item) { 
                 grid.innerHTML += `
                 <div class="inv-slot" style="cursor:pointer; position: relative;" onclick="showGearModal(player.inventory[${i}], 'inventory', ${i})">${item.icon}
-                    <div style="position: absolute; bottom: 2px; right: 2px; font-size: 0.5rem; background: rgba(0,0,0,0.6); padding: 1px 3px; border-radius: 3px; color: #ccc;">${item.type}</div>
+                    <div style="position: absolute; bottom: 2px; right: 2px; font-size: 0.5rem; background: rgba(0,0,0,0.6); color: #fff; padding: 1px 3px; border-radius: 3px;">${item.type}</div>
                 </div>`; 
             } else { 
                 grid.innerHTML += `<div class="inv-slot"></div>`; 
@@ -427,9 +469,9 @@ function showGearModal(item, source, key) {
         if (itemVal > 0 || equippedVal > 0) {
             let diff = itemVal - equippedVal; let diffHtml = '';
             if (source === 'inventory') { 
-                if (diff > 0) diffHtml = `<span class="stat-positive">(+${diff})</span>`; 
-                else if (diff < 0) diffHtml = `<span class="stat-negative">(${diff})</span>`; 
-                else diffHtml = `<span class="stat-neutral">(-)</span>`; 
+                if (diff > 0) diffHtml = `<span class="stat-positive" style="color:#2ecc71;">(+${diff})</span>`; 
+                else if (diff < 0) diffHtml = `<span class="stat-negative" style="color:#e74c3c;">(${diff})</span>`; 
+                else diffHtml = `<span class="stat-neutral" style="color:#bdc3c7;">(-)</span>`; 
             }
             statsDiv.innerHTML += `<div style="display: flex; justify-content: space-between;"><span>${statNames[stat]}:</span><span><b>${itemVal}</b> ${diffHtml}</span></div>`;
         }
@@ -441,9 +483,11 @@ function showGearModal(item, source, key) {
     let actionBtn = document.getElementById('gear-modal-action-btn');
     if (source === 'inventory') { 
         actionBtn.innerText = 'EQUIP'; 
+        actionBtn.style.background = '#2ecc71';
         actionBtn.onclick = () => { equipItem(key, item.slot); document.getElementById('gear-details-modal').style.display = 'none'; document.getElementById('global-modal-backdrop').style.display='none';}; 
     } else { 
         actionBtn.innerText = 'UNEQUIP'; 
+        actionBtn.style.background = '#e74c3c';
         actionBtn.onclick = () => { unequipItem(key); document.getElementById('gear-details-modal').style.display = 'none'; document.getElementById('global-modal-backdrop').style.display='none';}; 
     }
     document.getElementById('global-modal-backdrop').style.display='block'; 
@@ -577,16 +621,16 @@ function updateGearStatsPanel() {
     
     let html = `<h4 style="margin: 0 0 5px 0; color: #f1c40f; text-align: center;">${hero.name}</h4>`;
     html += `<div style="text-align:center; font-size:0.7rem; color:#bdc3c7; margin-bottom:10px; text-transform:uppercase;">[${hero.attackType || 'Hybrid'} Attacker]</div>`;
-    html += `<div class="equip-stat-row"><span>Max HP</span> <span>${maxH}</span></div>`;
-    html += `<div class="equip-stat-row"><span style="color:${hero.attackType === 'magical' ? '#555' : '#fff'}">P.Atk</span> <span style="color:${hero.attackType === 'magical' ? '#555' : '#fff'}">${stats.pAtk}</span></div>`;
-    html += `<div class="equip-stat-row"><span style="color:${hero.attackType === 'physical' ? '#555' : '#fff'}">M.Atk</span> <span style="color:${hero.attackType === 'physical' ? '#555' : '#fff'}">${stats.mAtk}</span></div>`;
-    html += `<div class="equip-stat-row"><span>P.Def</span> <span>${stats.pDef}</span></div>`;
-    html += `<div class="equip-stat-row"><span>M.Def</span> <span>${stats.mDef}</span></div>`;
-    html += `<div class="equip-stat-row"><span>Atk Spd</span> <span>${stats.atkSpd.toFixed(2)}</span></div>`;
-    html += `<div class="equip-stat-row"><span>Speed</span> <span>${stats.spd}</span></div>`;
-    html += `<div class="equip-stat-row"><span>Crit %</span> <span>${(stats.crit * 100).toFixed(1)}%</span></div>`;
-    html += `<div class="equip-stat-row"><span>Evasion %</span> <span>${(stats.evasion * 100).toFixed(1)}%</span></div>`;
-    html += `<div class="equip-stat-row"><span>Luck</span> <span>${stats.luck}</span></div>`; 
+    html += `<div class="equip-stat-row"><span>Max HP</span> <span style="color:#fff;">${maxH}</span></div>`;
+    html += `<div class="equip-stat-row"><span style="color:${hero.attackType === 'magical' ? '#7f8c8d' : '#bdc3c7'}">P.Atk</span> <span style="color:${hero.attackType === 'magical' ? '#7f8c8d' : '#fff'}">${stats.pAtk}</span></div>`;
+    html += `<div class="equip-stat-row"><span style="color:${hero.attackType === 'physical' ? '#7f8c8d' : '#bdc3c7'}">M.Atk</span> <span style="color:${hero.attackType === 'physical' ? '#7f8c8d' : '#fff'}">${stats.mAtk}</span></div>`;
+    html += `<div class="equip-stat-row"><span>P.Def</span> <span style="color:#fff;">${stats.pDef}</span></div>`;
+    html += `<div class="equip-stat-row"><span>M.Def</span> <span style="color:#fff;">${stats.mDef}</span></div>`;
+    html += `<div class="equip-stat-row"><span>Atk Spd</span> <span style="color:#fff;">${stats.atkSpd.toFixed(2)}</span></div>`;
+    html += `<div class="equip-stat-row"><span>Speed</span> <span style="color:#fff;">${stats.spd}</span></div>`;
+    html += `<div class="equip-stat-row"><span>Crit %</span> <span style="color:#fff;">${(stats.crit * 100).toFixed(1)}%</span></div>`;
+    html += `<div class="equip-stat-row"><span>Evasion %</span> <span style="color:#fff;">${(stats.evasion * 100).toFixed(1)}%</span></div>`;
+    html += `<div class="equip-stat-row"><span>Luck</span> <span style="color:#fff;">${stats.luck}</span></div>`; 
     
     panel.innerHTML = html;
 }
@@ -600,10 +644,17 @@ function toggleGameSpeed() {
 function switchShopTab(tab) {
     document.getElementById('forge-view').style.display = tab === 'forge' ? 'block' : 'none'; 
     document.getElementById('premium-view').style.display = tab === 'premium' ? 'block' : 'none';
-    document.getElementById('tab-forge').classList.toggle('active', tab === 'forge'); 
-    document.getElementById('tab-premium').classList.toggle('active', tab === 'premium');
-    document.getElementById('tab-forge').style.background = tab === 'forge' ? '#e67e22' : '#2c3e50'; 
-    document.getElementById('tab-premium').style.background = tab === 'premium' ? '#9b59b6' : '#2c3e50';
+    
+    let btnForge = document.getElementById('tab-forge');
+    let btnPremium = document.getElementById('tab-premium');
+    
+    if (tab === 'forge') {
+        btnForge.style.background = '#e67e22';
+        btnPremium.style.background = '#2c3e50';
+    } else {
+        btnForge.style.background = '#2c3e50';
+        btnPremium.style.background = '#9b59b6';
+    }
 }
 
 function renderForge() {
@@ -617,7 +668,7 @@ function renderForge() {
         if(player.materials[matId] > 0) { 
             hasMats = true; 
             let mData = materialsData[matId] || { icon: '📦', name: 'Unknown' }; 
-            matsContainer.innerHTML += `<div class="currency" title="${mData.name}">${mData.icon} ${player.materials[matId]}</div>`; 
+            matsContainer.innerHTML += `<div class="currency" title="${mData.name}" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 4px 8px; color: #fff;">${mData.icon} ${player.materials[matId]}</div>`; 
         } 
     }
     if(!hasMats) matsContainer.innerHTML = '<p style="font-size:0.8rem; color:#bdc3c7;">No materials gathered yet. Hunt monsters!</p>';
@@ -704,7 +755,7 @@ function renderMaterialRecap(containerId) {
         if (amount > 0) { 
             hasMats = true; 
             let mData = materialsData[matId] || { icon: '📦', name: 'Unknown' }; 
-            container.innerHTML += `<div class="currency" title="${mData.name}" style="background: rgba(0,0,0,0.5);">${mData.icon} ${amount}</div>`; 
+            container.innerHTML += `<div class="currency" title="${mData.name}" style="background: rgba(0,0,0,0.5); border-radius: 5px; padding: 4px 8px; color: #fff;">${mData.icon} ${amount}</div>`; 
         } 
     }
     
@@ -808,14 +859,14 @@ function createStatusHtml(eff, mini = false) {
     if (eff.type === 'stun') { text = "Stun"; iconClass = "debuff"; emoji = "💫"; } else if (eff.type === 'poison') { text = "Poison"; iconClass = "debuff"; emoji = "☠️"; } else if (eff.type === 'burn') { text = "Burn"; iconClass = "debuff"; emoji = "🔥"; } else if (eff.type === 'bleed') { text = "Bleed"; iconClass = "debuff"; emoji = "🩸"; } else if (eff.type === 'decay') { text = "Decay"; iconClass = "debuff"; emoji = "🧟"; } else if (eff.type === 'slow') { text = "Slow"; iconClass = "debuff"; emoji = "🐢"; } else if (eff.type === 'haste') { text = "Haste"; iconClass = "buff"; emoji = "⚡"; } else if (eff.type === 'blind') { text = "Blind"; iconClass = "debuff"; emoji = "👁️‍🗨️"; } else if (eff.type === 'empower') { text = "Empower"; iconClass = "buff"; emoji = "🔥"; } else if (eff.type === 'vulnerable') { text = "Vuln"; iconClass = "debuff"; emoji = "💔"; } else if (eff.type === 'barrier') { text = "Barrier"; iconClass = "buff"; emoji = "🛡️"; } else if (eff.type === 'regen') { text = "Regen"; iconClass = "buff"; emoji = "💖"; } else if (eff.type === 'thorns') { text = "Thorns"; iconClass = "buff"; emoji = "🌵"; } else if (eff.type === 'berserk') { text = "Berserk"; iconClass = "buff"; emoji = "😡"; } else if (eff.type === 'block') { text = "Block"; iconClass = "buff"; emoji = "🛡️"; } else if (eff.type === 'focused') { text = "Focus"; iconClass = "buff"; emoji = "👁️"; } else if (eff.type === 'marked') { text = "Marked"; iconClass = "debuff"; emoji = "🎯"; } else if (eff.type === 'doom') { text = "Doom"; iconClass = "debuff"; emoji = "⏳"; }
     let durText = eff.duration !== undefined ? Math.ceil(eff.duration/1000) + "s" : eff.charges + "x";
     if (mini) return `<div title="${text} (${durText})" style="font-size:0.9rem;">${emoji} ${durText}</div>`; 
-    return `<div class="status-icon ${iconClass}">${emoji} ${text} (${durText})</div>`;
+    return `<div class="status-icon ${iconClass}" style="background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 5px; margin: 2px;">${emoji} ${text} (${durText})</div>`;
 }
 
 function renderStatusEffects() {
     let pCont = document.getElementById('player-status-effects');
     if (pCont) { 
         pCont.innerHTML = ''; 
-        if (activeEnemies && activeEnemies.find(e => e.hp > 0 && enemySkillsData[e.skill] && enemySkillsData[e.skill].aura === 'intimidate')) { pCont.innerHTML += `<div class="status-icon debuff" title="Intimidated">💀 Intimidated</div>`; } 
+        if (activeEnemies && activeEnemies.find(e => e.hp > 0 && enemySkillsData[e.skill] && enemySkillsData[e.skill].aura === 'intimidate')) { pCont.innerHTML += `<div class="status-icon debuff" style="background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 5px; margin: 2px;" title="Intimidated">💀 Intimidated</div>`; } 
         if (player.activeEffects) { player.activeEffects.forEach(eff => { pCont.innerHTML += createStatusHtml(eff); }); } 
     }
     activeEnemies.forEach(e => { 
@@ -842,9 +893,9 @@ function selectTarget(id) {
     let targetEnemy = activeEnemies.find(e => e.id === id && !e.isDead && e.hp > 0); 
     if (!targetEnemy) return;
     selectedTargetId = id; 
-    document.querySelectorAll('.enemy-unit').forEach(el => el.classList.remove('targeted')); 
+    document.querySelectorAll('.enemy-unit').forEach(el => el.style.filter = ""); 
     let targetEl = document.getElementById(`enemy-${id}`); 
-    if (targetEl) targetEl.classList.add('targeted');
+    if (targetEl) targetEl.style.filter = "drop-shadow(0 0 10px #e74c3c)";
 }
 
 // --- COMBAT CORE & RENDERING ---
@@ -859,7 +910,7 @@ function updateCombatStatsPanel() {
     let panel = document.getElementById('combat-stats-panel'); 
     let stats = getPlayerStats(); 
     let d = getTotalDamage(); 
-    panel.innerHTML = `<div class="combat-stats-icon" id="player-combat-icon">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div><div><p>⚔️ ${d.pDmg} P / ${d.mDmg} M</p><p>⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p><p>🎯 ${Math.round(stats.crit * 100)}% Crit</p></div><div><p>🛡️ ${stats.pDef} P / ${stats.mDef} M</p><p>💨 ${Math.round(stats.evasion * 100)}% Ddg</p><p>🍀 ${Math.round(stats.luck * 100)}% Lck</p></div>`; 
+    panel.innerHTML = `<div style="font-size: 2.5rem;">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div><div><p style="margin: 2px 0;">⚔️ ${d.pDmg} P / ${d.mDmg} M</p><p style="margin: 2px 0;">⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p><p style="margin: 2px 0;">🎯 ${Math.round(stats.crit * 100)}% Crit</p></div><div><p style="margin: 2px 0;">🛡️ ${stats.pDef} P / ${stats.mDef} M</p><p style="margin: 2px 0;">💨 ${Math.round(stats.evasion * 100)}% Ddg</p><p style="margin: 2px 0;">🍀 ${Math.round(stats.luck * 100)}% Lck</p></div>`; 
     document.getElementById('run-runes-text').innerText = runStats.runes; 
 }
 
@@ -867,12 +918,45 @@ function playBattleStartAnimation() {
     let overlay = document.getElementById('battle-start-overlay'); 
     let swords = document.getElementById('crossed-swords'); 
     if(overlay && swords) { 
-        overlay.style.display = 'flex'; swords.classList.remove('animate-swords'); void swords.offsetWidth; swords.classList.add('animate-swords'); setTimeout(() => { overlay.style.display = 'none'; }, 1000); 
+        overlay.style.display = 'flex'; swords.style.transform = 'scale(0.1)'; swords.style.opacity = '0';
+        setTimeout(() => { swords.style.transition = 'all 0.5s ease-out'; swords.style.transform = 'scale(1.5)'; swords.style.opacity = '1'; }, 50);
+        setTimeout(() => { overlay.style.display = 'none'; }, 1000); 
     } 
 }
 
-function spawnFloatingText(targetId, text, className) { let targetDiv = document.getElementById(targetId); if(!targetDiv) return; let ft = document.createElement('div'); ft.className = `floating-text ${className}`; ft.innerText = text; let offsetX = (Math.random() * 40) - 20; ft.style.left = `calc(50% + ${offsetX}px)`; ft.style.top = '10px'; targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500); }
-function spawnLootDrop(targetId, type) { let targetDiv = document.getElementById(targetId); if(!targetDiv) return; let emoji = type === 'rune' ? '🌀' : '🪙'; let ft = document.createElement('div'); ft.className = 'loot-drop'; ft.innerText = emoji; let dirX = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()); ft.style.setProperty('--dirX', dirX); ft.style.left = '50%'; ft.style.top = '30%'; targetDiv.appendChild(ft); setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1500); }
+function spawnFloatingText(targetId, text, className) { 
+    let targetDiv = document.getElementById(targetId); if(!targetDiv) return; 
+    let ft = document.createElement('div'); 
+    ft.style.position = 'absolute'; ft.style.fontWeight = 'bold'; ft.style.zIndex = '100'; ft.style.textShadow = '0 2px 4px #000';
+    if(className === 'float-dmg') { ft.style.color = '#fff'; ft.style.fontSize = '1.2rem'; }
+    if(className === 'float-crit') { ft.style.color = '#f1c40f'; ft.style.fontSize = '1.5rem'; }
+    if(className === 'float-heal') { ft.style.color = '#2ecc71'; ft.style.fontSize = '1.2rem'; }
+    if(className === 'float-miss') { ft.style.color = '#bdc3c7'; ft.style.fontSize = '1rem'; }
+    if(className === 'float-enemy-dmg') { ft.style.color = '#e74c3c'; ft.style.fontSize = '1.2rem'; }
+    
+    ft.innerText = text; 
+    let offsetX = (Math.random() * 40) - 20; 
+    ft.style.left = `calc(50% + ${offsetX}px)`; ft.style.top = '10px'; 
+    ft.style.transition = 'all 1s ease-out';
+    targetDiv.appendChild(ft); 
+    setTimeout(() => { ft.style.transform = 'translateY(-40px)'; ft.style.opacity = '0'; }, 50);
+    setTimeout(() => { if(ft.parentElement) ft.remove(); }, 1050); 
+}
+
+function spawnLootDrop(targetId, type) { 
+    let targetDiv = document.getElementById(targetId); if(!targetDiv) return; 
+    let emoji = type === 'rune' ? '🌀' : '🪙'; 
+    let ft = document.createElement('div'); 
+    ft.innerText = emoji; 
+    ft.style.position = 'absolute'; ft.style.fontSize = '1.5rem'; ft.style.zIndex = '90'; ft.style.filter = 'drop-shadow(0 2px 2px #000)';
+    let dirX = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()); 
+    ft.style.left = '50%'; ft.style.top = '30%'; 
+    ft.style.transition = 'all 0.8s cubic-bezier(.25,.8,.25,1)';
+    targetDiv.appendChild(ft); 
+    setTimeout(() => { ft.style.transform = `translate(${dirX * 60}px, -40px) scale(1.5)`; }, 50);
+    setTimeout(() => { ft.style.transform = `translate(${dirX * 80}px, 20px) scale(1)`; ft.style.opacity = '0'; }, 400);
+    setTimeout(() => { if(ft.parentElement) ft.remove(); }, 850); 
+}
 
 function summonEnemyMidBattle(enemyId, hpOverride = null) {
     let template = null; 
@@ -935,7 +1019,7 @@ function startTestBattle() {
     let container = document.getElementById('enemy-container'); let textEl = document.getElementById('level-wave-text'); let mutatorEl = document.getElementById('mutator-display'); if(mutatorEl) mutatorEl.style.display = 'none'; activeMutator = null; container.innerHTML = ''; activeEnemies = []; selectedTargetId = null;
     textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[TRAINING GROUND]</span><br><span style="color:#9b59b6; text-shadow: 0 0 10px #9b59b6;">⚠️ TARGET DUMMY ⚠️</span>`;
     let dummyHp = 999999; let dummy = { id: 0, maxHp: dummyHp, hp: dummyHp, pAtk: 0, mAtk: 0, pDef: 9999, mDef: 9999, exp: 0, skill: 'dummy', attackProgress: 0, activeEffects: [], isDead: false, isBoss: true, spd: 1, atkSpd: 0.1, name: "Training Dummy" }; activeEnemies.push(dummy);
-    container.innerHTML = `<div class="enemy-unit boss" id="enemy-0" onclick="selectTarget(0)"><div class="emoji" style="font-size: 5rem;">🎯</div><div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">Training Dummy</div><div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-0"></div></div><div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none;"></div></div><div class="mini-hp-text" id="enemy-hp-text-0">${dummyHp}/${dummyHp}</div><div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div><div class="boss-skill-badge" title="Immune to most damage">🛡️ 9999 DEF/MDEF</div></div>`;
+    container.innerHTML = `<div class="enemy-unit boss" id="enemy-0" onclick="selectTarget(0)" style="display:flex; flex-direction:column; align-items:center; cursor:pointer;"><div class="emoji" style="font-size: 5rem;">🎯</div><div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px; color:#fff; text-shadow:0 1px 2px #000;">Training Dummy</div><div class="mini-bar-container" style="width:60px; height:8px; background:rgba(0,0,0,0.5);"><div class="mini-bar-fill" id="enemy-hp-bar-0" style="height:100%; background:#e74c3c;"></div></div><div class="mini-bar-container" style="width:60px; height: 6px; margin-top: 2px; background:rgba(0,0,0,0.5);"><div class="mini-bar-fill" id="enemy-atb-bar-0" style="background: #f1c40f; width: 0%; transition: none; height:100%;"></div></div><div class="mini-hp-text" id="enemy-hp-text-0" style="font-size:0.8rem; color:#fff; font-weight:bold;">${dummyHp}/${dummyHp}</div><div id="enemy-status-0" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div><div class="boss-skill-badge" style="background:#34495e; color:#fff; padding:2px 8px; border-radius:10px; font-size:0.7rem; border:1px solid #7f8c8d; margin-top:5px;">🛡️ 9999 DEF/MDEF</div></div>`;
     player.attackProgress = 95; dummy.attackProgress = 0; let pAtb = document.getElementById('player-atb'); if(pAtb) pAtb.style.width = '95%';
     renderStatusEffects(); playBattleStartAnimation(); setTimeout(() => { waveManager.isUpgrading = false; startCombatLoop(); }, 1500); 
 }
@@ -970,12 +1054,13 @@ function getLevelAndWave() {
 
 function renderBossUI(id, name, emoji, hp, bSkill) {
     let container = document.getElementById('enemy-container');
-    container.innerHTML += `<div class="enemy-unit boss" id="enemy-${id}" onclick="selectTarget(${id})"><div class="emoji" style="font-size: 4rem;">${emoji}</div><div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px;">${name}</div><div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div><div class="mini-bar-container" style="height: 6px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div><div class="mini-hp-text" id="enemy-hp-text-${id}">${hp}/${hp}</div><div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>${bSkill && bSkill.name ? `<div class="boss-skill-badge" title="${bSkill.desc}">${bSkill.icon || '🔥'} ${bSkill.name}</div>` : ''}</div>`;
+    container.innerHTML += `<div class="enemy-unit boss" id="enemy-${id}" onclick="selectTarget(${id})" style="display:flex; flex-direction:column; align-items:center; cursor:pointer;"><div class="emoji" style="font-size: 5rem; filter:drop-shadow(0 5px 5px rgba(0,0,0,0.5));">${emoji}</div><div class="enemy-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 4px; color:#fff; text-shadow:0 1px 2px #000;">${name}</div><div class="mini-bar-container" style="width:60px; height:8px; background:rgba(0,0,0,0.5);"><div class="mini-bar-fill" id="enemy-hp-bar-${id}" style="height:100%; background:#e74c3c;"></div></div><div class="mini-bar-container" style="width:60px; height: 6px; margin-top: 2px; background:rgba(0,0,0,0.5);"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none; height:100%;"></div></div><div class="mini-hp-text" id="enemy-hp-text-${id}" style="font-size:0.8rem; color:#fff; font-weight:bold;">${hp}/${hp}</div><div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div>${bSkill && bSkill.name ? `<div class="boss-skill-badge" style="background:#34495e; color:#fff; padding:2px 8px; border-radius:10px; font-size:0.7rem; border:1px solid #7f8c8d; margin-top:5px;">${bSkill.icon || '🔥'} ${bSkill.name}</div>` : ''}</div>`;
 }
 
 function renderNormalEnemyUI(id, enemyData, emoji, isElite) {
-    let container = document.getElementById('enemy-container'); let eliteClass = isElite ? 'elite' : '';
-    container.innerHTML += `<div class="enemy-unit ${eliteClass}" id="enemy-${id}" onclick="selectTarget(${id})"><div class="emoji">${emoji}</div><div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px;">${enemyData.name}</div><div class="mini-bar-container"><div class="mini-bar-fill" id="enemy-hp-bar-${id}"></div></div><div class="mini-bar-container" style="height: 4px; margin-top: 2px;"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none;"></div></div><div class="mini-hp-text" id="enemy-hp-text-${id}">${enemyData.hp}/${enemyData.hp}</div><div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div></div>`;
+    let container = document.getElementById('enemy-container'); 
+    let eliteStyle = isElite ? 'filter: drop-shadow(0 0 10px #f1c40f);' : 'filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));';
+    container.innerHTML += `<div class="enemy-unit" id="enemy-${id}" onclick="selectTarget(${id})" style="display:flex; flex-direction:column; align-items:center; cursor:pointer;"><div class="emoji" style="font-size: 3.5rem; ${eliteStyle}">${emoji}</div><div class="enemy-name" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 2px; color:#fff; text-shadow:0 1px 2px #000;">${enemyData.name}</div><div class="mini-bar-container" style="width:50px; height:6px; background:rgba(0,0,0,0.5);"><div class="mini-bar-fill" id="enemy-hp-bar-${id}" style="height:100%; background:#e74c3c;"></div></div><div class="mini-bar-container" style="width:50px; height: 4px; margin-top: 2px; background:rgba(0,0,0,0.5);"><div class="mini-bar-fill" id="enemy-atb-bar-${id}" style="background: #f1c40f; width: 0%; transition: none; height:100%;"></div></div><div class="mini-hp-text" id="enemy-hp-text-${id}" style="font-size:0.7rem; color:#fff; font-weight:bold;">${enemyData.hp}/${enemyData.hp}</div><div id="enemy-status-${id}" style="display:flex; justify-content:center; gap:2px; margin-top:2px; height:15px; color: white;"></div></div>`;
 }
 
 function spawnEnemyPack() {
@@ -988,9 +1073,23 @@ function spawnEnemyPack() {
     
     if (!biomeEnemies || biomeEnemies.length === 0) biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, pAtk: 2, mAtk: 0, pDef: 1, mDef: 1, spd: 10, atkSpd: 1.0, exp: 10, skill: null, loot: {} }];
 
-    let gameScreen = document.getElementById('screen-game');
-    if (stageInfo.biome && stageInfo.biome.background) { gameScreen.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.7), rgba(44, 62, 80, 0.9)), url('${stageInfo.biome.background}')`; gameScreen.style.backgroundSize = 'cover'; gameScreen.style.backgroundPosition = 'center'; gameScreen.style.backgroundRepeat = 'no-repeat'; } 
-    else { gameScreen.style.backgroundImage = 'none'; gameScreen.style.backgroundColor = '#2c3e50'; }
+    // --- DYNAMIC BACKGROUND INJECTION (PER SUBSTAGE) ---
+    let bgLayer = document.getElementById('battle-bg-layer');
+    if (bgLayer) {
+        if (stageInfo.biome && stageInfo.biome.backgrounds && stageInfo.biome.backgrounds[stageInfo.substageIndex]) {
+            // Pulls the specific image for Stage 1-1, 1-2, etc.
+            let currentBg = stageInfo.biome.backgrounds[stageInfo.substageIndex];
+            bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('${currentBg}')`;
+            
+        } else if (stageInfo.biome && stageInfo.biome.background) {
+            // Fallback just in case you only defined one background for the whole biome
+            bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('${stageInfo.biome.background}')`;
+            
+        } else {
+            // Ultimate fallback if no images are set yet
+            bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('default-battle-bg.jpg')`;
+        }
+    }
 
     let tier1 = biomeEnemies.slice(0, 3); let tier2 = biomeEnemies.length >= 6 ? biomeEnemies.slice(3, 6) : tier1; let tier3 = biomeEnemies.length >= 8 ? biomeEnemies.slice(6, 8) : tier2;
     let isOutskirts = stageInfo.substageIndex === 0; let isDepths = stageInfo.substageIndex === 2; let isRuins = stageInfo.substageIndex === 3; let isGauntlet = stageInfo.substageIndex === 4; let isLair = stageInfo.substageIndex === 5;
@@ -1109,7 +1208,10 @@ function handleEnemyDeath(target, unitId, unitDiv) {
     if (unitId === selectedTargetId) selectedTargetId = null;
 
     if(unitDiv) { 
-        unitDiv.classList.add('dead'); setTimeout(() => unitDiv.style.display = 'none', 300); 
+        unitDiv.style.transition = 'all 0.3s ease-out';
+        unitDiv.style.opacity = '0';
+        unitDiv.style.transform = 'scale(0.5)';
+        setTimeout(() => unitDiv.style.display = 'none', 300); 
     }
 
     try {
@@ -1161,7 +1263,20 @@ function animateHit(unitId, damageDealt, isCrit) {
     let unitDiv = document.getElementById(`enemy-${unitId}`);
     let hpBarDiv = document.getElementById(`enemy-hp-bar-${unitId}`); let hpTextDiv = document.getElementById(`enemy-hp-text-${unitId}`);
     let target = activeEnemies.find(e => e.id === unitId); if (!target) return;
-    if (unitDiv) { unitDiv.classList.add('hit-anim'); if(isCrit) { unitDiv.style.filter = "drop-shadow(0 0 10px red)"; spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit"); } else { spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg"); } setTimeout(() => { unitDiv.classList.remove('hit-anim'); unitDiv.style.filter = ""; }, 200); }
+    if (unitDiv) { 
+        unitDiv.style.transition = 'none';
+        unitDiv.style.transform = 'translateX(-5px)';
+        unitDiv.style.filter = isCrit ? "drop-shadow(0 0 10px red)" : "brightness(1.5) sepia(1)";
+        
+        if(isCrit) { spawnFloatingText(`enemy-${unitId}`, `${damageDealt} CRIT!`, "float-crit"); } 
+        else { spawnFloatingText(`enemy-${unitId}`, damageDealt, "float-dmg"); } 
+        
+        setTimeout(() => { 
+            unitDiv.style.transition = 'all 0.2s';
+            unitDiv.style.transform = 'translateX(0px)';
+            unitDiv.style.filter = ""; 
+        }, 100); 
+    }
     let displayHp = Math.max(0, Math.ceil(target.hp));
     if (hpBarDiv) hpBarDiv.style.width = (displayHp / target.maxHp) * 100 + '%'; if (hpTextDiv) hpTextDiv.innerText = `${displayHp}/${target.maxHp}`;
     if (target.hp <= 0 && !target.isDead) { handleEnemyDeath(target, unitId, unitDiv); }
@@ -1174,7 +1289,13 @@ function executePlayerAttack() {
     if (hasStatus(player, 'bleed')) { let bDmg = Math.floor(getMaxHealth() * 0.05); player.currentHealth -= bDmg; updatePlayerHealthBar(); spawnFloatingText('player-combat-area', "BLEED -" + bDmg, "float-enemy-dmg"); if (player.currentHealth <= 0) { triggerGameOver("Died from severe blood loss"); return; } }
     if (consumeCharge(player, 'blind')) { spawnFloatingText('player-combat-area', "BLIND MISS!", "float-miss"); return; }
     let isEmpowered = consumeCharge(player, 'empower');
-    let pIcon = document.getElementById('player-combat-icon'); if(pIcon) { pIcon.classList.add('player-attack-anim'); setTimeout(() => pIcon.classList.remove('player-attack-anim'), 200); }
+    
+    let pIcon = document.getElementById('player-combat-icon'); 
+    if(pIcon) { 
+        pIcon.style.transition = 'none'; pIcon.style.transform = 'translateY(-20px) scale(1.1)';
+        setTimeout(() => { pIcon.style.transition = 'all 0.2s'; pIcon.style.transform = 'translateY(0) scale(1)'; }, 100); 
+    }
+    
     let strikes = (Math.random() < runStats.doubleHitChance) ? 2 : 1;
 
     for (let s = 0; s < strikes; s++) {
@@ -1240,7 +1361,12 @@ function executeEnemyAttack(e) {
     if (consumeCharge(e, 'blind')) { spawnFloatingText(`enemy-${e.id}`, "BLIND MISS!", "float-miss"); return; }
     
     let isEmpowered = consumeCharge(e, 'empower');
-    let unitDiv = document.getElementById(`enemy-${e.id}`); if(unitDiv) { unitDiv.classList.add('attack-anim'); setTimeout(() => unitDiv.classList.remove('attack-anim'), 300); }
+    
+    let unitDiv = document.getElementById(`enemy-${e.id}`); 
+    if(unitDiv) { 
+        unitDiv.style.transition = 'none'; unitDiv.style.transform = 'translateY(15px) scale(1.1)';
+        setTimeout(() => { unitDiv.style.transition = 'all 0.2s'; unitDiv.style.transform = 'translateY(0) scale(1)'; }, 150); 
+    }
 
     let stats = getPlayerStats(); let incomingDmg = 0;
     let skillData = e.skill ? enemySkillsData[e.skill] : null; let isMagic = skillData && skillData.isMagic; let ignoresEvasion = skillData && skillData.ignoresEvasion; let isPiercing = skillData && skillData.isPiercing;
@@ -1269,7 +1395,11 @@ function executeEnemyAttack(e) {
     if (hasStatus(player, 'thorns') && incomingDmg > 0) { let tDmg = Math.floor(incomingDmg * 0.2); e.hp -= tDmg; animateHit(e.id, tDmg, false); }
     if (skillData && skillData.trigger === 'post_attack') { if (skillData.lifestealFraction && incomingDmg > 0) applyHeal(e, Math.ceil(incomingDmg * skillData.lifestealFraction)); if (skillData.drainPlayerATB && incomingDmg > 0) { player.attackProgress = 0; let pAtb = document.getElementById('player-atb'); if(pAtb) pAtb.style.width = '0%'; spawnFloatingText('player-combat-area', skillData.floatingText || "FATIGUED!", "float-miss"); } }
     if (skillData && skillData.summonEnemyId && skillData.trigger === 'attack') { let aliveCount = activeEnemies.filter(en => en.hp > 0 && !en.isDead).length; let maxAllowed = skillData.maxMinionsOnBoard || 5; if (aliveCount < maxAllowed) { summonEnemyMidBattle(skillData.summonEnemyId, skillData.summonHpOverride); } }
-    let container = document.getElementById('game-container'); container.style.backgroundColor = 'rgba(231, 76, 60, 0.4)'; setTimeout(() => { container.style.backgroundColor = '#2c3e50'; }, 100);
+    
+    let container = document.getElementById('game-container'); 
+    container.style.transition = 'none'; container.style.boxShadow = 'inset 0 0 50px rgba(231, 76, 60, 0.8)'; 
+    setTimeout(() => { container.style.transition = 'all 0.2s'; container.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)'; }, 100);
+    
     if (player.currentHealth <= 0) { triggerGameOver("Killed by " + e.name); }
 }
 
@@ -1302,9 +1432,19 @@ function packDefeated() {
 }
 
 function showUpgradeShop(shopPool) {
-    document.getElementById('wave-upgrade-ui').style.display = 'flex'; document.getElementById('shop-runes-display').innerText = runStats.runes; let list = document.getElementById('upgrade-list'); list.innerHTML = '';
+    document.getElementById('global-modal-backdrop').style.display='block';
+    document.getElementById('wave-upgrade-ui').style.display = 'flex'; 
+    document.getElementById('shop-runes-display').innerText = runStats.runes; 
+    let list = document.getElementById('upgrade-list'); list.innerHTML = '';
+    
     for (let i = shopPool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shopPool[i], shopPool[j]] = [shopPool[j], shopPool[i]]; }
-    shopPool.slice(0, 3).forEach(u => { let canAfford = runStats.runes >= u.cost; let lvlText = u.rarity === 'uncommon' ? ` <span class="lvl-badge">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : ''; list.innerHTML += `<button class="upgrade-btn rarity-${u.rarity} ${canAfford ? '' : 'disabled'}" onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])"><div style="font-size: 3rem; margin-bottom: 10px;">${u.icon || '✨'}</div><h4 style="font-size: 0.8rem; text-transform: uppercase; margin: 0; line-height: 1.2; color: #fff;">${u.name}${lvlText}</h4><p style="font-size: 0.9rem; font-weight: bold; margin-top: 5px; color: #f1c40f;">${u.desc}</p>${u.cost > 0 ? `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #00e5ff;">${u.cost} 🌀</div>` : `<div style="margin-top: auto; font-size: 1rem; font-weight: bold; color: #2ecc71;">FREE</div>`}</button>`; });
+    shopPool.slice(0, 3).forEach(u => { 
+        let canAfford = runStats.runes >= u.cost; 
+        let lvlText = u.rarity === 'uncommon' ? ` <span style="font-size:0.7rem; color:#bdc3c7;">(Lv ${u.currentLvl + 1}/${u.maxLevel})</span>` : ''; 
+        let opacity = canAfford ? '1' : '0.5';
+        
+        list.innerHTML += `<button class="action-btn" style="opacity: ${opacity}; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px; width: 100%; display: flex; align-items: center; justify-content: space-between;" ${canAfford ? `onclick="buyRunUpgrade(window.currentShopPool[${shopPool.indexOf(u)}])"` : ''}><div style="display: flex; align-items: center; gap: 15px;"><div style="font-size: 2.5rem;">${u.icon || '✨'}</div><div style="text-align: left;"><h4 style="font-size: 0.9rem; margin: 0; color: #fff;">${u.name}${lvlText}</h4><p style="font-size: 0.8rem; margin: 2px 0 0 0; color: #f1c40f;">${u.desc}</p></div></div><div style="font-size: 1.1rem; font-weight: bold; color: ${u.cost > 0 ? '#00e5ff' : '#2ecc71'};">${u.cost > 0 ? u.cost + ' 🌀' : 'FREE'}</div></button>`; 
+    });
 }
 
 function buyRunUpgrade(upgrade) {
@@ -1314,12 +1454,63 @@ function buyRunUpgrade(upgrade) {
     updateCombatStatsPanel(); continueToNextWave();
 }
 
-function showBossClearUI() { document.getElementById('boss-clear-ui').style.display = 'flex'; document.getElementById('boss-ui-gold').innerText = runStats.goldGained; document.getElementById('boss-ui-gems').innerText = runStats.gemsGained; document.getElementById('boss-ui-exp').innerText = runStats.expGained; renderMaterialRecap('boss-materials-recap'); }
-function continueToNextWave() { document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none'; waveManager.wave++; waveManager.isUpgrading = true; spawnEnemyPack(); playBattleStartAnimation(); setTimeout(() => { waveManager.isUpgrading = false; waveManager.transitioning = false; startCombatLoop(); }, 1500); }
-function endRun(titleText, titleColor, killerText = "") { isTestMode = false; document.getElementById('debug-panel').style.display = 'none'; clearInterval(combatTickInterval); document.getElementById('wave-upgrade-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none'; let summaryUi = document.getElementById('run-summary-ui'); let titleEl = document.getElementById('run-summary-title'); let killerEl = document.getElementById('run-summary-killer'); titleEl.innerText = titleText; titleEl.style.color = titleColor; if (killerEl) { if (killerText) { killerEl.innerText = killerText; killerEl.style.display = 'block'; } else { killerEl.style.display = 'none'; } } document.getElementById('summary-kills').innerText = runStats.enemiesKilled; document.getElementById('summary-gold').innerText = runStats.goldGained; document.getElementById('summary-exp').innerText = runStats.expGained; renderMaterialRecap('summary-materials-recap'); summaryUi.style.display = 'flex'; waveManager.transitioning = false; waveManager.isUpgrading = false; }
+function showBossClearUI() { 
+    document.getElementById('global-modal-backdrop').style.display='block';
+    document.getElementById('boss-clear-ui').style.display = 'flex'; 
+    document.getElementById('boss-ui-gold').innerText = runStats.goldGained; 
+    document.getElementById('boss-ui-gems').innerText = runStats.gemsGained; 
+    document.getElementById('boss-ui-exp').innerText = runStats.expGained; 
+    renderMaterialRecap('boss-materials-recap'); 
+}
+
+function continueToNextWave() { 
+    document.getElementById('global-modal-backdrop').style.display='none';
+    document.getElementById('wave-upgrade-ui').style.display = 'none'; 
+    document.getElementById('boss-clear-ui').style.display = 'none'; 
+    waveManager.wave++; waveManager.isUpgrading = true; 
+    spawnEnemyPack(); playBattleStartAnimation(); 
+    setTimeout(() => { waveManager.isUpgrading = false; waveManager.transitioning = false; startCombatLoop(); }, 1500); 
+}
+
+function endRun(titleText, titleColor, killerText = "") { 
+    isTestMode = false; document.getElementById('debug-panel').style.display = 'none'; 
+    clearInterval(combatTickInterval); 
+    
+    document.getElementById('global-modal-backdrop').style.display='block';
+    document.getElementById('wave-upgrade-ui').style.display = 'none'; 
+    document.getElementById('boss-clear-ui').style.display = 'none'; 
+    
+    let summaryUi = document.getElementById('run-summary-ui'); 
+    let titleEl = document.getElementById('run-summary-title'); 
+    let killerEl = document.getElementById('run-summary-killer'); 
+    
+    titleEl.innerText = titleText; titleEl.style.color = titleColor; 
+    if (killerEl) { if (killerText) { killerEl.innerText = killerText; killerEl.style.display = 'block'; } else { killerEl.style.display = 'none'; } } 
+    
+    document.getElementById('summary-kills').innerText = runStats.enemiesKilled; 
+    document.getElementById('summary-gold').innerText = runStats.goldGained; 
+    document.getElementById('summary-exp').innerText = runStats.expGained; 
+    renderMaterialRecap('summary-materials-recap'); 
+    
+    summaryUi.style.display = 'flex'; waveManager.transitioning = false; waveManager.isUpgrading = false; 
+}
+
 function triggerGameOver(killerText = "Slain by Unknown Forces") { player.currentHealth = 0; updatePlayerHealthBar(); endRun('DEFEATED', '#e74c3c', killerText); }
 function fleeCombat() { endRun('RETREATED', '#f39c12'); }
-function collectRunRewards() { let hStats = player.heroStats[player.currentHero]; if (hStats) { hStats.exp += runStats.expGained; let leveledUp = false; while(hStats.exp >= hStats.expNeeded) { hStats.level++; hStats.exp -= hStats.expNeeded; hStats.expNeeded = Math.floor(hStats.expNeeded * 1.5); player.talentPoints++; player.maxHealth += 25; leveledUp = true; } if(leveledUp) showNotification(`🎉 Level Up! You are now Level ${hStats.level}!`); } document.getElementById('run-summary-ui').style.display = 'none'; document.getElementById('boss-clear-ui').style.display = 'none'; openMenu('stages'); updateUI(); waveManager.transitioning = false; waveManager.isUpgrading = false; }
+
+function collectRunRewards() { 
+    let hStats = player.heroStats[player.currentHero]; 
+    if (hStats) { 
+        hStats.exp += runStats.expGained; let leveledUp = false; 
+        while(hStats.exp >= hStats.expNeeded) { hStats.level++; hStats.exp -= hStats.expNeeded; hStats.expNeeded = Math.floor(hStats.expNeeded * 1.5); player.talentPoints++; player.maxHealth += 25; leveledUp = true; } 
+        if(leveledUp) showNotification(`🎉 Level Up! You are now Level ${hStats.level}!`); 
+    } 
+    document.getElementById('global-modal-backdrop').style.display='none';
+    document.getElementById('run-summary-ui').style.display = 'none'; 
+    document.getElementById('boss-clear-ui').style.display = 'none'; 
+    openMenu('stages'); updateUI(); waveManager.transitioning = false; waveManager.isUpgrading = false; 
+}
+
 function updateUI() { document.getElementById('gold-amount').innerText = player.gold; document.getElementById('gem-amount').innerText = player.gems; if (player.heroStats && player.heroStats[player.currentHero]) { let activeH = player.heroStats[player.currentHero]; document.getElementById('player-level-text').innerText = activeH.level; document.getElementById('player-exp-fill').style.width = ((activeH.exp / activeH.expNeeded) * 100) + '%'; document.getElementById('player-exp-text').innerText = activeH.exp + '/' + activeH.expNeeded; } document.getElementById('tp-amount').innerText = player.talentPoints; let elDmg = document.getElementById('talent-lvl-damage'); let elGold = document.getElementById('talent-lvl-gold'); if(elDmg && player.talents) elDmg.innerText = player.talents.damage || 0; if(elGold && player.talents) elGold.innerText = player.talents.gold || 0; }
 function generateRandomEquipment() { if (equipmentData && equipmentData.length > 0) { let baseItem = equipmentData[Math.floor(Math.random() * equipmentData.length)]; let statsCopy = {}; if (baseItem.stats) { for (let key in baseItem.stats) { statsCopy[key] = baseItem.stats[key]; } } return { name: baseItem.name, type: baseItem.slot, slot: baseItem.slot, icon: baseItem.icon, stats: statsCopy, onHit: baseItem.onHit || null, onHitTaken: baseItem.onHitTaken || null }; } const slots = ['head', 'body', 'legs', 'boots', 'weapon', 'leftHand', 'ring', 'amulet']; const slot = slots[Math.floor(Math.random() * slots.length)]; const prefixes = ['Rusty', 'Iron', 'Steel']; const prefix = prefixes[Math.floor(Math.random() * prefixes.length)]; const itemTypes = { 'head': { name: 'Helm', icon: '🪖', stats: ['pDef', 'mDef', 'maxHp'] }, 'body': { name: 'Armor', icon: '👕', stats: ['pDef', 'mDef', 'maxHp'] }, 'legs': { name: 'Greaves', icon: '👖', stats: ['pDef', 'spd', 'evasion'] }, 'boots': { name: 'Boots', icon: '🥾', stats: ['spd', 'evasion', 'mDef'] }, 'weapon': { name: 'Sword', icon: '🗡️', stats: ['pAtk', 'mAtk', 'atkSpd', 'crit'] }, 'leftHand': { name: 'Off-Hand', icon: '🛡️', stats: ['pDef', 'mDef', 'maxHp', 'mAtk', 'pAtk'] }, 'ring': { name: 'Ring', icon: '💍', stats: ['pAtk', 'mAtk', 'luck', 'crit'] }, 'amulet': { name: 'Amulet', icon: '🧿', stats: ['maxHp', 'luck', 'evasion'] } }; const itemDef = itemTypes[slot]; let fallbackStats = {}; let statName = itemDef.stats[0]; fallbackStats[statName] = 5; return { name: `${prefix} ${itemDef.name}`, type: slot, slot: slot, icon: itemDef.icon, stats: fallbackStats, onHit: null, onHitTaken: null }; }
 
