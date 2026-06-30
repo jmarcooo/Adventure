@@ -1,0 +1,122 @@
+{
+  "forest": {
+    "area_bosses": [
+      { "id": "forest_boss_0", "name": "Rabid Alpha Wolf", "emoji": "🐺", "baseHp": 150, "pAtk": 10, "mAtk": 0, "pDef": 5, "mDef": 2, "spd": 15, "atkSpd": 1.5, "exp": 80, "skill": "heavy_strike", "loot": { "common": "animal_bone", "uncommon": "wolf_pelt", "rare": "sharp_wolf_fang" } },
+      { "id": "forest_boss_1", "name": "Giant Web-Spinner", "emoji": "🕷️", "baseHp": 180, "pAtk": 12, "mAtk": 5, "pDef": 6, "mDef": 5, "spd": 13, "atkSpd": 1.2, "exp": 100, "skill": "poison_bite", "loot": { "common": "bug_shell", "uncommon": "spider_thread", "rare": "venom_sac" } },
+      { "id": "forest_boss_2", "name": "Corrupted Grizzly", "emoji": "🐻", "baseHp": 250, "pAtk": 18, "mAtk": 0, "pDef": 10, "mDef": 4, "spd": 8, "atkSpd": 0.8, "exp": 120, "skill": "bash", "loot": { "common": "animal_bone", "uncommon": "thick_bear_pelt", "rare": "heavy_bear_claw" } },
+      { "id": "forest_boss_3", "name": "Ancient Moss-Golem", "emoji": "🪨", "baseHp": 300, "pAtk": 15, "mAtk": 0, "pDef": 18, "mDef": 10, "spd": 6, "atkSpd": 0.6, "exp": 150, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "iron_ore", "rare": "sturdy_stone" } },
+      { "id": "forest_boss_4", "name": "Overgrown Guardian", "emoji": "👺", "baseHp": 350, "pAtk": 15, "mAtk": 15, "pDef": 12, "mDef": 12, "spd": 10, "atkSpd": 1.0, "exp": 180, "skill": "heal_pack", "loot": { "common": "plant_fiber", "uncommon": "sturdy_bark", "rare": "living_leaf", "very_rare": "natures_sap" } }
+    ],
+    "region_boss": {
+      "id": "troll_king", "name": "Great Forest Troll", "emoji": "🧌", "baseHp": 500, "pAtk": 25, "mAtk": 0, "pDef": 15, "mDef": 10, "spd": 8, "atkSpd": 0.8, "exp": 300, "skill": "bash", "loot": { "common": "foul_sweat", "uncommon": "scrap_hide", "rare": "troll_bone", "very_rare": "troll_blood", "super_rare": "troll_heart" }
+    }
+  },
+  "cave": {
+    "area_bosses": [
+      { "id": "cave_boss_0", "name": "Blind Goliath Bat", "emoji": "🦇", "baseHp": 200, "pAtk": 12, "mAtk": 0, "pDef": 6, "mDef": 6, "spd": 16, "atkSpd": 1.6, "exp": 100, "skill": "lifesteal_bite", "loot": { "common": "animal_bone", "uncommon": "torn_wing", "rare": "bat_ear" } },
+      { "id": "cave_boss_1", "name": "Toxic Viper Queen", "emoji": "🐍", "baseHp": 220, "pAtk": 15, "mAtk": 5, "pDef": 8, "mDef": 8, "spd": 15, "atkSpd": 1.4, "exp": 120, "skill": "poison_aura", "loot": { "common": "animal_bone", "uncommon": "snake_scale", "rare": "venom_sac" } },
+      { "id": "cave_boss_2", "name": "Crystal Crawler", "emoji": "🕷️", "baseHp": 250, "pAtk": 14, "mAtk": 10, "pDef": 12, "mDef": 15, "spd": 12, "atkSpd": 1.2, "exp": 140, "skill": "spell_shield", "loot": { "common": "bug_shell", "uncommon": "spider_thread", "rare": "spider_eye" } },
+      { "id": "cave_boss_3", "name": "Iron-bound Golem", "emoji": "🧱", "baseHp": 350, "pAtk": 20, "mAtk": 0, "pDef": 25, "mDef": 10, "spd": 5, "atkSpd": 0.5, "exp": 170, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "iron_ore", "rare": "core_fragment" } },
+      { "id": "cave_boss_4", "name": "Arachnid Broodmother", "emoji": "🕸️", "baseHp": 400, "pAtk": 18, "mAtk": 10, "pDef": 15, "mDef": 15, "spd": 14, "atkSpd": 1.2, "exp": 200, "skill": "poison_bite", "loot": { "common": "bug_shell", "uncommon": "venom_sac", "rare": "spider_eye" } }
+    ],
+    "region_boss": {
+      "id": "cave_serpent", "name": "Abyssal Serpent", "emoji": "🐉", "baseHp": 650, "pAtk": 20, "mAtk": 15, "pDef": 12, "mDef": 18, "spd": 15, "atkSpd": 1.4, "exp": 400, "skill": "poison_aura", "loot": { "common": "animal_bone", "uncommon": "snake_scale", "rare": "venom_sac", "very_rare": "viper_fang", "super_rare": "serpent_eye" }
+    }
+  },
+  "graveyard": {
+    "area_bosses": [
+      { "id": "grave_boss_0", "name": "Restless Knight", "emoji": "💀", "baseHp": 220, "pAtk": 15, "mAtk": 0, "pDef": 12, "mDef": 5, "spd": 10, "atkSpd": 1.0, "exp": 120, "skill": "revive", "loot": { "common": "animal_bone", "uncommon": "rusted_metal", "rare": "intact_skull" } },
+      { "id": "grave_boss_1", "name": "Plague Zombie", "emoji": "🧟", "baseHp": 280, "pAtk": 16, "mAtk": 0, "pDef": 8, "mDef": 8, "spd": 7, "atkSpd": 0.8, "exp": 140, "skill": "decay_touch", "loot": { "common": "foul_sweat", "uncommon": "scrap_hide", "rare": "acidic_goo" } },
+      { "id": "grave_boss_2", "name": "Howling Banshee", "emoji": "👻", "baseHp": 200, "pAtk": 0, "mAtk": 22, "pDef": 5, "mDef": 20, "spd": 15, "atkSpd": 1.5, "exp": 160, "skill": "ethereal", "loot": { "common": "ectoplasm", "uncommon": "torn_cloth", "rare": "soul_shard" } },
+      { "id": "grave_boss_3", "name": "Bone Amalgam", "emoji": "🦴", "baseHp": 350, "pAtk": 20, "mAtk": 0, "pDef": 18, "mDef": 10, "spd": 8, "atkSpd": 0.9, "exp": 190, "skill": "bash", "loot": { "common": "animal_bone", "uncommon": "rusted_metal", "rare": "intact_skull" } },
+      { "id": "grave_boss_4", "name": "Undead Executioner", "emoji": "🪓", "baseHp": 400, "pAtk": 25, "mAtk": 5, "pDef": 15, "mDef": 12, "spd": 9, "atkSpd": 1.0, "exp": 220, "skill": "heavy_strike", "loot": { "common": "rusted_metal", "uncommon": "intact_skull", "rare": "ancient_coin" } }
+    ],
+    "region_boss": {
+      "id": "great_skeleton", "name": "The Skeleton King", "emoji": "👑", "baseHp": 750, "pAtk": 28, "mAtk": 10, "pDef": 20, "mDef": 15, "spd": 11, "atkSpd": 1.1, "exp": 500, "skill": "intimidate_revive", "loot": { "common": "animal_bone", "uncommon": "rusted_metal", "rare": "intact_skull", "very_rare": "ancient_coin", "super_rare": "cursed_totem" }
+    }
+  },
+  "ruins": {
+    "area_bosses": [
+      { "id": "ruins_boss_0", "name": "Ruin Crawler", "emoji": "🪲", "baseHp": 300, "pAtk": 18, "mAtk": 0, "pDef": 15, "mDef": 5, "spd": 12, "atkSpd": 1.2, "exp": 150, "skill": "poison_bite", "loot": { "common": "bug_shell", "uncommon": "pebbles", "rare": "venom_sac" } },
+      { "id": "ruins_boss_1", "name": "Possessed Armor", "emoji": "🛡️", "baseHp": 450, "pAtk": 22, "mAtk": 5, "pDef": 25, "mDef": 8, "spd": 7, "atkSpd": 0.8, "exp": 180, "skill": "high_armor", "loot": { "common": "rusted_metal", "uncommon": "iron_ore", "rare": "sturdy_stone" } },
+      { "id": "ruins_boss_2", "name": "Stone Gargoyle", "emoji": "🦇", "baseHp": 380, "pAtk": 20, "mAtk": 10, "pDef": 18, "mDef": 12, "spd": 11, "atkSpd": 1.1, "exp": 200, "skill": "heavy_strike", "loot": { "common": "pebbles", "uncommon": "sturdy_stone", "rare": "bat_ear" } },
+      { "id": "ruins_boss_3", "name": "Ancient Wisp", "emoji": "🔥", "baseHp": 250, "pAtk": 0, "mAtk": 30, "pDef": 5, "mDef": 25, "spd": 16, "atkSpd": 1.6, "exp": 220, "skill": "ethereal", "loot": { "common": "magic_dust", "uncommon": "glowing_ember", "rare": "soul_shard" } },
+      { "id": "ruins_boss_4", "name": "Ruin Sentinel", "emoji": "🪦", "baseHp": 550, "pAtk": 25, "mAtk": 0, "pDef": 30, "mDef": 15, "spd": 6, "atkSpd": 0.7, "exp": 250, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "iron_ore", "rare": "core_fragment" } }
+    ],
+    "region_boss": {
+      "id": "ancient_golem", "name": "Ancient Golem", "emoji": "🗿", "baseHp": 1000, "pAtk": 35, "mAtk": 0, "pDef": 40, "mDef": 20, "spd": 5, "atkSpd": 0.6, "exp": 600, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "iron_ore", "rare": "sturdy_stone", "very_rare": "core_fragment", "super_rare": "earth_heart" }
+    }
+  },
+  "coast": {
+    "area_bosses": [
+      { "id": "coast_boss_0", "name": "Mutated Crab", "emoji": "🦀", "baseHp": 400, "pAtk": 20, "mAtk": 0, "pDef": 20, "mDef": 8, "spd": 9, "atkSpd": 0.9, "exp": 180, "skill": "barbed", "loot": { "common": "bug_shell", "uncommon": "scrap_hide", "rare": "pebbles" } },
+      { "id": "coast_boss_1", "name": "Enchanting Siren", "emoji": "🧜‍♀️", "baseHp": 350, "pAtk": 5, "mAtk": 28, "pDef": 10, "mDef": 20, "spd": 13, "atkSpd": 1.3, "exp": 200, "skill": "heal_pack", "loot": { "common": "torn_cloth", "uncommon": "magic_dust", "rare": "soul_shard" } },
+      { "id": "coast_boss_2", "name": "Tide Hunter", "emoji": "🦈", "baseHp": 450, "pAtk": 25, "mAtk": 10, "pDef": 15, "mDef": 15, "spd": 12, "atkSpd": 1.2, "exp": 220, "skill": "heavy_strike", "loot": { "common": "animal_bone", "uncommon": "scrap_hide", "rare": "sharp_wolf_fang" } },
+      { "id": "coast_boss_3", "name": "Coral Serpent", "emoji": "🐉", "baseHp": 500, "pAtk": 22, "mAtk": 18, "pDef": 18, "mDef": 18, "spd": 11, "atkSpd": 1.1, "exp": 250, "skill": "poison_bite", "loot": { "common": "animal_bone", "uncommon": "snake_scale", "rare": "venom_sac" } },
+      { "id": "coast_boss_4", "name": "Abyssal Horror", "emoji": "🦑", "baseHp": 600, "pAtk": 30, "mAtk": 25, "pDef": 15, "mDef": 15, "spd": 10, "atkSpd": 1.0, "exp": 280, "skill": "lifesteal_bite", "loot": { "common": "sticky_fluid", "uncommon": "slime_gel", "rare": "acidic_goo" } }
+    ],
+    "region_boss": {
+      "id": "leviathan", "name": "Leviathan", "emoji": "🐋", "baseHp": 1200, "pAtk": 40, "mAtk": 30, "pDef": 25, "mDef": 25, "spd": 10, "atkSpd": 1.0, "exp": 800, "skill": "leviathan_spawns", "loot": { "common": "animal_bone", "uncommon": "snake_scale", "rare": "venom_sac", "very_rare": "viper_fang", "super_rare": "serpent_eye" }
+    }
+  },
+  "volcano": {
+    "area_bosses": [
+      { "id": "volcano_boss_0", "name": "Ember Bat", "emoji": "🦇", "baseHp": 350, "pAtk": 15, "mAtk": 25, "pDef": 10, "mDef": 15, "spd": 16, "atkSpd": 1.6, "exp": 200, "skill": "burn_touch", "loot": { "common": "animal_bone", "uncommon": "torn_wing", "rare": "glowing_ember" } },
+      { "id": "volcano_boss_1", "name": "Magma Slime", "emoji": "🔥", "baseHp": 450, "pAtk": 20, "mAtk": 20, "pDef": 15, "mDef": 15, "spd": 9, "atkSpd": 0.9, "exp": 230, "skill": "barbed", "loot": { "common": "sticky_fluid", "uncommon": "slime_gel", "rare": "glowing_ember" } },
+      { "id": "volcano_boss_2", "name": "Hellhound Alpha", "emoji": "🐺", "baseHp": 500, "pAtk": 30, "mAtk": 15, "pDef": 12, "mDef": 12, "spd": 14, "atkSpd": 1.4, "exp": 260, "skill": "heavy_strike", "loot": { "common": "animal_bone", "uncommon": "scrap_hide", "rare": "wolf_pelt" } },
+      { "id": "volcano_boss_3", "name": "Flame Elemental", "emoji": "☄️", "baseHp": 400, "pAtk": 10, "mAtk": 35, "pDef": 12, "mDef": 30, "spd": 12, "atkSpd": 1.2, "exp": 290, "skill": "burn_touch", "loot": { "common": "magic_dust", "uncommon": "glowing_ember", "rare": "soul_shard" } },
+      { "id": "volcano_boss_4", "name": "Obsidian Golem", "emoji": "🧱", "baseHp": 700, "pAtk": 28, "mAtk": 0, "pDef": 35, "mDef": 20, "spd": 7, "atkSpd": 0.7, "exp": 320, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "iron_ore", "rare": "core_fragment" } }
+    ],
+    "region_boss": {
+      "id": "infernal_dragon", "name": "Infernal Dragon", "emoji": "🐉", "baseHp": 1500, "pAtk": 50, "mAtk": 40, "pDef": 30, "mDef": 25, "spd": 11, "atkSpd": 1.1, "exp": 1000, "skill": "burn_touch", "loot": { "common": "animal_bone", "uncommon": "snake_scale", "rare": "glowing_ember", "very_rare": "core_fragment", "super_rare": "earth_heart" }
+    }
+  },
+  "tundra": {
+    "area_bosses": [
+      { "id": "tundra_boss_0", "name": "Dire Frost Wolf", "emoji": "🐺", "baseHp": 500, "pAtk": 30, "mAtk": 10, "pDef": 15, "mDef": 15, "spd": 15, "atkSpd": 1.5, "exp": 250, "skill": "chill_aura", "loot": { "common": "animal_bone", "uncommon": "scrap_hide", "rare": "wolf_pelt" } },
+      { "id": "tundra_boss_1", "name": "Ice Elemental", "emoji": "🧊", "baseHp": 650, "pAtk": 20, "mAtk": 30, "pDef": 25, "mDef": 25, "spd": 8, "atkSpd": 0.8, "exp": 280, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "sturdy_stone", "rare": "magic_dust" } },
+      { "id": "tundra_boss_2", "name": "Savage Yeti", "emoji": "🦍", "baseHp": 800, "pAtk": 40, "mAtk": 0, "pDef": 20, "mDef": 15, "spd": 9, "atkSpd": 0.9, "exp": 310, "skill": "bash", "loot": { "common": "animal_bone", "uncommon": "thick_bear_pelt", "rare": "heavy_bear_claw" } },
+      { "id": "tundra_boss_3", "name": "Frostbite Spider", "emoji": "🕷️", "baseHp": 550, "pAtk": 25, "mAtk": 20, "pDef": 18, "mDef": 18, "spd": 14, "atkSpd": 1.4, "exp": 340, "skill": "poison_bite", "loot": { "common": "bug_shell", "uncommon": "spider_thread", "rare": "venom_sac" } },
+      { "id": "tundra_boss_4", "name": "Glacial Golem", "emoji": "🗿", "baseHp": 900, "pAtk": 35, "mAtk": 10, "pDef": 35, "mDef": 25, "spd": 6, "atkSpd": 0.6, "exp": 380, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "sturdy_stone", "rare": "core_fragment" } }
+    ],
+    "region_boss": {
+      "id": "frost_lich", "name": "Frost Lich", "emoji": "🥶", "baseHp": 1800, "pAtk": 20, "mAtk": 60, "pDef": 25, "mDef": 40, "spd": 10, "atkSpd": 1.0, "exp": 1200, "skill": "intimidate_revive", "loot": { "common": "torn_cloth", "uncommon": "magic_dust", "rare": "intact_skull", "very_rare": "haunted_visage", "super_rare": "spectral_core" }
+    }
+  },
+  "desert": {
+    "area_bosses": [
+      { "id": "desert_boss_0", "name": "Deathstalker Scorpion", "emoji": "🦂", "baseHp": 600, "pAtk": 35, "mAtk": 15, "pDef": 25, "mDef": 15, "spd": 12, "atkSpd": 1.2, "exp": 300, "skill": "poison_bite", "loot": { "common": "bug_shell", "uncommon": "chitin_fragment", "rare": "venom_sac" } },
+      { "id": "desert_boss_1", "name": "Cursed Mummy", "emoji": "🧟", "baseHp": 750, "pAtk": 25, "mAtk": 20, "pDef": 18, "mDef": 18, "spd": 8, "atkSpd": 0.8, "exp": 330, "skill": "decay_touch", "loot": { "common": "torn_cloth", "uncommon": "ancient_coin", "rare": "magic_dust" } },
+      { "id": "desert_boss_2", "name": "Sand Golem", "emoji": "🗿", "baseHp": 950, "pAtk": 30, "mAtk": 0, "pDef": 35, "mDef": 20, "spd": 6, "atkSpd": 0.6, "exp": 360, "skill": "high_armor", "loot": { "common": "pebbles", "uncommon": "sturdy_stone", "rare": "core_fragment" } },
+      { "id": "desert_boss_3", "name": "Dune Viper", "emoji": "🐍", "baseHp": 500, "pAtk": 40, "mAtk": 10, "pDef": 15, "mDef": 15, "spd": 16, "atkSpd": 1.6, "exp": 400, "skill": "poison_aura", "loot": { "common": "animal_bone", "uncommon": "snake_scale", "rare": "viper_fang" } },
+      { "id": "desert_boss_4", "name": "Sphinx Guardian", "emoji": "🦁", "baseHp": 850, "pAtk": 45, "mAtk": 30, "pDef": 22, "mDef": 22, "spd": 11, "atkSpd": 1.1, "exp": 450, "skill": "heavy_strike", "loot": { "common": "animal_bone", "uncommon": "scrap_hide", "rare": "ancient_coin" } }
+    ],
+    "region_boss": {
+      "id": "giant_sandworm", "name": "Giant Sandworm", "emoji": "🐛", "baseHp": 2200, "pAtk": 60, "mAtk": 20, "pDef": 30, "mDef": 30, "spd": 9, "atkSpd": 0.9, "exp": 1500, "skill": "poison_aura", "loot": { "common": "bug_shell", "uncommon": "venom_sac", "rare": "viper_fang", "very_rare": "core_fragment", "super_rare": "serpent_eye" }
+    }
+  },
+  "void": {
+    "area_bosses": [
+      { "id": "void_boss_0", "name": "Void Spawn", "emoji": "👁️‍🗨️", "baseHp": 700, "pAtk": 10, "mAtk": 45, "pDef": 15, "mDef": 35, "spd": 14, "atkSpd": 1.4, "exp": 400, "skill": "ethereal", "loot": { "common": "ectoplasm", "uncommon": "magic_dust", "rare": "soul_shard" } },
+      { "id": "void_boss_1", "name": "Shadow Beast", "emoji": "🐺", "baseHp": 850, "pAtk": 50, "mAtk": 25, "pDef": 20, "mDef": 20, "spd": 16, "atkSpd": 1.6, "exp": 450, "skill": "lifesteal_bite", "loot": { "common": "animal_bone", "uncommon": "ectoplasm", "rare": "wolf_pelt" } },
+      { "id": "void_boss_2", "name": "Void Walker", "emoji": "🥷", "baseHp": 800, "pAtk": 45, "mAtk": 45, "pDef": 22, "mDef": 22, "spd": 18, "atkSpd": 1.8, "exp": 500, "skill": "dodge_master", "loot": { "common": "torn_cloth", "uncommon": "soul_shard", "rare": "shaman_mask" } },
+      { "id": "void_boss_3", "name": "Nightmare", "emoji": "🦄", "baseHp": 900, "pAtk": 55, "mAtk": 35, "pDef": 20, "mDef": 25, "spd": 15, "atkSpd": 1.5, "exp": 550, "skill": "intimidate_revive", "loot": { "common": "animal_bone", "uncommon": "scrap_hide", "rare": "haunted_visage" } },
+      { "id": "void_boss_4", "name": "Abyss Terror", "emoji": "🦑", "baseHp": 1200, "pAtk": 60, "mAtk": 50, "pDef": 25, "mDef": 30, "spd": 10, "atkSpd": 1.0, "exp": 600, "skill": "lifesteal_bite", "loot": { "common": "sticky_fluid", "uncommon": "acidic_goo", "rare": "spectral_core" } }
+    ],
+    "region_boss": {
+      "id": "void_lord", "name": "Void Lord", "emoji": "🌌", "baseHp": 3000, "pAtk": 70, "mAtk": 80, "pDef": 35, "mDef": 45, "spd": 12, "atkSpd": 1.2, "exp": 2000, "skill": "leviathan_spawns", "loot": { "common": "ectoplasm", "uncommon": "soul_shard", "rare": "haunted_visage", "very_rare": "shaman_mask", "super_rare": "spectral_core" }
+    }
+  },
+  "celestial": {
+    "area_bosses": [
+      { "id": "celestial_boss_0", "name": "Light Wisp", "emoji": "✨", "baseHp": 1000, "pAtk": 10, "mAtk": 65, "pDef": 20, "mDef": 40, "spd": 16, "atkSpd": 1.6, "exp": 600, "skill": "ethereal", "loot": { "common": "magic_dust", "uncommon": "glowing_ember", "rare": "soul_shard" } },
+      { "id": "celestial_boss_1", "name": "Valkyrie", "emoji": "👼", "baseHp": 1400, "pAtk": 65, "mAtk": 40, "pDef": 30, "mDef": 30, "spd": 15, "atkSpd": 1.5, "exp": 700, "skill": "revive", "loot": { "common": "rusted_metal", "uncommon": "ancient_coin", "rare": "magic_dust" } },
+      { "id": "celestial_boss_2", "name": "Crystal Entity", "emoji": "💎", "baseHp": 1800, "pAtk": 40, "mAtk": 60, "pDef": 40, "mDef": 50, "spd": 8, "atkSpd": 0.8, "exp": 800, "skill": "spell_shield", "loot": { "common": "pebbles", "uncommon": "core_fragment", "rare": "earth_heart" } },
+      { "id": "celestial_boss_3", "name": "Seraphim", "emoji": "🕊️", "baseHp": 1500, "pAtk": 55, "mAtk": 70, "pDef": 25, "mDef": 35, "spd": 16, "atkSpd": 1.6, "exp": 900, "skill": "heal_pack", "loot": { "common": "torn_cloth", "uncommon": "glowing_ember", "rare": "ancient_coin" } },
+      { "id": "celestial_boss_4", "name": "Archangel", "emoji": "⚔️", "baseHp": 2000, "pAtk": 80, "mAtk": 60, "pDef": 35, "mDef": 35, "spd": 14, "atkSpd": 1.4, "exp": 1000, "skill": "heavy_strike", "loot": { "common": "sturdy_stone", "uncommon": "iron_ore", "rare": "ancient_coin" } }
+    ],
+    "region_boss": {
+      "id": "fallen_titan", "name": "Fallen Titan", "emoji": "👑", "baseHp": 5000, "pAtk": 120, "mAtk": 100, "pDef": 50, "mDef": 50, "spd": 10, "atkSpd": 1.0, "exp": 5000, "skill": "bash", "loot": { "common": "pebbles", "uncommon": "ancient_coin", "rare": "core_fragment", "very_rare": "cursed_totem", "super_rare": "earth_heart" }
+    }
+  }
+}
