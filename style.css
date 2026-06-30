@@ -179,13 +179,14 @@ body {
 .player-attack-anim { animation: playerLunge 0.2s ease-in-out; }
 @keyframes playerLunge { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-25px) scale(1.15); } 100% { transform: translateY(0) scale(1); } }
 
-/* ⚠️ FIXED: Vertical Stacked Column Cards For Upgrades */
+/* ⚠️ FIXED: Vertical Stacked Column Cards For Upgrades (Prevents Overflow) */
 .upgrade-btn {
     background: rgba(0,0,0,0.6); 
     border: 2px solid rgba(255,255,255,0.1); 
     border-radius: 12px;
-    padding: 12px 8px;
-    flex: 1;
+    padding: 10px 5px; /* Thinner padding */
+    flex: 1 1 0; /* Magic constraint: forces equal flex sizing & scaling */
+    min-width: 0; /* Magic constraint: prevents content from expanding box off screen */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -194,12 +195,12 @@ body {
     cursor: pointer; font-family: 'Nunito', sans-serif; 
     transition: transform 0.1s, border-color 0.2s;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    overflow: hidden;
 }
 .upgrade-btn:active { transform: scale(0.97); }
 .upgrade-btn.disabled { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
 .upgrade-btn.rarity-common { border-color: #bdc3c7; }
 .upgrade-btn.rarity-uncommon { border-color: #3498db; }
-
 
 .loot-panel {
     background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; width: 100%; margin-bottom: 20px;
