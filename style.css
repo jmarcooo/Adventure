@@ -393,7 +393,7 @@ body {
 /* --- MAIN MENU BACKGROUND IMAGE --- */
 #screen-home {
     /* The linear-gradient adds a slight dark tint so your white text/buttons still pop! */
-    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('your-image-name.jpg');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), url('https://images.hdqwalls.com/download/8-bit-city-m2-1125x2436.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
