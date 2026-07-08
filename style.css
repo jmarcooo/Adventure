@@ -49,6 +49,19 @@ body {
     /* Keeps the 16-bit art perfectly crisp */
     image-rendering: pixelated; 
 }
+/* --- STAGES/LEVEL SELECTION BACKGROUND --- */
+#screen-stages {
+    /* Subtle dark overlay so the Region UI cards pop */
+    background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)), 
+        url('assets/menu/stages-bg.png') !important; 
+    
+    background-size: cover !important;
+    background-position: center bottom !important; /* 'bottom' ensures the cliff isn't cut off */
+    background-repeat: no-repeat !important;
+    
+    image-rendering: pixelated; 
+}
 
 .game-title {
     font-family: 'Fredoka One', cursive; font-size: 3.2rem; line-height: 1;
