@@ -300,3 +300,40 @@ body {
 @keyframes targetBounce { from { transform: translateY(0) scale(1); } to { transform: translateY(-8px) scale(1.1); } }
 
 ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+/* ==========================================
+   RETRO PIXEL ART & CRT EFFECTS
+   ========================================== */
+
+/* 1. Global Pixelation: Prevents browsers from blurring pixel art */
+img, .retro-forest-bg, .pixel-text {
+    image-rendering: -moz-crisp-edges; /* Firefox */
+    image-rendering: pixelated;        /* Chrome, Safari, Edge */
+}
+
+/* 2. The Retro Battle Background */
+.retro-forest-bg {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 0; 
+    pointer-events: none;
+    
+    /* Base dark sky color */
+    background-color: #0b1a14; 
+    
+    background-image: 
+        /* Layer 1: The Forest Floor (Bottom 25% of the screen) */
+        linear-gradient(to top, #2d4c2b 0%, #2d4c2b 25%, transparent 25%),
+        
+        /* Layer 2: CRT Scanline Texture Overlay (Creates that old TV look) */
+        repeating-linear-gradient(rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 3px, transparent 3px, transparent 6px),
+        
+        /* Layer 3: Distant Dark Tree Silhouettes */
+        linear-gradient(to bottom, transparent 45%, #153222 45%, #153222 100%);
+    
+    background-size: 100% 100%;
+}
+
