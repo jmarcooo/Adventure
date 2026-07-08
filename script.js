@@ -1,3 +1,4 @@
+
 // --- GAME DATA & GLOBALS ---
 let gameSpeed = 1; 
 
@@ -1077,18 +1078,6 @@ function spawnEnemyPack() {
     let biomeBosses = bossesData[stageInfo.biome.id] || {};
     
     if (!biomeEnemies || biomeEnemies.length === 0) biomeEnemies = [{ id: 'error_slime', name: 'Slime', emoji: '👾', baseHp: 20, pAtk: 2, mAtk: 0, pDef: 1, mDef: 1, spd: 10, atkSpd: 1.0, exp: 10, skill: null, loot: {} }];
-
-    let bgLayer = document.getElementById('battle-bg-layer');
-    if (bgLayer) {
-        if (stageInfo.biome && stageInfo.biome.backgrounds && stageInfo.biome.backgrounds[stageInfo.substageIndex]) {
-            let currentBg = stageInfo.biome.backgrounds[stageInfo.substageIndex];
-            bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('${currentBg}')`;
-        } else if (stageInfo.biome && stageInfo.biome.background) {
-            bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('${stageInfo.biome.background}')`;
-        } else {
-            bgLayer.style.backgroundImage = `linear-gradient(rgba(44, 62, 80, 0.5), rgba(44, 62, 80, 0.85)), url('default-battle-bg.jpg')`;
-        }
-    }
 
     let tier1 = biomeEnemies.slice(0, 3); let tier2 = biomeEnemies.length >= 6 ? biomeEnemies.slice(3, 6) : tier1; let tier3 = biomeEnemies.length >= 8 ? biomeEnemies.slice(6, 8) : tier2;
     let isOutskirts = stageInfo.substageIndex === 0; let isDepths = stageInfo.substageIndex === 2; let isRuins = stageInfo.substageIndex === 3; let isGauntlet = stageInfo.substageIndex === 4; let isLair = stageInfo.substageIndex === 5;
