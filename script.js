@@ -1,4 +1,3 @@
-
 // --- GAME DATA & GLOBALS ---
 let gameSpeed = 1; 
 
@@ -53,7 +52,14 @@ const STAGE_DATA = [
     { 
         id: 'forest', 
         name: 'Forest', 
-        backgrounds: ['forest-1.jpg', 'forest-2.jpg', 'forest-3.jpg', 'forest-4.jpg', 'forest-5.jpg', 'forest-6.jpg'] 
+        backgrounds: [
+            'assets/stage/forest/forest-1.png', 
+            'assets/stage/forest/forest-2.png', 
+            'assets/stage/forest/forest-3.png', 
+            'assets/stage/forest/forest-4.png', 
+            'assets/stage/forest/forest-5.png', 
+            'assets/stage/forest/forest-6.png'
+        ] 
     },
     { 
         id: 'cave', 
@@ -1082,6 +1088,14 @@ function spawnEnemyPack() {
     let tier1 = biomeEnemies.slice(0, 3); let tier2 = biomeEnemies.length >= 6 ? biomeEnemies.slice(3, 6) : tier1; let tier3 = biomeEnemies.length >= 8 ? biomeEnemies.slice(6, 8) : tier2;
     let isOutskirts = stageInfo.substageIndex === 0; let isDepths = stageInfo.substageIndex === 2; let isRuins = stageInfo.substageIndex === 3; let isGauntlet = stageInfo.substageIndex === 4; let isLair = stageInfo.substageIndex === 5;
     let statMult = isDepths ? 1.2 : 1.0;
+
+    // --- Set Dynamic Retro Background ---
+    let bgLayer = document.getElementById('battle-bg-layer');
+    if (bgLayer && stageInfo.biome && stageInfo.biome.backgrounds) {
+        let currentBg = stageInfo.biome.backgrounds[stageInfo.substageIndex];
+        // Applies the 40% dark overlay + the specific stage image
+        bgLayer.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${currentBg}')`;
+    }
 
     if (stageInfo.isBiomeBoss) {
         let bossTemplate = biomeBosses.region_boss || { name: "Unknown Boss", emoji: "❓", baseHp: 500, pAtk: 25, mAtk: 25, pDef: 15, mDef: 15, spd: 10, atkSpd: 1.0, exp: 500, skill: null, loot: {} };
