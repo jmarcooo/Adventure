@@ -39,10 +39,8 @@ body {
 
 /* --- MAIN MENU BACKGROUND --- */
 #screen-home {
-    /* 1. Dark overlay to keep UI readable, 2. Your image path */
-    background-image: 
-        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), 
-        url('assets/menu/menu-bg.png') !important; /* Change to .jpg if your file is a JPG */
+    /* Filter removed! Just the raw image now */
+    background-image: url('assets/menu/menu-bg.png') !important; 
     
     background-size: cover !important;
     background-position: center center !important;
