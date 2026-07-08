@@ -356,19 +356,11 @@ img, .retro-forest-bg, .pixel-text {
     z-index: 0; 
     pointer-events: none;
     
-    /* Base dark sky color forced with !important */
-    background-color: #0b1a14 !important; 
+    /* Load the actual pixel art image */
+    background-image: url('forest-bg.png') !important; 
     
-    /* Gradients forced with !important */
-    background-image: 
-        /* Layer 1: The Forest Floor (Bottom 25% of the screen) */
-        linear-gradient(to top, #2d4c2b 0%, #2d4c2b 25%, transparent 25%),
-        
-        /* Layer 2: CRT Scanline Texture Overlay (Creates that old TV look) */
-        repeating-linear-gradient(rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 3px, transparent 3px, transparent 6px),
-        
-        /* Layer 3: Distant Dark Tree Silhouettes */
-        linear-gradient(to bottom, transparent 45%, #153222 45%, #153222 100%) !important;
-    
-    background-size: 100% 100% !important;
+    /* Ensure it covers the screen and scales the pixels cleanly */
+    background-size: cover !important;
+    background-position: center bottom !important;
+    background-repeat: no-repeat !important;
 }
