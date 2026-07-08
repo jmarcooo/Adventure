@@ -356,11 +356,10 @@ img, .retro-forest-bg, .pixel-text {
     z-index: 0; 
     pointer-events: none;
     
-    /* Load the actual pixel art image */
-    background-image: url('forest-bg.png') !important; 
+    /* Image is now handled by JavaScript so it can change per stage */
     
-    /* Ensure it covers the screen and scales the pixels cleanly */
     background-size: cover !important;
-    background-position: center bottom !important;
+    background-position: center bottom !important; /* Change to 80% if monsters still float */
     background-repeat: no-repeat !important;
+}peat: no-repeat !important;
 }
