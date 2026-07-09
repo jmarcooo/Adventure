@@ -329,6 +329,14 @@ function renderHeroSelection() {
     }
 }
 
+// Helper to swap between new Sprites and old Emojis
+function getHeroVisual(hero) {
+    if (hero.sprite) {
+        return `<img src="${hero.sprite}" class="pixel-sprite" alt="${hero.name}">`;
+    }
+    return hero.emoji;
+}
+
 function renderHeroList() {
     let container = document.getElementById('heroes-list-container'); 
     if (!container) return; 
@@ -338,8 +346,16 @@ function renderHeroList() {
         let hero = heroData[heroId]; 
         let isSelected = player.currentHero === heroId ? 'selected' : '';
         let hLvl = player.heroStats[heroId] ? player.heroStats[heroId].level : 1;
+        
+        let visual = getHeroVisual(hero); // Uses our new helper
+
         container.innerHTML += `
-            <div class="card ${isSelected}" style="flex-direction: column; text-align: center; gap: 5px;" onclick="viewingHero = '${heroId}'; renderHeroSelection();"><div class="card-icon" style="font-size: 2.5rem;">${hero.emoji}</div><div class="card-info" style="text-align: center;"><h3 style="font-size: 1rem;">${hero.name} <span style="font-size:0.7rem; color:#f1c40f;">Lv.${hLvl}</span></h3></div></div>`;
+            <div class="card ${isSelected}" style="flex-direction: column; text-align: center; gap: 5px;" onclick="viewingHero = '${heroId}'; renderHeroSelection();">
+                <div class="card-icon" style="font-size: 2.5rem; display: flex; justify-content: center; align-items: center;">${visual}</div>
+                <div class="card-info" style="text-align: center;">
+                    <h3 style="font-size: 1rem;">${hero.name} <span style="font-size:0.7rem; color:#f1c40f;">Lv.${hLvl}</span></h3>
+                </div>
+            </div>`;
     }
 }
 
@@ -356,10 +372,12 @@ function renderHeroDetails(heroId) {
     let bonusPDef = (hLvl - 1) * (hero.pDefGrowth || 0); 
     let bonusMDef = (hLvl - 1) * (hero.mDefGrowth || 0);
 
+    let visual = getHeroVisual(hero); // Uses our new helper
+
     let contentDiv = document.getElementById('hero-details-content');
     contentDiv.innerHTML = `
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-            <div style="font-size: 4rem;">${hero.emoji}</div>
+            <div style="font-size: 4rem; display: flex; justify-content: center; align-items: center; width: 80px; height: 80px;">${visual}</div>
             <div>
                 <h2 style="margin: 0; font-size: 2rem; color: #fff;">${hero.name}</h2>
                 <p style="margin: 0; font-size: 1.2rem; color: #bdc3c7;">Weapon: ${hero.weapon}</p>
@@ -415,10 +433,14 @@ function upgradeHeroSkill(heroId) {
 
 function setActiveHero(heroId) { 
     player.currentHero = heroId; 
-    document.getElementById('home-hero').innerText = heroData[heroId].emoji; 
-    document.getElementById('home-weapon').innerText = heroData[heroId].weapon; 
+    let hero = heroData[heroId];
+    
+    // Update the home screen display
+    document.getElementById('home-hero').innerHTML = getHeroVisual(hero); 
+    document.getElementById('home-weapon').innerText = hero.weapon; 
+    
     renderHeroSelection(); 
-    showNotification(`${heroData[heroId].name} is now your active hero!`); 
+    showNotification(`${hero.name} is now your active hero!`); 
 }
 
 function upgradeTalent(type) { 
@@ -922,7 +944,23 @@ function updateCombatStatsPanel() {
     let panel = document.getElementById('combat-stats-panel'); 
     let stats = getPlayerStats(); 
     let d = getTotalDamage(); 
-    panel.innerHTML = `<div style="font-size: 2.5rem;">${heroData[player.currentHero] ? heroData[player.currentHero].emoji : '🧑'}</div><div><p style="margin: 2px 0;">⚔️ ${d.pDmg} P / ${d.mDmg} M</p><p style="margin: 2px 0;">⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p><p style="margin: 2px 0;">🎯 ${Math.round(stats.crit * 100)}% Crit</p></div><div><p style="margin: 2px 0;">🛡️ ${stats.pDef} P / ${stats.mDef} M</p><p style="margin: 2px 0;">💨 ${Math.round(stats.evasion * 100)}% Ddg</p><p style="margin: 2px 0;">🍀 ${Math.round(stats.luck * 100)}% Lck</p></div>`; 
+    
+    let hero = heroData[player.currentHero];
+    let visual = hero ? getHeroVisual(hero) : '🧑';
+
+    panel.innerHTML = `
+        <div style="font-size: 2.5rem; display: flex; justify-content: center; align-items: center; width: 50px; height: 50px;">${visual}</div>
+        <div>
+            <p style="margin: 2px 0;">⚔️ ${d.pDmg} P / ${d.mDmg} M</p>
+            <p style="margin: 2px 0;">⏱️ ${stats.atkSpd.toFixed(2)}/s Atk</p>
+            <p style="margin: 2px 0;">🎯 ${Math.round(stats.crit * 100)}% Crit</p>
+        </div>
+        <div>
+            <p style="margin: 2px 0;">🛡️ ${stats.pDef} P / ${stats.mDef} M</p>
+            <p style="margin: 2px 0;">💨 ${Math.round(stats.evasion * 100)}% Ddg</p>
+            <p style="margin: 2px 0;">🍀 ${Math.round(stats.luck * 100)}% Lck</p>
+        </div>`; 
+        
     document.getElementById('run-runes-text').innerText = runStats.runes; 
 }
 
