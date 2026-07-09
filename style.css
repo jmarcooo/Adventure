@@ -53,7 +53,7 @@ body {
 #screen-stages {
     /* Subtle dark overlay so the Region UI cards pop */
     background-image: 
-        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)), 
+        linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)), 
         url('assets/menu/stages-bg.png') !important; 
     
     background-size: cover !important;
