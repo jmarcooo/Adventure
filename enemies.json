@@ -129,7 +129,7 @@
         "skill": "stun_strike", 
         "loot": { "common": "sturdy_stone", "uncommon": "deepstone_chunk", "rare": "cyan_crystal", "super_rare": "geode_heart" } 
     }
-]
+  ],
   "graveyard": [
     { "id": "skeleton", "name": "Skeleton", "emoji": "💀", "baseHp": 50, "pAtk": 10, "mAtk": 0, "pDef": 4, "mDef": 2, "spd": 10, "atkSpd": 1.0, "exp": 35, "skill": "revive", "loot": { "common": "animal_bone", "uncommon": "rusted_metal", "rare": "intact_skull", "very_rare": "ancient_coin" } },
     { "id": "zombie", "name": "Zombie", "emoji": "🧟", "baseHp": 80, "pAtk": 12, "mAtk": 0, "pDef": 2, "mDef": 2, "spd": 6, "atkSpd": 0.7, "exp": 40, "skill": "decay_touch", "loot": { "common": "foul_sweat", "uncommon": "scrap_hide", "rare": "acidic_goo", "very_rare": "intact_skull" } },
