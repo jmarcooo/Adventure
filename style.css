@@ -389,3 +389,17 @@ img, .retro-forest-bg, .pixel-text {
     background-position: center bottom !important; /* Change to 80% if monsters still float */
     background-repeat: no-repeat !important;
 }
+
+/* --- HERO SPRITE RENDERING --- */
+.pixel-sprite {
+    object-fit: contain;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: pixelated; /* Crucial: Keeps pixel art sharp! */
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5));
+}
+
+/* Specific sizing for different screens */
+.character-display .pixel-sprite { width: 140px; height: 140px; z-index: 2; }
+.card-icon .pixel-sprite { width: 60px; height: 60px; }
+#hero-details-content .pixel-sprite { width: 80px; height: 80px; }
+.combat-stats-panel .pixel-sprite { width: 50px; height: 50px; }
