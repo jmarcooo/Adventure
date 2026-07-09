@@ -64,7 +64,14 @@ const STAGE_DATA = [
     { 
         id: 'cave', 
         name: 'Cave', 
-        backgrounds: ['cave-1.jpg', 'cave-2.jpg', 'cave-3.jpg', 'cave-4.jpg', 'cave-5.jpg', 'cave-6.jpg'] 
+        backgrounds: [
+            'assets/stage/cave/cave-1.png', 
+            'assets/stage/cave/cave-2.png', 
+            'assets/stage/cave/cave-3.png', 
+            'assets/stage/cave/cave-4.png', 
+            'assets/stage/cave/cave-5.png', 
+            'assets/stage/cave/cave-6.png'
+        ] 
     },
     { 
         id: 'graveyard', 
