@@ -1132,7 +1132,7 @@ function spawnEnemyPack() {
     if (bgLayer && stageInfo.biome && stageInfo.biome.backgrounds) {
         let currentBg = stageInfo.biome.backgrounds[stageInfo.substageIndex];
         // Applies the 40% dark overlay + the specific stage image
-        bgLayer.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${currentBg}')`;
+        bgLayer.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)), url('${currentBg}')`;
     }
 
     if (stageInfo.isBiomeBoss) {
