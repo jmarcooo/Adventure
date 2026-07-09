@@ -2,6 +2,7 @@
   "warrior": {
     "name": "Knight",
     "emoji": "🤺",
+    "sprite": "assets/heroes/warrior.png",
     "weapon": "🗡️",
     "attackType": "physical",
     "pAtk": 15,
