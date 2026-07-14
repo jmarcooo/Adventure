@@ -1591,4 +1591,4 @@ async function initGame() {
     } catch (error) { console.error("Failed to load game data:", error); }
 }
 
-initGame();
+initGame(); 
