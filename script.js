@@ -581,6 +581,23 @@ function getEquipmentStats() {
     return eqStats; 
 }
 
+// --- STEPPED TENSION SPIKE MATH ENGINE ---
+function getTensionMultiplier(waveNumber) {
+    if (waveNumber >= 1 && waveNumber <= 3) {
+        // Tier 1: The Warm-up (1.0x to 1.1x)
+        return 1.0 + (Math.random() * 0.1);
+    } else if (waveNumber >= 4 && waveNumber <= 6) {
+        // Tier 2: The Pushback (1.3x to 1.45x)
+        return 1.3 + (Math.random() * 0.15);
+    } else if (waveNumber >= 7 && waveNumber <= 9) {
+        // Tier 3: The Gauntlet (1.75x to 2.0x)
+        return 1.75 + (Math.random() * 0.25);
+    } else {
+        // Boss Wave (Wave 10+)
+        return 2.5; 
+    }
+}
+
 function getPlayerStats() {
     if (!heroData || !heroData[player.currentHero]) return { pAtk:1, mAtk:1, pDef:0, mDef:0, atkSpd:1, spd:1, evasion:0, crit:0, luck:0 };
     
@@ -1021,12 +1038,14 @@ function summonEnemyMidBattle(enemyId, hpOverride = null) {
     if (!template) return; 
     
     let stageInfo = getLevelAndWave(); 
-    let normHp = hpOverride !== null ? hpOverride : Math.floor((template.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier); 
-    let normPAtk = Math.max(0, Math.floor((template.pAtk || 0) + (stageInfo.absoluteLevel * 0.8))); 
-    let normMAtk = Math.max(0, Math.floor((template.mAtk || 0) + (stageInfo.absoluteLevel * 0.8))); 
-    let normPDef = Math.floor((template.pDef || 0) + (stageInfo.absoluteLevel * 0.5)); 
-    let normMDef = Math.floor((template.mDef || 0) + (stageInfo.absoluteLevel * 0.5)); 
-    let normExp = Math.floor((template.exp || 10) + (stageInfo.absoluteLevel * 2));
+    let tensionMult = getTensionMultiplier(stageInfo.wave);
+    
+    let normHp = hpOverride !== null ? hpOverride : Math.floor(template.baseHp * tensionMult * runStats.enemyHpMultiplier); 
+    let normPAtk = Math.max(0, Math.floor((template.pAtk || 0) * tensionMult)); 
+    let normMAtk = Math.max(0, Math.floor((template.mAtk || 0) * tensionMult)); 
+    let normPDef = Math.floor((template.pDef || 0) * tensionMult); 
+    let normMDef = Math.floor((template.mDef || 0) * tensionMult); 
+    let normExp = Math.floor((template.exp || 10) * tensionMult);
     let newId = 0; 
     
     activeEnemies.forEach(e => { if (e.id >= newId) newId = e.id + 1; });
@@ -1134,22 +1153,24 @@ function spawnEnemyPack() {
     let isOutskirts = stageInfo.substageIndex === 0; let isDepths = stageInfo.substageIndex === 2; let isRuins = stageInfo.substageIndex === 3; let isGauntlet = stageInfo.substageIndex === 4; let isLair = stageInfo.substageIndex === 5;
     let statMult = isDepths ? 1.2 : 1.0;
 
+    // Fetch the Stepped Dynamic Tension Curve Multiplier
+    let tensionMult = getTensionMultiplier(stageInfo.wave);
+
     // --- Set Dynamic Retro Background ---
     let bgLayer = document.getElementById('battle-bg-layer');
     if (bgLayer && stageInfo.biome && stageInfo.biome.backgrounds) {
         let currentBg = stageInfo.biome.backgrounds[stageInfo.substageIndex];
-        // Applies the 40% dark overlay + the specific stage image
         bgLayer.style.backgroundImage = `url('${currentBg}')`;
     }
 
     if (stageInfo.isBiomeBoss) {
         let bossTemplate = biomeBosses.region_boss || { name: "Unknown Boss", emoji: "❓", baseHp: 500, pAtk: 25, mAtk: 25, pDef: 15, mDef: 15, spd: 10, atkSpd: 1.0, exp: 500, skill: null, loot: {} };
-        let bossHp = Math.floor((bossTemplate.baseHp + (stageInfo.absoluteLevel * 35)) * runStats.enemyHpMultiplier * statMult);
-        let bPAtk = Math.floor((bossTemplate.pAtk + (stageInfo.absoluteLevel * 1.5)) * statMult); 
-        let bMAtk = Math.floor((bossTemplate.mAtk + (stageInfo.absoluteLevel * 1.5)) * statMult); 
-        let bPDef = Math.floor((bossTemplate.pDef + (stageInfo.absoluteLevel * 1.0)) * statMult); 
-        let bMDef = Math.floor((bossTemplate.mDef + (stageInfo.absoluteLevel * 1.0)) * statMult);
-        let bExp = bossTemplate.exp + (stageInfo.absoluteLevel * 20); 
+        let bossHp = Math.floor(bossTemplate.baseHp * tensionMult * runStats.enemyHpMultiplier * statMult);
+        let bPAtk = Math.floor((bossTemplate.pAtk || 0) * tensionMult * statMult); 
+        let bMAtk = Math.floor((bossTemplate.mAtk || 0) * tensionMult * statMult); 
+        let bPDef = Math.floor((bossTemplate.pDef || 0) * tensionMult * statMult); 
+        let bMDef = Math.floor((bossTemplate.mDef || 0) * tensionMult * statMult);
+        let bExp = Math.floor((bossTemplate.exp || 500) * tensionMult);
         
         let bSkill = { id: bossTemplate.skill, name: bossTemplate.name, icon: '👑', desc: 'Unique Biome Boss' };
         
@@ -1168,12 +1189,12 @@ function spawnEnemyPack() {
             };
         }
 
-        let bossHp = Math.floor((bossTemplate.baseHp + (stageInfo.absoluteLevel * 25)) * runStats.enemyHpMultiplier * statMult);
-        let bPAtk = Math.floor((bossTemplate.pAtk + (stageInfo.absoluteLevel * 1.2)) * statMult); 
-        let bMAtk = Math.floor((bossTemplate.mAtk + (stageInfo.absoluteLevel * 1.2)) * statMult); 
-        let bPDef = Math.floor((bossTemplate.pDef + (stageInfo.absoluteLevel * 0.8)) * statMult); 
-        let bMDef = Math.floor((bossTemplate.mDef + (stageInfo.absoluteLevel * 0.8)) * statMult);
-        let bExp = bossTemplate.exp + (stageInfo.absoluteLevel * 10);
+        let bossHp = Math.floor(bossTemplate.baseHp * tensionMult * runStats.enemyHpMultiplier * statMult);
+        let bPAtk = Math.floor((bossTemplate.pAtk || 0) * tensionMult * statMult); 
+        let bMAtk = Math.floor((bossTemplate.mAtk || 0) * tensionMult * statMult); 
+        let bPDef = Math.floor((bossTemplate.pDef || 0) * tensionMult * statMult); 
+        let bMDef = Math.floor((bossTemplate.mDef || 0) * tensionMult * statMult);
+        let bExp = Math.floor((bossTemplate.exp || 200) * tensionMult);
         
         let bSkill = { id: bossTemplate.skill, name: bossTemplate.name, icon: '🛡️', desc: 'Area Guardian' };
         
@@ -1187,15 +1208,27 @@ function spawnEnemyPack() {
     } else if (stageInfo.isMiniBoss) {
         let nodeName = SUBSTAGE_NAMES[stageInfo.substageIndex]; textEl.innerHTML = `<span style="font-size: 1rem; color: #bdc3c7;">[${stageInfo.biome.name.toUpperCase()}]</span><br><span style="color:#f39c12; text-shadow: 0 0 10px #f39c12;">⚔️ ${nodeName} Elite ⚔️</span>`;
         let strongestTemplate = tier3[Math.floor(Math.random() * tier3.length)];
-        let mbHp = Math.floor((strongestTemplate.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier * 2.5 * statMult); 
-        let mbPAtk = Math.max(1, Math.floor((strongestTemplate.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * 1.5 * statMult); let mbMAtk = Math.max(0, Math.floor((strongestTemplate.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * 1.5 * statMult); 
-        let mbPDef = Math.floor((strongestTemplate.pDef || 0) + (stageInfo.absoluteLevel * 0.5) * 1.5 * statMult); let mbMDef = Math.floor((strongestTemplate.mDef || 0) + (stageInfo.absoluteLevel * 0.5) * 1.5 * statMult); let mbExp = Math.floor((strongestTemplate.exp || 10) + (stageInfo.absoluteLevel * 2)) * 3;
+        
+        let mbHp = Math.floor(strongestTemplate.baseHp * tensionMult * 2.5 * runStats.enemyHpMultiplier * statMult); 
+        let mbPAtk = Math.max(1, Math.floor((strongestTemplate.pAtk || 0) * tensionMult * 1.5 * statMult)); 
+        let mbMAtk = Math.max(0, Math.floor((strongestTemplate.mAtk || 0) * tensionMult * 1.5 * statMult)); 
+        let mbPDef = Math.floor((strongestTemplate.pDef || 0) * tensionMult * 1.5 * statMult); 
+        let mbMDef = Math.floor((strongestTemplate.mDef || 0) * tensionMult * 1.5 * statMult); 
+        let mbExp = Math.floor((strongestTemplate.exp || 10) * tensionMult * 3);
+        
         activeEnemies.push({ id: 0, name: `Elite ${strongestTemplate.name}`, maxHp: mbHp, hp: mbHp, pAtk: mbPAtk, mAtk: mbMAtk, pDef: mbPDef, mDef: mbMDef, exp: mbExp, skill: strongestTemplate.skill, loot: strongestTemplate.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: true, spd: strongestTemplate.spd || 12, atkSpd: strongestTemplate.atkSpd || 1.2 });
         renderNormalEnemyUI(0, activeEnemies[0], strongestTemplate.emoji, true);
+        
         let minionCount = isOutskirts ? 1 : 2;
         for(let i=1; i<=minionCount; i++) {
             let minionTemplate = tier1[Math.floor(Math.random() * tier1.length)];
-            let mHp = Math.floor((minionTemplate.baseHp + (stageInfo.absoluteLevel * 10)) * runStats.enemyHpMultiplier * statMult); let mPAtk = Math.max(1, Math.floor((minionTemplate.pAtk || 0) + (stageInfo.absoluteLevel * 0.5)) * statMult); let mMAtk = Math.max(0, Math.floor((minionTemplate.mAtk || 0) + (stageInfo.absoluteLevel * 0.5)) * statMult); let mPDef = Math.floor((minionTemplate.pDef || 0) + (stageInfo.absoluteLevel * 0.3) * statMult); let mMDef = Math.floor((minionTemplate.mDef || 0) + (stageInfo.absoluteLevel * 0.3) * statMult); let mExp = Math.floor((minionTemplate.exp || 10) + (stageInfo.absoluteLevel * 1));
+            let mHp = Math.floor(minionTemplate.baseHp * tensionMult * runStats.enemyHpMultiplier * statMult); 
+            let mPAtk = Math.max(1, Math.floor((minionTemplate.pAtk || 0) * tensionMult * statMult)); 
+            let mMAtk = Math.max(0, Math.floor((minionTemplate.mAtk || 0) * tensionMult * statMult)); 
+            let mPDef = Math.floor((minionTemplate.pDef || 0) * tensionMult * statMult); 
+            let mMDef = Math.floor((minionTemplate.mDef || 0) * tensionMult * statMult); 
+            let mExp = Math.floor((minionTemplate.exp || 10) * tensionMult);
+            
             activeEnemies.push({ id: i, name: minionTemplate.name, maxHp: mHp, hp: mHp, pAtk: mPAtk, mAtk: mMAtk, pDef: mPDef, mDef: mMDef, exp: mExp, skill: minionTemplate.skill, loot: minionTemplate.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: false, spd: minionTemplate.spd || 10, atkSpd: minionTemplate.atkSpd || 1.0 });
             renderNormalEnemyUI(i, activeEnemies[i], minionTemplate.emoji, false);
         }
@@ -1217,9 +1250,25 @@ function spawnEnemyPack() {
         for(let i = 0; i < spawnList.length; i++) {
             let eTemp = spawnList[i]; let isElite = false;
             if (guaranteedElites > 0) { isElite = true; guaranteedElites--; } else { let dynamicEliteChance = 0.02 * stageInfo.wave; if (isRuins) dynamicEliteChance *= 2; if (Math.random() < dynamicEliteChance) isElite = true; }
-            let normHp = Math.floor((eTemp.baseHp + (stageInfo.absoluteLevel * 15)) * runStats.enemyHpMultiplier * statMult);
-            let normPAtk = Math.max(0, Math.floor((eTemp.pAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * statMult); let normMAtk = Math.max(0, Math.floor((eTemp.mAtk || 0) + (stageInfo.absoluteLevel * 0.8)) * statMult); let normPDef = Math.floor((eTemp.pDef || 0) + (stageInfo.absoluteLevel * 0.5) * statMult); let normMDef = Math.floor((eTemp.mDef || 0) + (stageInfo.absoluteLevel * 0.5) * statMult); let normExp = Math.floor((eTemp.exp || 10) + (stageInfo.absoluteLevel * 2));
-            let finalHp = isElite ? normHp * 2 : normHp; let finalPAtk = isElite ? Math.floor(normPAtk * 1.5) : normPAtk; let finalMAtk = isElite ? Math.floor(normMAtk * 1.5) : normMAtk; let finalPDef = isElite ? Math.floor(normPDef * 1.5) : normPDef; let finalMDef = isElite ? Math.floor(normMDef * 1.5) : normMDef; let finalExp = isElite ? normExp * 3 : normExp; let eName = (isElite ? 'Elite ' : '') + eTemp.name; let finalSpd = eTemp.spd || (isElite ? 12 : 10); let finalAtkSpd = eTemp.atkSpd || 1.0;
+            
+            let normHp = Math.floor(eTemp.baseHp * tensionMult * runStats.enemyHpMultiplier * statMult);
+            let normPAtk = Math.max(0, Math.floor((eTemp.pAtk || 0) * tensionMult * statMult)); 
+            let normMAtk = Math.max(0, Math.floor((eTemp.mAtk || 0) * tensionMult * statMult)); 
+            let normPDef = Math.floor((eTemp.pDef || 0) * tensionMult * statMult); 
+            let normMDef = Math.floor((eTemp.mDef || 0) * tensionMult * statMult); 
+            let normExp = Math.floor((eTemp.exp || 10) * tensionMult);
+            
+            let finalHp = isElite ? normHp * 2 : normHp; 
+            let finalPAtk = isElite ? Math.floor(normPAtk * 1.5) : normPAtk; 
+            let finalMAtk = isElite ? Math.floor(normMAtk * 1.5) : normMAtk; 
+            let finalPDef = isElite ? Math.floor(normPDef * 1.5) : normPDef; 
+            let finalMDef = isElite ? Math.floor(normMDef * 1.5) : normMDef; 
+            let finalExp = isElite ? normExp * 3 : normExp; 
+            
+            let eName = (isElite ? 'Elite ' : '') + eTemp.name; 
+            let finalSpd = eTemp.spd || (isElite ? 12 : 10); 
+            let finalAtkSpd = eTemp.atkSpd || 1.0;
+            
             activeEnemies.push({ id: i, name: eName, maxHp: finalHp, hp: finalHp, pAtk: finalPAtk, mAtk: finalMAtk, pDef: finalPDef, mDef: finalMDef, exp: finalExp, skill: eTemp.skill, loot: eTemp.loot, attackProgress: 0, activeEffects: [], isDead: false, isBoss: false, isElite: isElite, spd: finalSpd, atkSpd: finalAtkSpd });
             renderNormalEnemyUI(i, activeEnemies[i], eTemp.emoji, isElite);
         }
@@ -1478,7 +1527,6 @@ function packDefeated() {
     if (shopPool.length === 0 || !canAffordAny) { setTimeout(() => { continueToNextWave(); }, 1000 / gameSpeed); } else { showUpgradeShop(shopPool); }
 }
 
-// ⚠️ FIXED: Upgrade cards are now portrait columns that sit side-by-side
 function showUpgradeShop(shopPool) {
     document.getElementById('global-modal-backdrop').style.display='block';
     document.getElementById('wave-upgrade-ui').style.display = 'flex'; 
@@ -1518,6 +1566,7 @@ function showBossClearUI() {
     renderMaterialRecap('boss-materials-recap'); 
 }
 
+// --- WAVE CONTINUATION FIX WITH INCORPORATED TENSION SPIKE CALCULATIONS ---
 function continueToNextWave() { 
     document.getElementById('global-modal-backdrop').style.display='none';
     document.getElementById('wave-upgrade-ui').style.display = 'none'; 
@@ -1577,7 +1626,7 @@ async function initGame() {
         
         try { const bossesResponse = await fetch('boss.json'); if (bossesResponse.ok) { bossesData = await bossesResponse.json(); } } catch (err) { console.warn("Failed to load boss.json"); }
         try { const skillsResponse = await fetch('skills.json'); if (skillsResponse.ok) { enemySkillsData = await skillsResponse.json(); } } catch (err) { console.warn("Failed to load skills.json - verify file exists."); }
-        try { const matsResponse = await fetch('materials.json'); if (matsResponse.ok) { materialsData = await matsResponse.json(); } } catch (err) { console.warn("Failed to load materials.json"); }
+        try { const matsResponse = await fetch('materials.json'); if (matsResponse.ok) { materialsData = await materialsData.json(); } } catch (err) { console.warn("Failed to load materials.json"); }
         try { const recResponse = await fetch('recipes.json'); if (recResponse.ok) { recipesData = await recResponse.json(); } } catch (err) { console.warn("Failed to load recipes.json"); }
         try { let equipResponse = await fetch('equipment.json'); if (!equipResponse.ok) equipResponse = await fetch('equipments.json'); if (equipResponse.ok) { equipmentData = await equipResponse.json(); } } catch (err) { console.warn("Failed to fetch equipment:", err); }
         
@@ -1591,4 +1640,4 @@ async function initGame() {
     } catch (error) { console.error("Failed to load game data:", error); }
 }
 
-initGame(); 
+initGame();
